@@ -8,9 +8,9 @@ from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
 from pydantic import ValidationError
-from simulator.schemas import Event, MachineState, WorkerState
 
 from copilot.timeutil import now_iso_s
+from simulator.schemas import Event, MachineState, WorkerState
 
 ItemKind = Literal["machine", "worker", "event"]
 ENVELOPE_KEYS = ("seq", "epoch", "hub_ts", "rseq", "source_id", "stale")

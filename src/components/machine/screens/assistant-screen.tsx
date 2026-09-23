@@ -2,57 +2,53 @@
 
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, Circle, Mic, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, Circle, Mic, Send, Sparkles } from "lucide-react";
+import { useVoice } from "@web/lib/voice";
 import { assistantChecks } from "@/lib/mock-data";
 import { deriveAdvice } from "@/lib/advice";
+import { PRIMARY_MACHINE_ID } from "@/lib/api/seed";
 import { cn } from "@/lib/utils";
 import { useMachineStore } from "@/store/machine-store";
 import { AssistantCard, ScreenPad, SectionTitle, TouchButton } from "../touch";
 import type { MachineScreen } from "../machine-app";
 
-interface Turn {
-  role: "operator" | "assistant";
-  text: string;
-}
-
-const SCRIPTED_QUESTION = "Why is the hydraulic warning active?";
+/** Shown as tappable chips so the cab is usable with gloves on, not just by voice. */
+const SUGGESTIONS = [
+  "Why is the hydraulic warning active?",
+  "Is my seatbelt fastened?",
+  "How long will this task take?",
+  "What should I do about the proximity alert?",
+];
 
 export function AssistantScreen({ navigate }: { navigate: (s: MachineScreen) => void }) {
   const sensors = useMachineStore((s) => s.sensors);
-  const voiceState = useMachineStore((s) => s.voiceState);
   const setVoiceState = useMachineStore((s) => s.setVoiceState);
   const inspectionResults = useMachineStore((s) => s.inspectionResults);
   const advice = deriveAdvice(sensors);
 
-  const [transcript, setTranscript] = React.useState<Turn[]>([]);
-  const timers = React.useRef<number[]>([]);
+  const voice = useVoice({ surface: "cab", machineId: PRIMARY_MACHINE_ID });
+  const [input, setInput] = React.useState("");
+  const logRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => () => timers.current.forEach(window.clearTimeout), []);
+  // Keep the cab's own HMI animation (mic ring, avatar) in step with the real
+  // assistant rather than with a scripted timer.
+  React.useEffect(() => {
+    setVoiceState(
+      voice.listening ? "listening"
+        : voice.status === "thinking" || voice.status === "calling_tool" || voice.transcribing ? "thinking"
+        : voice.speaking || voice.status === "answering" ? "responding"
+        : "idle",
+    );
+  }, [voice.listening, voice.transcribing, voice.speaking, voice.status, setVoiceState]);
 
-  const answer = React.useCallback(() => {
-    const temp = sensors.hydraulicTemperature.toFixed(0);
-    const delta = Math.max(0, sensors.hydraulicTemperature - 90).toFixed(0);
-    return sensors.hydraulicTemperature >= 90
-      ? `Hydraulic temperature is currently ${temp}°C, approximately ${delta}°C above the recommended operating range. Reduce continuous high-load work and the system should recover within a few minutes.`
-      : `No hydraulic warning is active. Hydraulic oil is ${temp}°C and system pressure is ${Math.round(sensors.hydraulicPressure).toLocaleString()} PSI, both inside the normal range.`;
-  }, [sensors]);
+  React.useEffect(() => {
+    logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
+  }, [voice.messages.length, voice.draft]);
 
-  const runVoiceDemo = () => {
-    if (voiceState !== "idle") return;
-    timers.current.forEach(window.clearTimeout);
-    setTranscript([]);
-    setVoiceState("listening");
-    timers.current = [
-      window.setTimeout(() => {
-        setTranscript([{ role: "operator", text: SCRIPTED_QUESTION }]);
-        setVoiceState("thinking");
-      }, 1800),
-      window.setTimeout(() => {
-        setVoiceState("responding");
-        setTranscript((t) => [...t, { role: "assistant", text: answer() }]);
-      }, 3200),
-      window.setTimeout(() => setVoiceState("idle"), 6200),
-    ];
+  const submit = (text: string) => {
+    if (!text.trim()) return;
+    setInput("");
+    void voice.send(text);
   };
 
   const checks = assistantChecks.map((c) =>
@@ -62,12 +58,20 @@ export function AssistantScreen({ navigate }: { navigate: (s: MachineScreen) => 
   );
   const remaining = checks.filter((c) => !c.done).length;
 
-  const voiceLabel = {
-    idle: "Tap to speak",
-    listening: "Listening…",
-    thinking: "Thinking…",
-    responding: "Responding…",
-  }[voiceState];
+  const busy = voice.status === "thinking" || voice.status === "calling_tool" || voice.status === "answering";
+  const voiceLabel = voice.listening
+    ? "Listening…"
+    : voice.transcribing
+      ? "Transcribing…"
+      : voice.status === "calling_tool"
+        ? "Checking the machine…"
+        : voice.status === "thinking"
+          ? "Thinking…"
+          : voice.speaking
+            ? "Responding…"
+            : voice.sttSupported
+              ? "Hold to speak"
+              : "Type your question";
 
   return (
     <ScreenPad className="grid gap-4 xl:grid-cols-[1.3fr_1fr]">
@@ -121,18 +125,22 @@ export function AssistantScreen({ navigate }: { navigate: (s: MachineScreen) => 
         </div>
 
         <div className="rounded border border-white/10 bg-ink-900 p-5">
-          <SectionTitle>Voice</SectionTitle>
+          <SectionTitle>Ask the assistant</SectionTitle>
           <div className="flex items-center gap-5">
             <button
-              onClick={runVoiceDemo}
-              aria-label="Ask the machine assistant"
+              onPointerDown={voice.startTalking}
+              onPointerUp={voice.stopTalking}
+              onPointerLeave={voice.stopTalking}
+              disabled={!voice.sttSupported}
+              aria-label="Hold to ask the machine assistant"
               className={cn(
                 "relative flex size-20 shrink-0 items-center justify-center rounded-full transition-colors",
-                voiceState === "idle" ? "bg-white/8 text-zinc-200 hover:bg-white/14" : "bg-cat-500 text-ink-950",
+                voice.listening ? "bg-cat-500 text-ink-950" : "bg-white/8 text-zinc-200 hover:bg-white/14",
+                !voice.sttSupported && "cursor-not-allowed opacity-40",
               )}
             >
               <Mic className="size-8" aria-hidden />
-              {voiceState === "listening" ? (
+              {voice.listening ? (
                 <motion.span
                   className="absolute inset-0 rounded-full border-2 border-cat-500"
                   animate={{ scale: [1, 1.35], opacity: [0.8, 0] }}
@@ -143,33 +151,59 @@ export function AssistantScreen({ navigate }: { navigate: (s: MachineScreen) => 
             <div className="min-w-0">
               <p className="text-lg font-bold uppercase tracking-[0.12em] text-zinc-100">{voiceLabel}</p>
               <p className="mt-1 text-sm text-muted">
-                Voice recognition is simulated for this prototype. Tap the microphone to replay a sample exchange.
+                {voice.interim
+                  ? voice.interim
+                  : voice.sttSupported
+                    ? `Hold the microphone and ask anything about this machine or the site (${voice.sttEngine} speech).`
+                    : "Speech is unavailable in this browser. Type your question instead."}
               </p>
             </div>
           </div>
 
-          <div className="mt-4 min-h-[120px] space-y-2">
-            <AnimatePresence>
-              {transcript.map((t, i) => (
+          {voice.micError ? (
+            <p className="mt-3 flex items-center gap-2 text-sm text-status-warn">
+              <AlertTriangle className="size-4" aria-hidden />
+              {voice.micError}
+            </p>
+          ) : null}
+
+          <div ref={logRef} className="mt-4 max-h-[280px] min-h-[120px] space-y-2 overflow-y-auto">
+            <AnimatePresence initial={false}>
+              {voice.messages.map((m) => (
                 <motion.div
-                  key={i}
+                  key={m.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={cn(
                     "rounded px-4 py-3 text-base",
-                    t.role === "operator"
+                    m.role === "user"
                       ? "bg-white/6 text-zinc-200"
                       : "border border-cat-500/30 bg-cat-500/8 text-zinc-100",
                   )}
                 >
                   <span className="mr-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted">
-                    {t.role === "operator" ? "Operator" : "Assistant"}
+                    {m.role === "user" ? "Operator" : "Assistant"}
                   </span>
-                  {t.text}
+                  {m.text}
+                  {/* Say where the answer came from, rather than letting a cached or
+                      fallback answer pass as a live one. */}
+                  {m.role === "assistant" && m.mode && m.mode !== "live" ? (
+                    <span className="ml-2 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-muted">
+                      {m.mode === "cache" ? "cached" : "from data"}
+                    </span>
+                  ) : null}
                 </motion.div>
               ))}
             </AnimatePresence>
-            {voiceState === "thinking" ? (
+
+            {voice.draft ? (
+              <div className="rounded border border-cat-500/30 bg-cat-500/8 px-4 py-3 text-base text-zinc-100">
+                <span className="mr-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted">Assistant</span>
+                {voice.draft}
+              </div>
+            ) : null}
+
+            {busy && !voice.draft ? (
               <div className="flex gap-1.5 px-2">
                 {[0, 1, 2].map((i) => (
                   <motion.span
@@ -181,7 +215,57 @@ export function AssistantScreen({ navigate }: { navigate: (s: MachineScreen) => 
                 ))}
               </div>
             ) : null}
+
+            {voice.error ? (
+              <p className="px-2 text-sm text-status-warn">{voice.error}</p>
+            ) : null}
           </div>
+
+          {/* A pending action never executes on the model's say-so; the operator confirms. */}
+          {voice.pending.map((p) => (
+            <div key={p.action_id} className="mt-3 rounded border border-status-warn/40 bg-status-warn/8 p-4">
+              <p className="text-base font-semibold text-zinc-100">{p.summary}</p>
+              <div className="mt-3 flex gap-2">
+                <TouchButton tone="primary" onClick={() => void voice.confirm(p.action_id)}>
+                  Confirm
+                </TouchButton>
+                <TouchButton onClick={() => void voice.cancel(p.action_id)}>Cancel</TouchButton>
+              </div>
+            </div>
+          ))}
+
+          {voice.messages.length === 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => submit(s)}
+                  className="rounded border border-white/12 bg-white/4 px-3 py-2 text-sm text-zinc-300 hover:bg-white/10"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          <form
+            className="mt-4 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              submit(input);
+            }}
+          >
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask anything about this machine or the site…"
+              aria-label="Ask the machine assistant"
+              className="min-h-14 flex-1 rounded border border-white/12 bg-white/4 px-4 text-base text-zinc-100 placeholder:text-muted focus:border-cat-500 focus:outline-none"
+            />
+            <TouchButton tone="primary" type="submit" disabled={!input.trim() || busy}>
+              <Send className="size-5" aria-hidden />
+            </TouchButton>
+          </form>
         </div>
       </section>
 

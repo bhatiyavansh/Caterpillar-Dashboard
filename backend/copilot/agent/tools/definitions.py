@@ -8,12 +8,12 @@ import time
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
-from simulator.config import FLEET, OPERATORS
 
 from copilot.agent.registry import ALL, Tool, ToolContext, ToolError, ToolRegistry, ToolResult
 from copilot.config import BACKEND_DIR, REPO_DIR
 from copilot.ml.port import MLUnavailable
 from copilot.sim_client import SimError, SimUnavailable
+from simulator.config import FLEET, OPERATORS
 
 FLEET_BY_ID = {f.machine_id: f for f in FLEET}
 OPERATOR_BY_ID = {o.operator_id: o for o in OPERATORS}

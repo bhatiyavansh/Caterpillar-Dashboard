@@ -1,26 +1,39 @@
 /**
- * Live telemetry over WebSocket.
+ * Live telemetry for the twin, off the one shared hub connection.
  *
  * This is the class the whole `TelemetryProvider` seam was built for: it
  * implements exactly the same interface as `MockTelemetryProvider`, so the
  * engine and every 3D component are unchanged whether frames come from the
- * keyboard, the mock generator, or the Python simulator on :8100.
+ * keyboard, the mock generator, or the hub.
  *
- * It is deliberately forgiving. A demo must not die because a backend is
- * restarting, so the socket reconnects with backoff, reports its state for the
- * HUD, and never throws at callers.
+ * It used to open its own socket straight to the simulator on :8100. It no
+ * longer does. Frames straight off the simulator are unenriched — no protocol
+ * attachment, no epoch/rseq, and none of the hub-originated events (webcam CV,
+ * confirmed actions, incidents) — so the twin and the command centre were
+ * showing two different realities from two different sockets. It now subscribes
+ * to the shared `web/lib/stream` store: the twin still renders entirely on its
+ * own, but the data underneath it is the same data every other surface sees.
+ *
+ * It stays deliberately forgiving. A demo must not die because a backend is
+ * restarting; the shared client handles reconnection and this reports link
+ * state for the HUD and never throws at callers.
  */
 
+import {
+  acquireStream,
+  getStreamStore,
+  type Machine as HubMachine,
+  type StreamState,
+  type StreamStatus,
+  type Worker as HubWorker,
+} from "@web/lib/stream";
 import type { MachineTelemetry, SiteWorker, TelemetryProvider } from "@/types/twin";
 import {
-  DEFAULT_WS_URL,
-  isEvent,
-  isMachineState,
-  isWorkerState,
   toTelemetry,
   toWorker,
   type LiveEvent,
-  type LiveMessage,
+  type LiveMachineState,
+  type LiveWorkerState,
 } from "./liveFrame";
 
 export type LinkStatus =
@@ -31,17 +44,15 @@ export type LinkStatus =
   | "unavailable";
 
 export interface WebSocketProviderOptions {
+  /** Accepted for compatibility; the shared client owns the endpoint. */
   url?: string;
   /** Called whenever the link state changes, for the connection badge. */
   onStatus?: (status: LinkStatus, detail: string) => void;
-  /** Worker positions arrive on the same socket but are not machine telemetry. */
+  /** Worker positions arrive on the same stream but are not machine telemetry. */
   onWorkers?: (workers: SiteWorker[]) => void;
   /** Safety and anomaly events, for the twin's event feed. */
   onEvent?: (event: LiveEvent) => void;
-  /**
-   * Site conditions. These are not on the socket — the stream carries only
-   * machine and worker state — so they are polled from `/state` instead.
-   */
+  /** Site conditions, carried on the hub snapshot. */
   onEnvironment?: (env: LiveEnvironment) => void;
 }
 
@@ -52,17 +63,51 @@ export interface LiveEnvironment {
   temperature_c: number;
 }
 
-/** Backoff schedule, in ms. Caps out so a long outage still retries steadily. */
-const BACKOFF = [500, 1000, 2000, 4000, 8000, 15000];
+/**
+ * The hub contract marks a few fields optional that `liveFrame` requires
+ * outright. Normalise rather than cast, so a contract change shows up as a type
+ * error here instead of as undefined at runtime.
+ */
+function asLiveMachine(m: HubMachine): LiveMachineState {
+  return { ...m, task_id: m.task_id ?? null, zone: m.zone ?? null } as LiveMachineState;
+}
+
+function asLiveWorker(w: HubWorker): LiveWorkerState {
+  return { type: "worker_state", worker_id: w.worker_id, pos: w.pos, zone: w.zone ?? null };
+}
+
+function readEnvironment(env: Record<string, unknown>): LiveEnvironment | null {
+  const weather = typeof env.weather === "string" ? env.weather : null;
+  if (weather === null) return null;
+  return {
+    weather,
+    ground: typeof env.ground === "string" ? env.ground : "dry",
+    visibility_m: typeof env.visibility_m === "number" ? env.visibility_m : 0,
+    temperature_c: typeof env.temperature_c === "number" ? env.temperature_c : 0,
+  };
+}
+
+function linkState(s: StreamState): { status: LinkStatus; detail: string } {
+  const map: Record<StreamStatus, { status: LinkStatus; detail: string }> = {
+    idle: { status: "idle", detail: "Not connected" },
+    connecting: {
+      status: s.reconnects > 0 ? "reconnecting" : "connecting",
+      detail: s.reconnects > 0 ? `Reconnecting (attempt ${s.reconnects})` : "Connecting to the hub",
+    },
+    live: { status: "live", detail: "Connected" },
+    stale: { status: "unavailable", detail: "Hub connected but the source has gone quiet" },
+    offline: { status: "unavailable", detail: "Hub unreachable" },
+  };
+  return map[s.status] ?? { status: "idle", detail: "Not connected" };
+}
 
 export class WebSocketTelemetryProvider implements TelemetryProvider {
   readonly id = "websocket" as const;
 
   private listeners = new Set<(data: MachineTelemetry[]) => void>();
-  private socket: WebSocket | null = null;
-  private retry: ReturnType<typeof setTimeout> | null = null;
-  private attempt = 0;
   private stopped = true;
+  private release: (() => void) | null = null;
+  private unsubscribe: (() => void) | null = null;
 
   /** Latest frame per machine, flushed to listeners on a timer. */
   private machineBuffer = new Map<string, MachineTelemetry>();
@@ -71,7 +116,8 @@ export class WebSocketTelemetryProvider implements TelemetryProvider {
 
   private _status: LinkStatus = "idle";
   private lastMessageAt = 0;
-  private envTimer: ReturnType<typeof setInterval> | null = null;
+  private lastEventRseq = 0;
+  private lastWeather: string | null = null;
 
   constructor(private readonly options: WebSocketProviderOptions = {}) {}
 
@@ -94,162 +140,84 @@ export class WebSocketTelemetryProvider implements TelemetryProvider {
   start(): void {
     if (!this.stopped) return;
     this.stopped = false;
-    this.attempt = 0;
-    this.connect();
+    if (typeof window === "undefined") return;
+
+    this.release = acquireStream();
+    const store = getStreamStore();
+    this.unsubscribe = store.subscribe((s) => this.absorb(s));
+    this.absorb(store.getState());
 
     // Machines arrive as individual messages at 1 Hz; batch them so the engine
     // sees one coherent set rather than nine separate updates.
     this.flushTimer = setInterval(() => this.flush(), 200);
-
-    // Weather changes on a human timescale, so a slow poll is plenty.
-    if (this.options.onEnvironment) {
-      void this.pollEnvironment();
-      this.envTimer = setInterval(() => void this.pollEnvironment(), 4000);
-    }
-  }
-
-  /** Derives the REST origin from the socket URL so both track one simulator. */
-  private stateUrl(): string {
-    const raw = this.options.url ?? DEFAULT_WS_URL;
-    try {
-      const url = new URL(raw);
-      url.protocol = url.protocol === "wss:" ? "https:" : "http:";
-      url.pathname = "/state";
-      return url.toString();
-    } catch {
-      return "http://localhost:8100/state";
-    }
-  }
-
-  private async pollEnvironment(): Promise<void> {
-    if (this.stopped || !this.options.onEnvironment) return;
-    try {
-      const response = await fetch(this.stateUrl(), { cache: "no-store" });
-      if (!response.ok) return;
-      const state = (await response.json()) as { environment?: LiveEnvironment };
-      if (state.environment) this.options.onEnvironment(state.environment);
-    } catch {
-      // The socket already reports link health; a failed poll is not news.
-    }
   }
 
   stop(): void {
     this.stopped = true;
-    if (this.retry) clearTimeout(this.retry);
     if (this.flushTimer) clearInterval(this.flushTimer);
-    if (this.envTimer) clearInterval(this.envTimer);
-    this.retry = null;
     this.flushTimer = null;
-    this.envTimer = null;
-
-    const socket = this.socket;
-    this.socket = null;
-    if (socket) {
-      // Drop handlers first so closing does not schedule a reconnect.
-      socket.onopen = null;
-      socket.onmessage = null;
-      socket.onerror = null;
-      socket.onclose = null;
-      try {
-        socket.close();
-      } catch {
-        /* already gone */
-      }
-    }
-
+    this.unsubscribe?.();
+    this.release?.();
+    this.unsubscribe = this.release = null;
     this.machineBuffer.clear();
     this.workerBuffer.clear();
+    this.lastEventRseq = 0;
+    this.lastWeather = null;
     this.setStatus("idle", "Disconnected");
   }
 
   /* ------------------------------------------------------------------ */
 
-  private setStatus(status: LinkStatus, detail: string): void {
-    if (this._status === status) return;
-    this._status = status;
-    this.options.onStatus?.(status, detail);
-  }
-
-  private connect(): void {
+  /** One store snapshot -> everything the twin needs from it. */
+  private absorb(s: StreamState): void {
     if (this.stopped) return;
-    const url = this.options.url ?? DEFAULT_WS_URL;
 
-    this.setStatus(
-      this.attempt === 0 ? "connecting" : "reconnecting",
-      this.attempt === 0 ? `Connecting to ${url}` : `Reconnecting (attempt ${this.attempt})`,
-    );
+    const link = linkState(s);
+    this.setStatus(link.status, link.detail);
+    if (s.lastMessageAt !== null) this.lastMessageAt = s.lastMessageAt;
 
-    let socket: WebSocket;
-    try {
-      socket = new WebSocket(url);
-    } catch {
-      // Bad URL or blocked scheme — retrying will not help much, but the demo
-      // should still recover if the user fixes it.
-      this.scheduleRetry(`Could not open ${url}`);
-      return;
-    }
-    this.socket = socket;
-
-    socket.onopen = () => {
-      this.attempt = 0;
-      this.setStatus("live", "Connected");
-    };
-
-    socket.onmessage = (ev) => {
-      this.lastMessageAt = Date.now();
-      this.handle(ev.data);
-    };
-
-    socket.onerror = () => {
-      // `onclose` always follows, so recovery is handled in one place.
-    };
-
-    socket.onclose = () => {
-      if (this.stopped) return;
-      this.socket = null;
-      this.scheduleRetry("Simulator not reachable");
-    };
-  }
-
-  private scheduleRetry(detail: string): void {
-    if (this.stopped) return;
-    const delay = BACKOFF[Math.min(this.attempt, BACKOFF.length - 1)];
-    this.attempt++;
-    this.setStatus(this.attempt > 3 ? "unavailable" : "reconnecting", detail);
-    this.retry = setTimeout(() => this.connect(), delay);
-  }
-
-  private handle(raw: unknown): void {
-    if (typeof raw !== "string") return;
-
-    let message: LiveMessage;
-    try {
-      message = JSON.parse(raw) as LiveMessage;
-    } catch {
-      return; // A malformed frame is not worth taking the stream down for.
+    for (const m of Object.values(s.machines)) {
+      this.machineBuffer.set(m.machine_id, toTelemetry(asLiveMachine(m)));
     }
 
-    try {
-      if (isMachineState(message)) {
-        this.machineBuffer.set(message.machine_id, toTelemetry(message));
-      } else if (isWorkerState(message)) {
-        const previous = this.workerBuffer.get(message.worker_id);
-        this.workerBuffer.set(message.worker_id, toWorker(message, previous));
-      } else if (isEvent(message)) {
-        this.options.onEvent?.(message);
+    if (this.options.onWorkers) {
+      let changed = false;
+      for (const w of Object.values(s.workers)) {
+        const previous = this.workerBuffer.get(w.worker_id);
+        this.workerBuffer.set(w.worker_id, toWorker(asLiveWorker(w), previous));
+        changed = true;
       }
-    } catch {
-      // A single unmappable message must not break the link.
+      if (changed) this.options.onWorkers([...this.workerBuffer.values()]);
+    }
+
+    if (this.options.onEvent) {
+      // rseq is contiguous per epoch over reliable messages, so it is the cheapest
+      // "have I seen this already" check there is.
+      for (const e of s.events) {
+        if (e.rseq <= this.lastEventRseq) continue;
+        this.lastEventRseq = e.rseq;
+        this.options.onEvent(e as unknown as LiveEvent);
+      }
+    }
+
+    if (this.options.onEnvironment) {
+      const env = readEnvironment(s.environment);
+      if (env && env.weather !== this.lastWeather) {
+        this.lastWeather = env.weather;
+        this.options.onEnvironment(env);
+      }
     }
   }
 
   private flush(): void {
-    if (this.machineBuffer.size > 0) {
-      const frames = Array.from(this.machineBuffer.values());
-      this.listeners.forEach((cb) => cb(frames));
-    }
-    if (this.workerBuffer.size > 0 && this.options.onWorkers) {
-      this.options.onWorkers(Array.from(this.workerBuffer.values()));
-    }
+    if (this.machineBuffer.size === 0 || this.listeners.size === 0) return;
+    const frame = [...this.machineBuffer.values()];
+    for (const l of this.listeners) l(frame);
+  }
+
+  private setStatus(status: LinkStatus, detail: string): void {
+    if (this._status === status) return;
+    this._status = status;
+    this.options.onStatus?.(status, detail);
   }
 }

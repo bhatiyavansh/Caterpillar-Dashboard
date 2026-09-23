@@ -27,10 +27,6 @@ import { terrainHeight } from "./terrain";
  */
 export const LIVE_ORIGIN = { x: 192, y: 192 } as const;
 
-/** Default endpoint; override with NEXT_PUBLIC_TWIN_WS_URL. */
-export const DEFAULT_WS_URL =
-  process.env.NEXT_PUBLIC_TWIN_WS_URL ?? "ws://localhost:8100/ws/live";
-
 export function liveToWorldX(x: number): number {
   return x - LIVE_ORIGIN.x;
 }
@@ -95,8 +91,6 @@ export interface LiveEvent {
   message: string;
   data: Record<string, unknown>;
 }
-
-export type LiveMessage = LiveMachineState | LiveWorkerState | LiveEvent;
 
 /* --------------------------- field mapping ----------------------------- */
 
@@ -190,12 +184,3 @@ export function toWorker(msg: LiveWorkerState, previous?: SiteWorker): SiteWorke
   };
 }
 
-export function isMachineState(m: LiveMessage): m is LiveMachineState {
-  return m.type === "machine_state";
-}
-export function isWorkerState(m: LiveMessage): m is LiveWorkerState {
-  return m.type === "worker_state";
-}
-export function isEvent(m: LiveMessage): m is LiveEvent {
-  return m.type === "event";
-}

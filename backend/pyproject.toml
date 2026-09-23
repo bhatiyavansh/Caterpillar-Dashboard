@@ -49,3 +49,9 @@ extend-exclude = [".venv"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "ASYNC"]
 ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+# simulator/ and intelligence/ are the repo-root package, a path dependency of this
+# project - first-party, not third-party. Grouping them correctly also keeps
+# `import copilot` (the sys.path bootstrap) sorted ahead of them.
+known-first-party = ["copilot", "simulator", "intelligence"]
