@@ -102,7 +102,7 @@ export function signTexture(label: string, sub: string, color: string): THREE.Te
 }
 
 /** Diagonal hazard stripes for barriers and the restricted-zone fence. */
-export function hazardTexture(color = PALETTE.catYellow): THREE.Texture {
+export function hazardTexture(color: string = PALETTE.catYellow): THREE.Texture {
   const tex = fromCanvas(`hazard:${color}`, 64, 64, (ctx) => {
     ctx.fillStyle = "#101216";
     ctx.fillRect(0, 0, 64, 64);
