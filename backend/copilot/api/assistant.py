@@ -112,7 +112,8 @@ async def whatif_job(request: Request, job_id: str) -> dict[str, Any]:
     return job
 
 
-_SPOKEN_ID = re.compile(r"\b(E\s*X\s*C|D\s*O\s*Z|W\s*H\s*L|T\s*R\s*K|G\s*R\s*D|O\s*P)[\s\-]*((?:\d[\s\-]*){3,4})\b",
+# the digit run must END on a digit, or the trailing space is eaten and the next word glued on
+_SPOKEN_ID = re.compile(r"\b(E\s*X\s*C|D\s*O\s*Z|W\s*H\s*L|T\s*R\s*K|G\s*R\s*D|O\s*P)[\s\-]*((?:\d[\s\-]*){2,3}\d)\b",
                         re.IGNORECASE)
 
 
@@ -132,16 +133,7 @@ async def stt(request: Request, lang: str | None = None) -> dict[str, Any]:
     audio = await request.body()
     if not audio:
         raise HTTPException(422, "empty audio")
-    if len(audio) > _SPOKEN_ID = re.compile(r"\b(E\s*X\s*C|D\s*O\s*Z|W\s*H\s*L|T\s*R\s*K|G\s*R\s*D|O\s*P)[\s\-]*((?:\d[\s\-]*){3,4})\b",
-                        re.IGNORECASE)
-
-
-def normalize_ids(text: str) -> str:
-    """Speech splits machine/operator IDs ("EX C001", "t r k 0 0 2"): join them back (EXC001, TRK002)."""
-    return _SPOKEN_ID.sub(lambda m: re.sub(r"\s", "", m.group(1)).upper() + re.sub(r"[\s\-]", "", m.group(2)), text)
-
-
-STT_MAX_BYTES:
+    if len(audio) > STT_MAX_BYTES:
         raise HTTPException(413, "recording too long")
     llm = request.app.state.agent.llm
     if not getattr(llm, "stt_available", False):

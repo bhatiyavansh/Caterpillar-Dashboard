@@ -18,14 +18,25 @@ import httpx
 
 from copilot.agent.llm import LLMError, LLMTurn, ToolCall, _emit
 
-PROVIDERS: dict[str, dict[str, str]] = {
-    "groq": {"base": "https://api.groq.com/openai/v1", "key": "GROQ_API_KEY",
+PROVIDERS: dict[str, dict[str, Any]] = {
+    "groq": {"base": "https://api.groq.com/openai/v1", "key": ("GROQ_API_KEY",),
              "main": "openai/gpt-oss-120b", "fast": "openai/gpt-oss-20b", "vision": "",
              "spare": "qwen/qwen3.8-27b", "stt": "whisper-large-v3-turbo"},
-    "gemini": {"base": "https://generativelanguage.googleapis.com/v1beta/openai", "key": "GEMINI_API_KEY",
+    # Google hands out the key under both names depending on where you copy it from (AI Studio vs gcloud).
+    "gemini": {"base": "https://generativelanguage.googleapis.com/v1beta/openai",
+               "key": ("GEMINI_API_KEY", "GOOGLE_API_KEY"),
                "main": "gemini-2.5-flash", "fast": "gemini-2.5-flash-lite", "vision": "gemini-2.5-flash",
                "spare": "", "stt": ""},
 }
+
+
+def _key_from_env(names: tuple[str, ...]) -> str | None:
+    """First of the accepted env var names that is set and non-empty."""
+    for n in names:
+        v = os.environ.get(n)
+        if v and v.strip():
+            return v.strip()
+    return None
 
 
 _ODD_SPACES = str.maketrans({"\u202f": " ", "\u00a0": " ", "\u2011": "-", "\u2009": " "})
@@ -65,7 +76,7 @@ class OpenAICompatLLM:
     def __init__(self, provider: str, api_key: str | None = None, main: str | None = None, fast: str | None = None):
         cfg = PROVIDERS[provider]
         self.name = provider
-        self._key = api_key or os.environ.get(cfg["key"])
+        self._key = api_key or _key_from_env(cfg["key"])
         self.base = cfg["base"]
         self.models = {"main": main or os.environ.get(f"{provider.upper()}_MODEL", cfg["main"]),
                        "fast": fast or os.environ.get(f"{provider.upper()}_FAST_MODEL", cfg["fast"])}
@@ -83,7 +94,6 @@ class OpenAICompatLLM:
         return self.models.get(model, model)
 
     async def _post(self, body: dict[str, Any], deadline: float) -> dict[str, Any]:
-        loop = asyncio.get_running_loop()
         try:
             async with asyncio.timeout_at(deadline):
                 r = await self._client.post(f"{self.base}/chat/completions", json=body,
@@ -101,7 +111,6 @@ class OpenAICompatLLM:
             raise LLMError("auth", self.disabled)
         if r.status_code >= 400:
             raise LLMError("bad_request" if r.status_code == 400 else "api_error", f"{self.name} {r.status_code}: {r.text[:300]}")
-        _ = loop
         return r.json()
 
     async def turn(self, *, model, system, messages, tools, max_tokens, effort, on_text, first_token_s, deadline):
