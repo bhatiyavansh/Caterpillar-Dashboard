@@ -112,6 +112,29 @@ async def get_shift_tasks(ctx: ToolContext, a: ShiftTasksIn) -> ToolResult:
     return ToolResult(True, {"operator_id": op, "tasks": tasks}, prov, f"{len(tasks)} tasks for {op}")
 
 
+async def get_site_plan(ctx: ToolContext, a: EmptyIn) -> ToolResult:
+    """The whole site's plan for the shift: every operator's task queue, what each machine is doing now."""
+    tasks, prov = await _tasks(ctx)
+    by_op: dict[str, list[dict[str, Any]]] = {}
+    for t in sorted(tasks, key=lambda t: (t["operator_id"], t.get("order", 0))):
+        by_op.setdefault(t["operator_id"], []).append(t)
+    crews = []
+    for op, ts in by_op.items():
+        cur = next((t for t in ts if t["status"] == "in_progress"), None)
+        crews.append({"operator_id": op, "machine_id": ts[0].get("machine_id"),
+                      "current": {k: cur.get(k) for k in ("task_id", "task_type", "zone", "progress", "eta_min")}
+                      if cur else None,
+                      "queue": [f"{t['task_id']} {t['task_type']} zone {t['zone']} ({t['status']})" for t in ts]})
+    counts: dict[str, int] = {}
+    for t in tasks:
+        counts[t["status"]] = counts.get(t["status"], 0) + 1
+    whatifs = [{k: j.get(k) for k in ("job_id", "status", "params", "started_at")}
+               for j in list(getattr(ctx.jobs, "jobs", {}).values())[-3:]]
+    return ToolResult(True, {"tasks_total": len(tasks), "by_status": counts, "crews": crews,
+                             "what_if_runs": whatifs}, prov,
+                      f"{len(tasks)} tasks across {len(crews)} operators")
+
+
 class RecentEventsIn(_In):
     machine_id: MachineId | None = None
     types: list[str] | None = None
@@ -248,6 +271,28 @@ class ProtocolIn(_In):
     component: str | None = Field(None, description="For maintenance_due: the component, e.g. hydraulic_pump")
 
 
+def _protocol_list(lib: Any) -> list[dict[str, Any]]:
+    return [{"protocol_id": p.id, "title": p.title, "for_events": list(p.applies_to_events),
+             "regulation": (p.regulation or {}).get("citation") if isinstance(p.regulation, dict) else None}
+            for p in lib.protocols]
+
+
+async def list_documents(ctx: ToolContext, a: EmptyIn) -> ToolResult:
+    """Every document the assistant can read: site protocols (SOPs) and manuals/regulations."""
+    lib, rag = ctx.extras.get("protocols"), ctx.extras.get("rag")
+    if lib is None and rag is None:
+        raise ToolError("document library not loaded", "stub")
+    docs: dict[str, dict[str, Any]] = {}
+    for c in (rag.chunks if rag is not None else []):
+        d = docs.setdefault(c.doc_id, {"doc_id": c.doc_id, "title": c.title, "citation": c.citation.split("(")[0].strip(),
+                                       "source": c.source, "sections": 0})
+        d["sections"] += 1
+    return ToolResult(True, {"protocols": _protocol_list(lib) if lib is not None else [],
+                             "manuals": list(docs.values()),
+                             "note": "Use get_protocol for a protocol's steps and search_manual to read a manual."},
+                      "document_library", f"{len(lib.protocols) if lib else 0} protocols, {len(docs)} manuals")
+
+
 async def get_protocol(ctx: ToolContext, a: ProtocolIn) -> ToolResult:
     lib = ctx.extras.get("protocols")
     if lib is None:
@@ -257,7 +302,8 @@ async def get_protocol(ctx: ToolContext, a: ProtocolIn) -> ToolResult:
     elif a.event:
         p = lib.for_event({"event": a.event, "data": {"component": a.component} if a.component else {}})
     else:
-        raise ToolError("give an event or a protocol_id")
+        return ToolResult(True, {"found": False, "protocols": _protocol_list(lib)}, "protocol_library",
+                          f"{len(lib.protocols)} protocols on file")
     if p is None:
         return ToolResult(True, {"found": False, "available": sorted(lib.by_id)}, "protocol_library",
                           "no protocol for that")
@@ -406,6 +452,9 @@ def build_tools() -> list[Tool]:
         Tool("get_shift_tasks", "Today's tasks for an operator (or the operator of a machine), in order, with "
              "progress and planner estimates.", ShiftTasksIn, get_shift_tasks,
              frozenset({"cab", "command", "training"}), frozenset({"planner", "general", "coordination"})),
+        Tool("get_site_plan", "The whole site's plan for this shift: every operator's task queue in order, what "
+             "each machine is working on now, task counts by status.", EmptyIn, get_site_plan, ALL,
+             frozenset({"planner", "general", "coordination", "reporting"})),
         Tool("reorder_tasks", "Re-sequence an operator's tasks for a reason such as rain. Needs confirmation.",
              ReorderIn, reorder_execute, CAB_CMD, frozenset({"planner", "general"}), True, reorder_prepare),
         Tool("predict_task_time", "ML time estimate (P10/P50/P90 minutes, remaining time, reasons) for a task.",
@@ -424,6 +473,10 @@ def build_tools() -> list[Tool]:
         Tool("get_protocol", "The site protocol for a safety event or protocol id: steps to follow (verbatim), "
              "escalation, and the regulation it cites.", ProtocolIn, get_protocol, ALL,
              frozenset({"safety", "training", "general", "maintenance"})),
+        Tool("list_documents", "List every document on file: the site's safety protocols (SOPs) and the "
+             "manuals/regulations. Use when asked what protocols, procedures, manuals or rules exist.", EmptyIn,
+             list_documents, ALL, frozenset({"safety", "maintenance", "training", "general", "reporting",
+                                              "planner", "coordination"})),
         Tool("create_incident", "File an incident report for a machine. Needs confirmation.", IncidentIn,
              incident_execute, CAB_CMD, frozenset({"safety", "reporting", "general"}), True, incident_prepare,
              timeout_s=10.0),

@@ -33,17 +33,19 @@ class Specialist:
 
 SPECIALISTS: dict[str, Specialist] = {s.id: s for s in (
     Specialist("safety", "Safety", (
-        "You are the safety specialist. For any 'what do I do' question about an alert, call get_protocol and "
-        "tell the user the protocol applies; the system appends the protocol steps verbatim after your text, so "
-        "do NOT restate, paraphrase or add steps yourself. Keep your own text to one short sentence."),
+        "You are the safety specialist. For any 'what do I do' question or any question about a procedure, call "
+        "get_protocol (list_documents shows what exists) and tell the user which protocol applies; the system "
+        "appends the protocol steps verbatim after your text, so do NOT restate, paraphrase or add steps "
+        "yourself. Keep your own text to one short sentence."),
         ((r"seat ?belt|\bbelt\b|buckle", 2), (r"proximity|behind me|blind spot|worker (?:near|behind)|person (?:near|behind)|someone behind", 2),
          (r"fatigue|tired|sleepy|drows|eyes closed", 2), (r"\btip(?:ping)?\b|tip-over|rollover|overturn|stability|margin", 2),
          (r"collision|crash|reversing", 2), (r"\bsafe\b|safety|danger|hazard|alarm|alert", 1),
-         (r"what (?:do|should) i do|what now", 1), (r"incident|near miss|injur", 1.5))),
+         (r"what (?:do|should) i do|what now", 1), (r"incident|near miss|injur", 1.5),
+         (r"protocols?|\bsops?\b|procedures?|emergency", 1.5))),
     Specialist("planner", "Planner", (
         "You are the planning specialist: tasks, sequencing, time estimates and what-if. Quote time estimates "
         "as the P50 with the P10-P90 range and name the top reasons if the tool gives them."),
-        ((r"\btasks?\b|schedule|\bplan\b|reorder|re-?sequence|next job|shift plan", 2),
+        ((r"\btasks?\b|schedule|\bplans?\b|planned|reorder|re-?sequence|next job|shift plan|to-?do|work queue", 2),
          (r"how long|\beta\b|finish|time estimate|will (?:it|this) take", 2), (r"what[- ]if|add(?:ed)? trucks?|extra trucks?", 2),
          (r"trench|excavat|haul", 0.5))),
     Specialist("maintenance", "Maintenance", (
