@@ -15,7 +15,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { getFaceLandmarker } from "./mediapipe";
+import { getFaceLandmarker, type FaceLandmarker, type FaceLandmarkerResult } from "./mediapipe";
 import { useWebcam } from "./useWebcam";
 
 export type CvFatigueEvent = {
@@ -88,7 +88,7 @@ export function FatigueDetector({
     if (!enabled || status !== "ready") return;
 
     let cancelled = false;
-    let landmarker: any = null;
+    let landmarker: FaceLandmarker | null = null;
     let lastVideoTime = -1;
 
     const loop = () => {
@@ -100,7 +100,7 @@ export function FatigueDetector({
       if (video.currentTime === lastVideoTime) return;
       lastVideoTime = video.currentTime;
 
-      let result: any;
+      let result: FaceLandmarkerResult;
       try {
         result = landmarker.detectForVideo(video, performance.now());
       } catch {
@@ -117,7 +117,7 @@ export function FatigueDetector({
       setFaceSeen(true);
 
       const score = (name: string) =>
-        shapes.find((c: any) => c.categoryName === name)?.score ?? 0;
+        shapes.find((c) => c.categoryName === name)?.score ?? 0;
       const eyesClosed =
         score("eyeBlinkLeft") > BLINK_THRESHOLD &&
         score("eyeBlinkRight") > BLINK_THRESHOLD;

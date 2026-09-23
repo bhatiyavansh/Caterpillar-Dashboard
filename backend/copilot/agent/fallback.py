@@ -55,6 +55,25 @@ def summarize(name: str, r: ToolResult) -> str:
         rows = d.get("forecast", [])[:3]
         return "Service outlook: " + "; ".join(
             f"{f['machine_id']} {f['component']} in {f['hours_to_service']} h" for f in rows) + "."
+    if name == "get_site_plan":
+        crews = d.get("crews", [])
+        now = [f"{c['operator_id']} on {c['machine_id']}: {c['current']['task_id']} {c['current']['task_type']} "
+               f"zone {c['current']['zone']} ({round((c['current']['progress'] or 0) * 100)}%)"
+               for c in crews if c.get("current")]
+        counts = ", ".join(f"{v} {k}" for k, v in d.get("by_status", {}).items())
+        return f"Site plan: {d.get('tasks_total')} tasks ({counts}). In progress: " + ("; ".join(now) or "none") + "."
+    if name == "list_documents":
+        prots = ", ".join(p["title"] for p in d.get("protocols", []))
+        mans = ", ".join(m["citation"] for m in d.get("manuals", []))
+        return f"Protocols on file: {prots}. Manuals and regulations: {mans}."
+    if name == "search_manual":
+        hits = d.get("hits", [])
+        if not hits:
+            return "Nothing in the manuals matches that."
+        h = hits[0]
+        return f"From {h['citation']}: \"{h['quote'][:300].strip()}\""
+    if name == "get_protocol" and not d.get("found"):
+        return "Protocols on file: " + ", ".join(p["title"] for p in d.get("protocols", [])) + "."
     if r.pending_action:
         return f"{r.pending_action['summary']}. Say or tap confirm to go ahead."
     return f"{name}: {r.summary}."

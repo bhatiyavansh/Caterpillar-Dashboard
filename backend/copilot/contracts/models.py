@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
 from simulator.schemas import EVENT_CATALOGUE, Event, MachineState, Severity, WorkerState
 
 CONTRACT_VERSION = "1.2.0"

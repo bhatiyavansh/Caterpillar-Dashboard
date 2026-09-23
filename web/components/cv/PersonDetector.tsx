@@ -16,7 +16,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { getObjectDetector } from "./mediapipe";
+import { getObjectDetector, type ObjectDetector, type ObjectDetectorResult } from "./mediapipe";
 import { useWebcam } from "./useWebcam";
 
 export type CvProximityEvent = {
@@ -106,7 +106,7 @@ export function PersonDetector({
     if (!enabled || status !== "ready") return;
 
     let cancelled = false;
-    let detector: any = null;
+    let detector: ObjectDetector | null = null;
     let lastVideoTime = -1;
 
     const loop = () => {
@@ -119,16 +119,16 @@ export function PersonDetector({
       if (video.currentTime === lastVideoTime) return;
       lastVideoTime = video.currentTime;
 
-      let result: any;
+      let result: ObjectDetectorResult;
       try {
         result = detector.detectForVideo(video, performance.now());
       } catch {
         return;   // a dropped frame is not worth tearing the component down
       }
 
-      const people = (result?.detections ?? []).filter((d: any) =>
+      const people = (result?.detections ?? []).filter((d) =>
         d.categories?.some(
-          (c: any) => c.categoryName === "person" && c.score >= minConfidence,
+          (c) => c.categoryName === "person" && c.score >= minConfidence,
         ),
       );
 

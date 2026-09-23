@@ -4,6 +4,7 @@ export { createStreamStore, initialState, reduce, type Machine, type StreamState
 export { siteToPlan, siteToTwin, twinToSite, degToRad, radToDeg, PLAN, TWIN, SITE } from "./geo";
 export { LiveTelemetryProvider, TwinPublisher, TWIN_COMMANDS, TWIN_IDS, toTelemetry, type TwinEngineLike } from "./twin";
 export {
+  acquireStream,
   configureStream,
   getStreamStore,
   useActiveAlerts,

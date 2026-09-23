@@ -68,14 +68,18 @@ export function useWebcam(enabled = true) {
 
   useEffect(() => {
     if (!enabled) return;
-    let released = false;
+    // Capture the element now: by the time cleanup runs React may already have detached it,
+    // and we would then leave the MediaStream wired to a node nobody can see.
+    const video = videoRef.current;
+    // Opening a camera is exactly the "synchronize with an external system" an effect is for.
+    // `start` sets a "starting" status before its first await, which the lint rule cannot tell
+    // apart from a render-driven setState, so silence it here rather than deferring the call
+    // behind a microtask purely to satisfy the check.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external device acquisition
     void start();
     return () => {
-      if (!released) {
-        released = true;
-        if (videoRef.current) videoRef.current.srcObject = null;
-        release();
-      }
+      if (video) video.srcObject = null;
+      release();
     };
   }, [enabled, start]);
 

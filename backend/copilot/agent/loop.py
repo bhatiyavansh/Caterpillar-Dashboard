@@ -28,6 +28,7 @@ from copilot.agent.registry import ToolContext, ToolRegistry, ToolResult
 from copilot.contracts.assistant import AssistantRequest
 
 EFFORT = {"cab": "low", "training": "low", "ar": "low", "command": "medium", "owner": "medium"}
+TOOL_RESULT_CHARS = 6000  # free tiers allow ~8k tokens/min per model; a turn resends every result each round
 SpeakMax = {"cab": 2, "ar": 2, "training": 3, "command": 3, "owner": 3}
 MACHINE_RE = re.compile(r"\b[A-Z]{3}\d{3}\b")
 
@@ -187,6 +188,9 @@ class Agent:
         elif llm_grounded is False:
             grounded = True  # delivered text is the deterministic, data-only answer
         speak_text = speak(final_text, req.surface)
+        if protocol is None:  # the model looked a protocol up itself: its steps still come from the file, verbatim
+            protocol = next((r.data["protocol"] for n, r in t.results
+                             if n == "get_protocol" and r.ok and r.data.get("found")), None)
         if protocol is not None:
             final_text = final_text.rstrip() + "\n\n" + protocol_block(protocol)
             speak_text = (speak_text + " " + " ".join(protocol["steps"])).strip()
@@ -307,7 +311,7 @@ class Agent:
                 yield "confirm_required", payload
             if results_blocks is not None:
                 results_blocks.append({"type": "tool_result", "tool_use_id": call_id,
-                                       "content": json.dumps(res.for_model(), default=str)[:20_000],
+                                       "content": json.dumps(res.for_model(), default=str)[:TOOL_RESULT_CHARS],
                                        "is_error": not res.ok})
 
     async def _log(self, record: dict[str, Any]) -> None:

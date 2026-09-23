@@ -219,7 +219,7 @@ Ingest payloads never carry envelope fields. The hub strips any it receives.
 
 ### 5.1 LLM [DECIDED 2026-09-23: free providers first]
 
-- **Provider chain (current):** `LLM_PROVIDER=auto` → Groq (`llama-3.3-70b-versatile` / fast `llama-3.1-8b-instant`) → Gemini (`gemini-2.5-flash` / `-lite`) → Anthropic, using whichever keys are in `backend/.env` (`GROQ_API_KEY`, `GEMINI_API_KEY`). OpenAI-compatible adapter in `copilot/agent/openai_compat.py`; models are aliases `main`/`fast`. The Anthropic notes below apply only when it is in the chain.
+- **Provider chain (current):** `LLM_PROVIDER=auto` → Groq (`openai/gpt-oss-120b` / fast `openai/gpt-oss-20b`) → Gemini (`gemini-2.5-flash` / `-lite`) → Anthropic, using whichever keys are in `backend/.env` (`GROQ_API_KEY`, `GEMINI_API_KEY`). OpenAI-compatible adapter in `copilot/agent/openai_compat.py`; models are aliases `main`/`fast`. The Anthropic notes below apply only when it is in the chain.
 
 
 - Anthropic Messages API through the async SDK, via `client.beta.messages.stream`. The beta surface is needed for server-side refusal `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`). All of this sits behind `LLMPort`; tests use `FakeLLM`.

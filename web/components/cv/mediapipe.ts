@@ -14,9 +14,20 @@ const OBJECT_MODEL =
 const FACE_MODEL =
   "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 
-let visionPromise: Promise<any> | null = null;
-let objectDetectorPromise: Promise<any> | null = null;
-let faceLandmarkerPromise: Promise<any> | null = null;
+/**
+ * The bundle is imported dynamically (it pulls in WASM), so the value import happens at runtime
+ * while these type-only imports cost nothing and keep every caller type-checked.
+ */
+type Vision = typeof import("@mediapipe/tasks-vision");
+type Fileset = Awaited<ReturnType<Vision["FilesetResolver"]["forVisionTasks"]>>;
+export type ObjectDetector = Awaited<ReturnType<Vision["ObjectDetector"]["createFromOptions"]>>;
+export type FaceLandmarker = Awaited<ReturnType<Vision["FaceLandmarker"]["createFromOptions"]>>;
+export type ObjectDetectorResult = ReturnType<ObjectDetector["detectForVideo"]>;
+export type FaceLandmarkerResult = ReturnType<FaceLandmarker["detectForVideo"]>;
+
+let visionPromise: Promise<{ vision: Vision; fileset: Fileset }> | null = null;
+let objectDetectorPromise: Promise<ObjectDetector> | null = null;
+let faceLandmarkerPromise: Promise<FaceLandmarker> | null = null;
 
 async function loadVision() {
   if (!visionPromise) {
@@ -29,7 +40,7 @@ async function loadVision() {
   return visionPromise;
 }
 
-export async function getObjectDetector(minConfidence: number) {
+export async function getObjectDetector(minConfidence: number): Promise<ObjectDetector> {
   if (!objectDetectorPromise) {
     objectDetectorPromise = (async () => {
       const { vision, fileset } = await loadVision();
@@ -44,7 +55,7 @@ export async function getObjectDetector(minConfidence: number) {
   return objectDetectorPromise;
 }
 
-export async function getFaceLandmarker() {
+export async function getFaceLandmarker(): Promise<FaceLandmarker> {
   if (!faceLandmarkerPromise) {
     faceLandmarkerPromise = (async () => {
       const { vision, fileset } = await loadVision();

@@ -18,6 +18,7 @@ import { PROXIMITY } from "@/lib/status";
 import { Button } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import type { CvProximityEvent } from "@web/components/cv";
+import { publishCvEvent } from "@web/lib/cv";
 
 export type AvatarState = "idle" | "listening" | "thinking" | "talking" | "alert";
 
@@ -117,8 +118,26 @@ export function WebcamSlot({
   const token = PROXIMITY[level];
   const detected = level !== "safe" && distanceM !== null;
 
+  // A detection is a site event, not a cab-local one: publish it to the hub so the command
+  // centre, the twin, the alert ribbon, the database and the assistant all see it too. The
+  // local callback still fires first, so this panel never waits on the network.
+  const lastSeverity = React.useRef<string | null>(null);
   const handleEvent = React.useCallback(
-    (e: CvProximityEvent) => onDetection?.(e),
+    (e: CvProximityEvent) => {
+      onDetection?.(e);
+      const escalated = lastSeverity.current !== null && lastSeverity.current !== e.severity;
+      lastSeverity.current = e.severity;
+      void publishCvEvent(
+        {
+          event: e.event,
+          severity: e.severity,
+          machine_id: e.machine_id,
+          message: e.message,
+          data: e.data,
+        },
+        { force: escalated },
+      );
+    },
     [onDetection],
   );
 

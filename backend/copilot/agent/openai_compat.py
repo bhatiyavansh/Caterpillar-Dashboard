@@ -11,18 +11,40 @@ import asyncio
 import base64
 import json
 import os
+import re
 from typing import Any
 
 import httpx
 
 from copilot.agent.llm import LLMError, LLMTurn, ToolCall, _emit
 
-PROVIDERS: dict[str, dict[str, str]] = {
-    "groq": {"base": "https://api.groq.com/openai/v1", "key": "GROQ_API_KEY",
-             "main": "llama-3.3-70b-versatile", "fast": "llama-3.1-8b-instant", "vision": ""},
-    "gemini": {"base": "https://generativelanguage.googleapis.com/v1beta/openai", "key": "GEMINI_API_KEY",
-               "main": "gemini-2.5-flash", "fast": "gemini-2.5-flash-lite", "vision": "gemini-2.5-flash"},
+PROVIDERS: dict[str, dict[str, Any]] = {
+    "groq": {"base": "https://api.groq.com/openai/v1", "key": ("GROQ_API_KEY",),
+             "main": "openai/gpt-oss-120b", "fast": "openai/gpt-oss-20b", "vision": "",
+             "spare": "qwen/qwen3.8-27b", "stt": "whisper-large-v3-turbo"},
+    # Google hands out the key under both names depending on where you copy it from (AI Studio vs gcloud).
+    "gemini": {"base": "https://generativelanguage.googleapis.com/v1beta/openai",
+               "key": ("GEMINI_API_KEY", "GOOGLE_API_KEY"),
+               "main": "gemini-2.5-flash", "fast": "gemini-2.5-flash-lite", "vision": "gemini-2.5-flash",
+               "spare": "", "stt": ""},
 }
+
+
+def _key_from_env(names: tuple[str, ...]) -> str | None:
+    """First of the accepted env var names that is set and non-empty."""
+    for n in names:
+        v = os.environ.get(n)
+        if v and v.strip():
+            return v.strip()
+    return None
+
+
+_ODD_SPACES = str.maketrans({"\u202f": " ", "\u00a0": " ", "\u2011": "-", "\u2009": " "})
+_CITE_TAGS = re.compile(r"\u3010[^\u3011]*\u3011")  # gpt-oss adds 【source】 markers
+
+
+def _clean(text: str) -> str:
+    return _CITE_TAGS.sub("", text.translate(_ODD_SPACES))
 
 
 def _to_openai(system: list[dict[str, Any]], messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -54,22 +76,24 @@ class OpenAICompatLLM:
     def __init__(self, provider: str, api_key: str | None = None, main: str | None = None, fast: str | None = None):
         cfg = PROVIDERS[provider]
         self.name = provider
-        self._key = api_key or os.environ.get(cfg["key"])
+        self._key = api_key or _key_from_env(cfg["key"])
         self.base = cfg["base"]
         self.models = {"main": main or os.environ.get(f"{provider.upper()}_MODEL", cfg["main"]),
                        "fast": fast or os.environ.get(f"{provider.upper()}_FAST_MODEL", cfg["fast"])}
         self.vision = cfg["vision"]
+        # free tiers rate-limit per model, so on a 429 the other models' quotas are still there
+        self.spares = [m for m in (self.models["main"], self.models["fast"], cfg["spare"]) if m]
+        self.disabled: str | None = None  # set when the key is rejected; the chain then skips us
         self._client = httpx.AsyncClient(timeout=20.0) if self._key else None
 
     @property
     def available(self) -> bool:
-        return self._client is not None
+        return self._client is not None and self.disabled is None
 
     def resolve(self, model: str) -> str:
         return self.models.get(model, model)
 
     async def _post(self, body: dict[str, Any], deadline: float) -> dict[str, Any]:
-        loop = asyncio.get_running_loop()
         try:
             async with asyncio.timeout_at(deadline):
                 r = await self._client.post(f"{self.base}/chat/completions", json=body,
@@ -82,9 +106,11 @@ class OpenAICompatLLM:
             raise LLMError("rate_limited", f"{self.name} 429")
         if r.status_code in (500, 502, 503, 529):
             raise LLMError("overloaded", f"{self.name} {r.status_code}")
+        if r.status_code in (401, 403) or (r.status_code == 400 and "auth" in r.text.lower() and "key" in r.text.lower()):
+            self.disabled = f"{self.name}: API key rejected ({r.status_code})"
+            raise LLMError("auth", self.disabled)
         if r.status_code >= 400:
             raise LLMError("bad_request" if r.status_code == 400 else "api_error", f"{self.name} {r.status_code}: {r.text[:300]}")
-        _ = loop
         return r.json()
 
     async def turn(self, *, model, system, messages, tools, max_tokens, effort, on_text, first_token_s, deadline):
@@ -95,12 +121,20 @@ class OpenAICompatLLM:
         if tools:
             body["tools"] = [{"type": "function", "function": {"name": t["name"], "description": t["description"],
                                                                 "parameters": t["input_schema"]}} for t in tools]
-        data = await self._post(body, deadline)
+        order = [body["model"]] + [m for m in self.spares if m != body["model"]]
+        for i, m in enumerate(order):
+            body["model"] = m
+            try:
+                data = await self._post(body, deadline)
+                break
+            except LLMError as exc:
+                if exc.code != "rate_limited" or i == len(order) - 1:
+                    raise
         try:
             msg = data["choices"][0]["message"]
         except (KeyError, IndexError) as exc:
             raise LLMError("api_error", f"{self.name}: malformed response") from exc
-        text = msg.get("content") or ""
+        text = _clean(msg.get("content") or "")
         calls: list[ToolCall] = []
         for c in msg.get("tool_calls") or []:
             try:
@@ -123,30 +157,85 @@ class OpenAICompatLLM:
         return data["choices"][0]["message"].get("content") or ""
 
 
+    async def transcribe(self, audio: bytes, filename: str, media_type: str, language: str | None,
+                         timeout_s: float) -> dict[str, Any]:
+        """Speech to text (Groq Whisper): returns {"text", "language"}."""
+        stt = PROVIDERS[self.name]["stt"]
+        if self._client is None or not stt:
+            raise LLMError("unavailable", f"{self.name}: no speech-to-text model")
+        data = {"model": stt, "response_format": "verbose_json", "temperature": "0"}
+        if language:
+            data["language"] = language
+        try:
+            async with asyncio.timeout(timeout_s):
+                r = await self._client.post(f"{self.base}/audio/transcriptions", data=data,
+                                            files={"file": (filename, audio, media_type)},
+                                            headers={"Authorization": f"Bearer {self._key}"})
+        except TimeoutError as exc:
+            raise LLMError("total_timeout", f"{self.name} stt deadline reached") from exc
+        except httpx.HTTPError as exc:
+            raise LLMError("unavailable", f"{self.name} stt: {exc!r}") from exc
+        if r.status_code == 429:
+            raise LLMError("rate_limited", f"{self.name} stt 429")
+        if r.status_code >= 400:
+            raise LLMError("api_error", f"{self.name} stt {r.status_code}: {r.text[:200]}")
+        body = r.json()
+        return {"text": (body.get("text") or "").strip(), "language": body.get("language")}
+
+
 class ChainLLM:
     """Try providers in order (e.g. Groq then Gemini) within the same deadline; refusals are not retried."""
 
     def __init__(self, providers: list[Any]) -> None:
-        self.providers = [p for p in providers if p.available]
-        self.name = ">".join(p.name for p in self.providers) or "none"
+        self.all = [p for p in providers if p.available]
         self.last_used: str | None = None
+
+    @property
+    def providers(self) -> list[Any]:
+        return [p for p in self.all if p.available]  # a provider whose key was rejected drops out
+
+    @property
+    def name(self) -> str:
+        return ">".join(p.name for p in self.providers) or "none"
+
+    @property
+    def disabled(self) -> list[str]:
+        return [p.disabled for p in self.all if getattr(p, "disabled", None)]
 
     @property
     def available(self) -> bool:
         return bool(self.providers)
 
     async def turn(self, **kw):
-        last: LLMError | None = None
+        errors: list[LLMError] = []
         for p in self.providers:
             try:
                 out = await p.turn(**kw)
                 self.last_used = p.name
                 return out
             except LLMError as exc:
-                last = exc
+                errors.append(exc)
                 if exc.code in ("refusal", "total_timeout"):
                     break
-        raise last or LLMError("no_key", "no LLM provider configured")
+        if not errors:
+            raise LLMError("no_key", "no LLM provider configured")
+        # report the most useful failure (a rate limit says more than a later provider's bad key)
+        rank = ("refusal", "total_timeout", "rate_limited", "overloaded")
+        raise min(errors, key=lambda e: rank.index(e.code) if e.code in rank else len(rank))
+
+    async def transcribe(self, **kw) -> dict[str, Any]:
+        last: LLMError | None = None
+        for p in self.providers:
+            if hasattr(p, "transcribe"):
+                try:
+                    return await p.transcribe(**kw)
+                except LLMError as exc:
+                    last = exc
+        raise last or LLMError("unavailable", "no speech-to-text provider configured")
+
+    @property
+    def stt_available(self) -> bool:
+        return any(getattr(p, "name", "") in PROVIDERS and PROVIDERS[p.name]["stt"] for p in self.providers)
 
     async def describe_image(self, **kw):
         last: LLMError | None = None
