@@ -23,9 +23,12 @@ PROVIDERS: dict[str, dict[str, Any]] = {
              "main": "openai/gpt-oss-120b", "fast": "openai/gpt-oss-20b", "vision": "",
              "spare": "qwen/qwen3.8-27b", "stt": "whisper-large-v3-turbo"},
     # Google hands out the key under both names depending on where you copy it from (AI Studio vs gcloud).
+    # Google retires pinned Gemini snapshots on a rolling schedule (2.5-flash was pulled
+    # for new users in 2026) - the "-latest" aliases point at whatever Google currently
+    # considers current, so this entry does not need to be revisited every retirement.
     "gemini": {"base": "https://generativelanguage.googleapis.com/v1beta/openai",
                "key": ("GEMINI_API_KEY", "GOOGLE_API_KEY"),
-               "main": "gemini-2.5-flash", "fast": "gemini-2.5-flash-lite", "vision": "gemini-2.5-flash",
+               "main": "gemini-flash-latest", "fast": "gemini-flash-lite-latest", "vision": "gemini-flash-latest",
                "spare": "", "stt": ""},
 }
 

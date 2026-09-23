@@ -12,7 +12,8 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { Fuel, Gauge, Hourglass, Thermometer } from "lucide-react";
 import { TaskPanel } from "./task-panel";
-import { AvatarSlot, WebcamSlot, type AvatarState } from "./integration-slots";
+import { WebcamSlot } from "./integration-slots";
+import { AssistantPanel } from "@/components/assistant/assistant-panel";
 import { AlertRibbon, levelFor } from "@/components/alerts/alert-ribbon";
 import { ArcGauge, Readout } from "@/components/ui/data";
 import { MachineStatusChip } from "@/components/ui/status";
@@ -21,32 +22,6 @@ import { LIMITS, MACHINE_STATUS, thresholdStatus } from "@/lib/status";
 import { useAlerts, useMachine, useSnapshot, useTasks } from "@/lib/hooks/use-site";
 import { PRIMARY_MACHINE_ID } from "@/lib/api/seed";
 import { cn } from "@/lib/utils";
-
-/** What the assistant says, chosen from live state rather than a script. */
-function assistantLine(
-  alertTitle: string | null,
-  alertAction: string | null,
-  taskTitle: string | null,
-  weatherRain: boolean,
-): { state: AvatarState; message: string } {
-  if (alertTitle && alertAction) {
-    return { state: "alert", message: `${alertTitle}. ${alertAction}` };
-  }
-  if (weatherRain) {
-    return {
-      state: "talking",
-      message:
-        "Rain is moving in for the rest of the shift. I have pulled the truck load forward and pushed the backfill to 16:30. Haul road speeds are capped at 15 km/h.",
-    };
-  }
-  if (taskTitle) {
-    return {
-      state: "idle",
-      message: `You are on ${taskTitle}. Everything is inside limits — ask me anything about the machine, the plan or the manual.`,
-    };
-  }
-  return { state: "idle", message: "Ready when you are. Ask me about the machine, the plan or the manual." };
-}
 
 export function CabHmi() {
   const params = useSearchParams();
@@ -75,14 +50,7 @@ export function CabHmi() {
       />
     );
 
-  const lead = cabAlerts.find((a) => !a.acknowledged) ?? null;
   const level = levelFor(cabAlerts);
-  const assistant = assistantLine(
-    lead?.title ?? null,
-    lead?.action ?? null,
-    tasks.find((t) => t.state === "active")?.title ?? null,
-    snapshot?.weather === "rain",
-  );
 
   const fuelStatus = thresholdStatus(machine.fuel, LIMITS.fuel);
   const tempStatus = thresholdStatus(machine.hydraulicTemperature, LIMITS.hydraulicTemperature);
@@ -221,7 +189,13 @@ export function CabHmi() {
             onToggleCamera={() => setCameraOn((v) => !v)}
             className="shrink-0"
           />
-          <AvatarSlot state={assistant.state} message={assistant.message} onPushToTalk={() => {}} className="min-h-0 flex-1" />
+          <AssistantPanel
+            surface="cab"
+            machineId={machine.id}
+            operatorId={machine.operator?.id}
+            alert={level === "critical"}
+            className="min-h-0 flex-1"
+          />
         </div>
       </div>
     </div>

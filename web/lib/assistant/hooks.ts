@@ -6,7 +6,7 @@
  * Typing or saying "confirm"/"cancel" while an action is pending resolves it locally.
  */
 import { useCallback, useRef, useState } from "react";
-import type { SseConfirmRequired, SseSpecialist } from "../stream/contracts.gen";
+import type { Citation, SseConfirmRequired, SseSpecialist } from "../stream/contracts.gen";
 import { CANCEL_RE, CONFIRM_RE, cancelAction, confirmAction, streamAssistant, type StreamOptions } from "./client";
 
 export type AssistantStatus = "idle" | "thinking" | "calling_tool" | "answering" | "error";
@@ -19,6 +19,8 @@ export interface ChatMessage {
   mode?: "live" | "cache" | "fallback";
   grounded?: boolean;
   tools?: { name: string; ok: boolean; provenance: string }[];
+  /** Manual/protocol passages the answer is grounded in, in citation order. */
+  citations?: Citation[];
 }
 
 export interface UseAssistantOptions extends Pick<StreamOptions, "apiBase" | "fetchImpl"> {
@@ -66,6 +68,7 @@ export function useAssistant(opts: UseAssistantOptions) {
       setMessages((m) => [...m, { id: nextId(), role: "user", text: trimmed }]);
       setStatus("thinking");
       const tools: ChatMessage["tools"] = [];
+      const citations: Citation[] = [];
       let mode: ChatMessage["mode"];
       try {
         const final = await streamAssistant(
@@ -80,13 +83,14 @@ export function useAssistant(opts: UseAssistantOptions) {
               else if (e.name === "token") setDraft((d) => d + e.data.delta);
               else if (e.name === "specialist") setSpecialist(e.data);
               else if (e.name === "tool_result") tools.push({ name: e.data.name, ok: e.data.ok, provenance: e.data.provenance });
+              else if (e.name === "citation") citations.push(e.data);
               else if (e.name === "confirm_required") setPending((p) => [...p, e.data]);
               else if (e.name === "error") setError(`${e.data.code}${e.data.fallback_used ? " (answered from data)" : ""}`);
             },
           },
         );
         setMessages((m) => [...m, { id: nextId(), role: "assistant", text: final.text, speakText: final.speak_text,
-          mode, grounded: final.grounded, tools }]);
+          mode, grounded: final.grounded, tools, citations: final.citations?.length ? final.citations : citations }]);
         setStatus("idle");
       } catch (e) {
         setError(String(e));

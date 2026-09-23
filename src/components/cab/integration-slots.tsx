@@ -1,99 +1,34 @@
 "use client";
 
 /**
- * The cab's two live panels: the site assistant and the rear camera.
+ * The cab's rear camera panel.
  *
- * Both host work owned by other tracks — the voice assistant and the browser
- * person detector — inside product chrome that stays put whether or not those
- * pieces are available. Each degrades to a useful resting state rather than an
- * error, because a camera that will not start must never take the cab HMI down
- * mid-demo.
+ * Hosts work owned by another track — the browser person detector — inside
+ * product chrome that stays put whether or not the model has loaded. It
+ * degrades to a useful resting state rather than an error, because a camera
+ * that will not start must never take the cab HMI down mid-demo.
+ *
+ * The site assistant used to live here too, as a scripted one-line message
+ * with a mic button wired to nothing. It is now `AssistantPanel`
+ * (`@/components/assistant/assistant-panel`), a real conversation backed by
+ * the same `useVoice`/`useAssistant` stack this file already used for its
+ * state names — that capability existed all along, just not reachable from
+ * this screen.
  */
 import * as React from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
-import { Camera, CameraOff, Mic, ShieldAlert, ShieldCheck, Volume2 } from "lucide-react";
+import { Camera, CameraOff, ShieldAlert, ShieldCheck } from "lucide-react";
 import type { ProximityLevel } from "@/lib/api/contracts";
 import { PROXIMITY } from "@/lib/status";
-import { Button } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import type { CvProximityEvent } from "@web/components/cv";
 import { publishCvEvent } from "@web/lib/cv";
-
-export type AvatarState = "idle" | "listening" | "thinking" | "talking" | "alert";
-
-/** Browser-only: both reach for `navigator`, so neither can render on the server. */
-const Avatar2D = dynamic(() => import("@web/components/avatar").then((m) => m.Avatar2D), {
-  ssr: false,
-  loading: () => <div className="size-16 shrink-0 rounded-full border-2 border-white/15 bg-ink-900" />,
-});
 
 const PersonDetector = dynamic(() => import("@web/components/cv").then((m) => m.PersonDetector), {
   ssr: false,
   loading: () => <div className="aspect-video w-full bg-ink-950" />,
 });
-
-const AVATAR_COPY: Record<AvatarState, { label: string; text: string }> = {
-  idle: { label: "Ready", text: "text-muted" },
-  listening: { label: "Listening", text: "text-status-info" },
-  thinking: { label: "Thinking", text: "text-cat-500" },
-  talking: { label: "Speaking", text: "text-cat-500" },
-  alert: { label: "Alerting", text: "text-status-crit" },
-};
-
-export function AvatarSlot({
-  state,
-  message,
-  onPushToTalk,
-  className,
-}: {
-  state: AvatarState;
-  /** The last thing the assistant said, so the panel is useful when silent. */
-  message: string;
-  onPushToTalk?: () => void;
-  className?: string;
-}) {
-  const copy = AVATAR_COPY[state];
-  const speaking = state === "talking";
-
-  return (
-    <section
-      className={cn("flex min-h-0 flex-col overflow-hidden rounded border border-white/10 bg-ink-850", className)}
-      aria-label="Site assistant"
-    >
-      <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-3 py-2">
-        <span className="label-xs">Site assistant</span>
-        <span className={cn("inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider", copy.text)}>
-          <span className={cn("size-1.5 rounded-full", state === "idle" ? "bg-zinc-500" : "bg-current")} aria-hidden />
-          {copy.label}
-        </span>
-      </div>
-
-      <div className="flex min-h-0 flex-1 items-center gap-3 p-3">
-        <Avatar2D state={state} size={64} label={false} />
-
-        <div className="min-w-0 flex-1">
-          <p className="line-clamp-4 text-xs leading-relaxed text-zinc-200">{message}</p>
-          {speaking ? (
-            <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-cat-500">
-              <Volume2 className="size-3" aria-hidden />
-              Speaking
-            </span>
-          ) : null}
-        </div>
-      </div>
-
-      {onPushToTalk ? (
-        <div className="shrink-0 border-t border-white/10 p-2">
-          <Button variant="secondary" size="touch" className="w-full" onClick={onPushToTalk}>
-            <Mic className="size-5" aria-hidden />
-            Hold to ask
-          </Button>
-        </div>
-      ) : null}
-    </section>
-  );
-}
 
 export function WebcamSlot({
   machineId,

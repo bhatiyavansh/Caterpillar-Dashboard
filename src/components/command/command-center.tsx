@@ -10,11 +10,12 @@
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence } from "motion/react";
-import { Boxes, ListFilter, PanelLeftClose, PanelLeftOpen, SlidersHorizontal } from "lucide-react";
+import { Boxes, ListFilter, MessageCircle, PanelLeftClose, PanelLeftOpen, SlidersHorizontal } from "lucide-react";
 import { FleetList } from "./fleet-list";
 import { MachineInspector } from "./machine-inspector";
 import { TimelineBar } from "./timeline-bar";
 import { TwinViewport } from "@/components/twin/twin-viewport";
+import { AssistantPanel } from "@/components/assistant/assistant-panel";
 import { AlertCard } from "@/components/alerts/alert-card";
 import { KpiRail, SectionHeader, type KpiItem } from "@/components/ui/data";
 import { EmptyPanel, SkeletonRows } from "@/components/ui/states";
@@ -72,6 +73,9 @@ export function CommandCenter() {
    * show at once — the tab bar is hidden there.
    */
   const [pane, setPane] = React.useState<"fleet" | "site" | "inspector">("site");
+
+  /** The right-hand column shows the selected machine or the site assistant, not both at once. */
+  const [rightTab, setRightTab] = React.useState<"inspector" | "assistant">("inspector");
 
   // A new critical alert pulls the inspector onto the machine that raised it,
   // so the manager is already looking at the right thing when they glance up.
@@ -167,19 +171,45 @@ export function CommandCenter() {
           <TimelineBar now={snapshot.t} markers={markers} replayAt={replayAt} onReplayAtChange={setReplayAt} />
         </div>
 
-        {/* Inspector */}
+        {/* Inspector / assistant — one column, one bordered container */}
         <div
           className={cn(
-            "shrink-0 flex-col max-lg:w-full lg:flex lg:w-80 2xl:w-96",
+            "shrink-0 flex-col border-l border-white/10 bg-ink-900 max-lg:w-full lg:flex lg:w-80 2xl:w-96",
             pane === "inspector" ? "flex" : "hidden lg:flex",
           )}
         >
-          <MachineInspector
-            machine={selected}
-            alerts={alerts}
-            onAcknowledge={acknowledge}
-            className="min-h-0 flex-1"
-          />
+          <div className="flex shrink-0 items-center gap-1 border-b border-white/10 p-1.5">
+            {(
+              [
+                { id: "inspector" as const, label: "Inspector", icon: SlidersHorizontal },
+                { id: "assistant" as const, label: "Assistant", icon: MessageCircle },
+              ]
+            ).map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setRightTab(id)}
+                aria-pressed={rightTab === id}
+                className={cn(
+                  "inline-flex flex-1 items-center justify-center gap-1.5 rounded px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors",
+                  rightTab === id ? "bg-cat-500 text-ink-950" : "text-muted hover:bg-white/5 hover:text-zinc-200",
+                )}
+              >
+                <Icon className="size-3.5" aria-hidden />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {rightTab === "inspector" ? (
+            <MachineInspector
+              machine={selected}
+              alerts={alerts}
+              onAcknowledge={acknowledge}
+              className="min-h-0 flex-1 border-0"
+            />
+          ) : (
+            <AssistantPanel surface="command" machineId={selected?.id} className="min-h-0 flex-1 rounded-none border-0" />
+          )}
         </div>
       </div>
 
