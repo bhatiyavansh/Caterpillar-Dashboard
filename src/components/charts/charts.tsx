@@ -57,7 +57,7 @@ export function TrendAreaChart({
   height = 200,
   domain,
 }: {
-  data: Record<string, unknown>[];
+  data: readonly object[];
   dataKey: string;
   xKey?: string;
   color?: string;
@@ -100,7 +100,7 @@ export function MultiBarChart({
   height = 220,
   stacked,
 }: {
-  data: Record<string, unknown>[];
+  data: readonly object[];
   xKey: string;
   bars: { key: string; name: string; color: string }[];
   height?: number;
@@ -136,7 +136,7 @@ export function MultiLineChart({
   lines,
   height = 220,
 }: {
-  data: Record<string, unknown>[];
+  data: readonly object[];
   xKey: string;
   lines: { key: string; name: string; color: string }[];
   height?: number;

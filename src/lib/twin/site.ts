@@ -391,7 +391,7 @@ export const WORKER_ROUTES: Record<string, Waypoint[]> = {
     { x: 78, z: 38, dwell: 5 },
     { x: 64, z: 36, dwell: 6 },
   ],
-];
+};
 
 /** Where EXC001 starts, and where `R` returns it to. */
 export const EXCAVATOR_HOME = {
