@@ -11,7 +11,7 @@ import type {
   MachineTelemetry,
   TelemetryProvider,
   VehicleInput,
-} from "@/types/simulation";
+} from "@/types/twin";
 import { clamp, headingVector } from "./site";
 import { sampleAttitude, terrainHeight } from "./terrain";
 
@@ -108,7 +108,7 @@ export function computeTipOverMargin(t: MachineTelemetry): number {
 
   const margin =
     2.35 -
-    slopeDeg / 13 -
+    slopeDeg / 19 -
     reach * 0.5 -
     load * 0.4 -
     reach * lateral * 0.38 -

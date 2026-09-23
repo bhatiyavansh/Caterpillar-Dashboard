@@ -6,7 +6,7 @@
  * it is a visual demo, not a certified conflict-detection system.
  */
 
-import type { CollisionRisk, MachineTelemetry, PredictedPath } from "@/types/simulation";
+import type { CollisionRisk, MachineTelemetry, PredictedPath } from "@/types/twin";
 import { headingVector } from "./site";
 import { terrainHeight } from "./terrain";
 

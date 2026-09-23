@@ -27,7 +27,7 @@ export function SimulationFrame({
     if (!el) return;
     const measure = () => {
       const rect = el.getBoundingClientRect();
-      setScale(Math.min((rect.width - 100) / w, (rect.height - 84) / h, 1));
+      setScale(Math.max(0.2, Math.min((rect.width - 100) / w, (rect.height - 84) / h, 1)));
     };
     measure();
     const ro = new ResizeObserver(measure);

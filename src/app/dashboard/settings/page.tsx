@@ -12,6 +12,7 @@ import {
   Shield,
   UserCog,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/navigation/dashboard-shell";
 import { Button, Select } from "@/components/ui/primitives";
@@ -24,7 +25,7 @@ function Section({
   description,
   children,
 }: {
-  icon: React.ElementType;
+  icon: LucideIcon;
   title: string;
   description: string;
   children: React.ReactNode;

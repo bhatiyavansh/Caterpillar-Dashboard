@@ -1,6 +1,7 @@
 "use client";
 
 import { BatteryCharging, Cog, Droplets, Flame, Shield, Snowflake, Waves, Wrench } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { HealthStatus } from "@/lib/types";
 import { cn, formatNumber, statusStyles } from "@/lib/utils";
 import { lowReadingStatus, readingStatus, useMachineStore } from "@/store/machine-store";
@@ -10,7 +11,7 @@ export function StatusScreen() {
   const s = useMachineStore((st) => st.sensors);
   const mode = useMachineStore((st) => st.mode);
 
-  const rows: { icon: React.ElementType; label: string; value: string; status: HealthStatus; note: string }[] = [
+  const rows: { icon: LucideIcon; label: string; value: string; status: HealthStatus; note: string }[] = [
     {
       icon: Flame,
       label: "Engine",

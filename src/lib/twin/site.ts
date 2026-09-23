@@ -397,7 +397,7 @@ export const WORKER_ROUTES: Record<string, Waypoint[]> = {
 export const EXCAVATOR_HOME = {
   x: -5,
   z: -20,
-  heading: Math.PI, // facing north, into the excavation spur
+  heading: 0, // facing north, straight up the excavation spur
 };
 
 /** Static props: containers, site office, barriers, signage. */

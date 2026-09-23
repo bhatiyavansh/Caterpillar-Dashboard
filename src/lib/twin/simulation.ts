@@ -24,7 +24,7 @@ import type {
   TelemetrySource,
   VehicleInput,
   WeatherMode,
-} from "@/types/simulation";
+} from "@/types/twin";
 import {
   EXCAVATOR_HOME,
   MACHINE_ROUTES,
@@ -59,7 +59,7 @@ import {
   proximityLevel,
   worstLevel,
 } from "./proximity";
-import type { PredictedPath } from "@/types/simulation";
+import type { PredictedPath } from "@/types/twin";
 
 export const PRIMARY_MACHINE = "EXC001";
 
@@ -560,6 +560,18 @@ export class SimulationEngine {
 
   private clearAlert(id: string): void {
     this.alerts.delete(id);
+  }
+
+  /**
+   * Raises an alert from outside the engine.
+   *
+   * Note that `reconcileAlerts` owns the ids it manages and will clear an
+   * injected alert that reuses one of them on the next tick — pass a distinct
+   * id for anything that should persist.
+   */
+  injectAlert(alert: Omit<Alert, "createdAt">): void {
+    this.setAlert(alert);
+    this.pushEvent(`${alert.title} — ${alert.message}`, alert.severity);
   }
 
   private reconcileAlerts(): void {

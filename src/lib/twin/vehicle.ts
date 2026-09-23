@@ -10,7 +10,7 @@
  * results into a `MachineTelemetry` object it mutates in place.
  */
 
-import type { MachineTelemetry, VehicleInput } from "@/types/simulation";
+import type { MachineTelemetry, VehicleInput } from "@/types/twin";
 import { SITE_HALF, clamp, headingVector, normalizeHeading } from "./site";
 import { sampleAttitude } from "./terrain";
 import {
@@ -43,7 +43,9 @@ export interface VehicleTuning {
 
 export const TUNING: Record<string, VehicleTuning> = {
   excavator: {
-    maxSpeed: 3.0,
+    // A real 320 travels ~5.5 km/h; 2.4 m/s (8.6 km/h) keeps the site
+    // crossable in a demo without feeling like a go-kart.
+    maxSpeed: 2.4,
     accel: 1.0,
     brake: 1.9,
     rollingDrag: 1.35,
