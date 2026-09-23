@@ -10,7 +10,7 @@
  */
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertTriangle, Check, CheckCircle2, OctagonAlert } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle2, OctagonAlert, type LucideIcon } from "lucide-react";
 import type { SiteAlert } from "@/lib/api/contracts";
 import { Button } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@ export type RibbonLevel = "normal" | "info" | "warning" | "critical";
 
 const LEVEL: Record<
   RibbonLevel,
-  { wrap: string; icon: React.ElementType; iconWrap: string; eyebrow: string }
+  { wrap: string; icon: LucideIcon; iconWrap: string; eyebrow: string }
 > = {
   normal: {
     wrap: "border-status-ok/30 bg-status-ok/8",

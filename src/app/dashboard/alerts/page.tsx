@@ -52,7 +52,7 @@ export default function AlertsPage() {
         actions={<RunSimulationButton size="md" />}
       />
 
-      <div className="space-y-5 p-6">
+      <div className="space-y-4 p-4">
         <div className="grid gap-4 sm:grid-cols-3">
           {(["critical", "warning", "info"] as Severity[]).map((s) => (
             <div key={s} className={cn("panel-raised border-l-4 p-4", severityStyles[s].border)}>

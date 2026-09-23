@@ -209,6 +209,7 @@ export function CabHmi() {
         {/* Assistant + camera */}
         <div className="flex min-h-0 flex-col gap-2.5">
           <WebcamSlot
+            machineId={machine.id}
             level={machine.proximity.level}
             distanceM={machine.proximity.nearestPersonM}
             zone={machine.proximity.zone}

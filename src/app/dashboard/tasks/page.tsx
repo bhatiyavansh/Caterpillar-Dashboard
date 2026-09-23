@@ -34,7 +34,7 @@ export default function TasksPage() {
         actions={<RunSimulationButton size="md" />}
       />
 
-      <div className="space-y-5 p-6">
+      <div className="space-y-4 p-4">
         <div className="panel-raised p-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-zinc-100">Shift progress</p>

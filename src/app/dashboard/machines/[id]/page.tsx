@@ -47,7 +47,7 @@ export default function MachineDetailPage() {
 
   if (!machine) {
     return (
-      <div className="p-6">
+      <div className="p-4">
         <EmptyState
           title="Machine not found"
           body="This asset is not registered to Northgate Quarry. It may have been transferred to another site."
@@ -110,7 +110,7 @@ export default function MachineDetailPage() {
         }
       />
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 p-4">
         <section className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
           <div className="panel-raised p-4">
             <div className="flex items-center justify-between">

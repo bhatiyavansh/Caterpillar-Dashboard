@@ -173,10 +173,13 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/10 bg-ink-900/40 px-6 py-5">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-50">{title}</h1>
-        <p className="mt-1 text-sm text-muted">{subtitle}</p>
+    <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 border-b border-white/10 bg-ink-900/40 px-4 py-4">
+      <div className="min-w-0">
+        {/* The section rail above already names the area, so this states the
+            page, not the product. A display-sized heading here would push the
+            actual records below the fold for no gain. */}
+        <h1 className="text-lg font-bold leading-tight tracking-tight text-zinc-50">{title}</h1>
+        <p className="mt-0.5 text-xs text-muted">{subtitle}</p>
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </div>

@@ -54,7 +54,7 @@ export default function ReportsPage() {
         }
       />
 
-      <div className="space-y-5 p-6">
+      <div className="space-y-4 p-4">
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Report date range">
           {RANGES.map((r) => (
             <button

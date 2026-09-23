@@ -17,8 +17,15 @@ import { CommandPalette } from "./command-palette";
 import { Button } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 
-/** Routes that want the navigation out of the way by default. */
-const FOCUSED_ROUTES = ["/cab", "/ar", "/director"];
+/**
+ * Routes that want the rail out of the way on arrival.
+ *
+ * These are surfaces where the content is the point — an operator display, a
+ * 3D site, a phone-width procedure — and a 240px rail costs them more than it
+ * gives. The rail collapses to icons rather than disappearing, so navigation is
+ * always one click away.
+ */
+const FOCUSED_ROUTES = ["/cab", "/ar", "/director", "/twin", "/machine"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

@@ -100,7 +100,7 @@ export default function SettingsPage() {
         actions={<Button variant="primary" onClick={() => toast.success("Settings saved to all connected displays")}>Save changes</Button>}
       />
 
-      <div className="grid gap-4 p-6 xl:grid-cols-2">
+      <div className="grid gap-4 p-4 xl:grid-cols-2">
         <Section icon={Monitor} title="Display" description="How the in-cab screen renders in the field.">
           <Row
             label="Default machine screen size"

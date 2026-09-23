@@ -9,8 +9,8 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, CloudRain, CloudSun, Search, Sun, Waves } from "lucide-react";
-import { ALL_NAV } from "./nav-config";
+import { Bell, CloudRain, CloudSun, Search, Sun, Waves, type LucideIcon } from "lucide-react";
+import { activeNavItem } from "./nav-config";
 import { NavToggle } from "./app-shell";
 import { useAlerts, useSnapshot } from "@/lib/hooks/use-site";
 import { SITE_NAME } from "@/lib/api/seed";
@@ -23,7 +23,7 @@ import { MACHINE_STATUS } from "@/lib/status";
 import type { WeatherMode } from "@/lib/api/contracts";
 import { cn } from "@/lib/utils";
 
-const WEATHER: Record<WeatherMode, { icon: React.ElementType; label: string }> = {
+const WEATHER: Record<WeatherMode, { icon: LucideIcon; label: string }> = {
   clear: { icon: Sun, label: "Clear" },
   rain: { icon: CloudRain, label: "Rain" },
   fog: { icon: Waves, label: "Fog" },
@@ -130,7 +130,7 @@ export function TopBar({
 }) {
   const pathname = usePathname();
   const snapshot = useSnapshot();
-  const current = ALL_NAV.find((n) => pathname === n.href || pathname.startsWith(`${n.href}/`));
+  const current = activeNavItem(pathname);
   const weather = WEATHER[snapshot?.weather ?? "clear"];
   const WeatherIcon = weather.icon;
   const riskStatus = snapshot ? thresholdStatus(snapshot.riskScore, { warn: 40, crit: 65 }) : "operating";
@@ -147,7 +147,7 @@ export function TopBar({
         </p>
       </div>
 
-      {current?.demoOnly ? (
+      {current?.internal ? (
         <span className="hazard-stripe shrink-0 rounded px-0.5 py-0.5">
           <span className="block rounded bg-ink-950 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-cat-500">
             Demo control

@@ -10,6 +10,7 @@ import * as React from "react";
 import { getFleetSource } from "@/lib/api";
 import { serverSnapshot } from "@/lib/api/server-snapshot";
 import { ownerKpisFrom, ownerSeries } from "@/lib/api/owner-report";
+import { applyScenarioToTwin } from "@/lib/twin-bridge";
 import type {
   Anomaly,
   ConnectionState,
@@ -179,6 +180,9 @@ export function useDirector(): DirectorHandle {
 
   const trigger = React.useCallback(async (id: DirectorScenarioId) => {
     setPending(id);
+    // Drive the 3D twin immediately so the site reacts while the scenario
+    // request is still in flight.
+    applyScenarioToTwin(id);
     try {
       const result = await getFleetSource().triggerScenario(id);
       setLog((l) => [result, ...l].slice(0, 12));

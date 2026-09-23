@@ -23,7 +23,7 @@ const paths: Record<MachineScreen, string> = {
 export function MachineRoute({ screen }: { screen: MachineScreen }) {
   const router = useRouter();
   return (
-    <div className="h-dvh w-full">
+    <div className="h-full w-full">
       <MachineApp screen={screen} onNavigate={(s) => router.push(paths[s])} />
     </div>
   );

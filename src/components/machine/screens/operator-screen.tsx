@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { BadgeCheck, Clock, ShieldCheck, User } from "lucide-react";
 import { operator } from "@/lib/mock-data";
 import { Progress } from "@/components/ui/primitives";
@@ -8,7 +9,14 @@ import { ScreenPad, SectionTitle, TouchButton } from "../touch";
 import type { MachineScreen } from "../machine-app";
 
 export function OperatorScreen({ navigate }: { navigate: (s: MachineScreen) => void }) {
-  const tasks = useMachineStore((s) => s.tasks.filter((t) => t.machineId === operator.machineId));
+  // Select the stored array, then narrow it in render. Filtering inside the
+  // selector returns a new array on every store read, which makes the snapshot
+  // compare unequal forever and drives React into an update loop.
+  const allTasks = useMachineStore((s) => s.tasks);
+  const tasks = React.useMemo(
+    () => allTasks.filter((t) => t.machineId === operator.machineId),
+    [allTasks],
+  );
   const completed = tasks.filter((t) => t.status === "completed").length;
 
   return (

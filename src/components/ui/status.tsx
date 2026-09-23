@@ -14,12 +14,13 @@ import {
   PauseCircle,
   PowerOff,
   Wrench,
+  type LucideIcon,
 } from "lucide-react";
 import type { AlertSeverity, MachineStatus } from "@/lib/api/contracts";
 import { ALERT_SEVERITY, MACHINE_STATUS } from "@/lib/status";
 import { cn } from "@/lib/utils";
 
-const STATUS_ICON: Record<MachineStatus, React.ElementType> = {
+const STATUS_ICON: Record<MachineStatus, LucideIcon> = {
   operating: CheckCircle2,
   idle: PauseCircle,
   warning: AlertTriangle,
@@ -28,7 +29,7 @@ const STATUS_ICON: Record<MachineStatus, React.ElementType> = {
   offline: PowerOff,
 };
 
-const SEVERITY_ICON: Record<AlertSeverity, React.ElementType> = {
+const SEVERITY_ICON: Record<AlertSeverity, LucideIcon> = {
   critical: OctagonAlert,
   warning: AlertTriangle,
   info: Info,

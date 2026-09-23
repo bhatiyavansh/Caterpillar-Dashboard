@@ -21,6 +21,7 @@ import {
   RotateCcw,
   Smartphone,
   Wind,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,7 @@ interface Hotspot {
   id: string;
   label: string;
   system: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   /** Position on the machine diagram, as percentages. */
   x: number;
   y: number;

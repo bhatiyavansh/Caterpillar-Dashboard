@@ -7,9 +7,12 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono-stack", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "CAT Visual Assist",
+  title: {
+    default: "CAT Copilot",
+    template: "%s · CAT Copilot",
+  },
   description:
-    "Fleet monitoring and in-cab visual assistant for heavy construction and mining equipment.",
+    "Site intelligence for heavy construction: live command centre, operator cab, fleet cost and training.",
 };
 
 export const viewport: Viewport = {
