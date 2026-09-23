@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink-950: #0a0b0d;
+  --color-ink-900: #101216;
+  --color-ink-850: #14171c;
+  --color-ink-800: #191d23;
+  --color-ink-700: #23282f;
+  --color-ink-600: #31373f;
+
+  --color-cat-500: #ffcd11;
+  --color-cat-600: #e6b400;
+  --color-cat-400: #ffdb52;
+  --color-cat-orange: #ff8a1f;
+
+  --color-status-ok: #3ddc84;
+  --color-status-warn: #ffb020;
+  --color-status-crit: #ff4d4f;
+  --color-status-info: #4aa8ff;
+
+  --color-muted: #9aa3ad;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-stack), ui-monospace, "SFMono-Regular", monospace;
+
+  --radius-panel: 0.5rem;
+}
+
+:root {
+  color-scheme: dark;
+  --font-mono-stack: "JetBrains Mono", ui-monospace, monospace;
+}
+
+html,
+body {
+  background: var(--color-ink-950);
+  color: #e9edf2;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+/* Industrial panel surface */
+@utility panel {
+  background-color: color-mix(in oklab, var(--color-ink-900) 92%, transparent);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: var(--radius-panel);
+}
+
+@utility panel-raised {
+  background-color: var(--color-ink-850);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 12px 28px -18px rgb(0 0 0 / 0.9);
+}
+
+@utility label-xs {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+@utility hazard-stripe {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--color-cat-500) 0 10px,
+    #0a0b0d 10px 20px
+  );
+}
+
+/* Focus visibility — keyboard users must always see where they are. */
+:where(a, button, [role="button"], input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-cat-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0b0d;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3038;
+  border-radius: 999px;
+  border: 2px solid #0a0b0d;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a424c;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 0.55;
+  }
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+    opacity: 0;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    opacity: 0;
+  }
+}
+
+.pulse-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(400%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
