@@ -60,7 +60,11 @@ SPECIALISTS: dict[str, Specialist] = {s.id: s for s in (
     Specialist("reporting", "Reporting", (
         "You are the reporting specialist for owners and managers: costs, fuel, utilisation, anomalies and "
         "summaries. Lead with the number that matters most."),
-        ((r"report|summary|weekly|\bcost|spend|carbon|co2|utili[sz]ation|\bkpi|anomal|idle cost|owner|\bfuel used", 2),)),
+        ((r"report|summary|weekly|\bcost|spend|carbon|co2|utili[sz]ation|\bkpi|anomal|idle cost|owner|\bfuel used", 2),
+         # "give me an update" phrasings: a recap of the window, not a live reading
+         (r"what(?:'s| has| is)? (?:changed|happened|new)|catch me up|brief me|update me|give me an update|"
+          r"any ?thing (?:new|else|i should know)|status update|so far (?:today|this shift)|this shift|"
+          r"since (?:i|we) (?:started|last)|recap", 2),)),
     Specialist("coordination", "Coordination", (
         "You are the site coordination specialist: machine interactions, queues, haul traffic and who is "
         "waiting for what. Explain using only the fleet and event data."),

@@ -13,6 +13,7 @@ from copilot.agent.registry import ALL, Tool, ToolContext, ToolError, ToolRegist
 from copilot.config import BACKEND_DIR, REPO_DIR
 from copilot.ml.port import MLUnavailable
 from copilot.sim_client import SimError, SimUnavailable
+from copilot.timeutil import parse_ts
 from simulator.config import FLEET, OPERATORS
 
 FLEET_BY_ID = {f.machine_id: f for f in FLEET}
@@ -143,8 +144,6 @@ class RecentEventsIn(_In):
 
 async def get_recent_events(ctx: ToolContext, a: RecentEventsIn) -> ToolResult:
     cutoff = time.time() - a.minutes * 60
-    from copilot.timeutil import parse_ts
-
     out, noise = [], 0
     for e in reversed(ctx.hub.ring):
         if e.get("type") != "event":
@@ -166,6 +165,142 @@ async def get_recent_events(ctx: ToolContext, a: RecentEventsIn) -> ToolResult:
             break
     return ToolResult(True, {"events": out, "suppressed_live_unusual_pattern": noise}, "hub",
                       f"{len(out)} events in {a.minutes} min")
+
+
+SEVERITY_ORDER = ("critical", "high", "medium", "low", "info")
+
+#: Live one-minute "unusual_pattern" anomalies misfire (REPO_ANALYSIS C12); suppressed everywhere.
+def _is_forest_noise(e: dict[str, Any]) -> bool:
+    d = e.get("data") or {}
+    return (e.get("event") == "anomaly_detected" and d.get("anomaly_type") == "unusual_pattern"
+            and d.get("window_min") == 1)
+
+
+async def _stored_events(ctx: ToolContext, from_s: float, to_s: float, machine_id: str | None,
+                         types: list[str] | None, limit: int) -> tuple[list[dict[str, Any]], str]:
+    """Stored events first (they survive a hub restart); the in-memory ring is the fallback."""
+    persister = getattr(ctx.hub, "persister", None)
+    if persister is not None:
+        try:
+            rows = await persister.events(from_s=from_s, to_s=to_s, machine_id=machine_id,
+                                          types=types, limit=limit)
+            return [e for e in rows if not _is_forest_noise(e)], "db"
+        except Exception as exc:  # a broken read must not take the answer down
+            ctx.extras.setdefault("warnings", []).append(f"event history unavailable: {exc!r}")
+    out = []
+    for e in reversed(ctx.hub.ring):
+        if e.get("type") != "event" or _is_forest_noise(e):
+            continue
+        ts = parse_ts(e.get("ts")) or 0
+        if ts < from_s:
+            break
+        if ts > to_s or (machine_id and e.get("machine_id") != machine_id):
+            continue
+        if types and e.get("event") not in types:
+            continue
+        out.append(e)
+        if len(out) >= limit:
+            break
+    return list(reversed(out)), "hub-ring"
+
+
+class ShiftSummaryIn(_In):
+    hours: float = Field(8, gt=0, le=24, description="How far back to look. A shift is 8 h.")
+    machine_id: MachineId | None = Field(None, description="Narrow to one machine.")
+
+
+async def get_shift_summary(ctx: ToolContext, a: ShiftSummaryIn) -> ToolResult:
+    """What has happened recently and what is still open - the 'give me an update' tool.
+
+    Answers "what happened this shift", "what changed", "anything I should know", "catch me up".
+    Counts come from stored events so they survive a hub restart; "open now" is the live World.
+    """
+    to_s = time.time()
+    from_s = to_s - a.hours * 3600
+    events, prov = await _stored_events(ctx, from_s, to_s, a.machine_id, None, 2000)
+
+    by_severity: dict[str, int] = {}
+    by_type: dict[str, int] = {}
+    by_machine: dict[str, int] = {}
+    notable: list[dict[str, Any]] = []
+    for e in events:
+        sev = e.get("severity") or "info"
+        by_severity[sev] = by_severity.get(sev, 0) + 1
+        by_type[e.get("event", "?")] = by_type.get(e.get("event", "?"), 0) + 1
+        mid = e.get("machine_id")
+        if mid:
+            by_machine[mid] = by_machine.get(mid, 0) + 1
+        if sev in ("critical", "high"):
+            notable.append({k: e.get(k) for k in ("ts", "event", "severity", "machine_id", "source", "message")})
+
+    # Newest first, capped: the model needs the shape of the shift, not every row.
+    notable = sorted(notable, key=lambda e: e.get("ts") or "", reverse=True)[:15]
+
+    open_now = []
+    for e in ctx.hub.world.active_alerts():
+        if _is_forest_noise(e):
+            continue
+        if a.machine_id and e.get("machine_id") != a.machine_id:
+            continue
+        open_now.append({k: e.get(k) for k in ("ts", "event", "severity", "machine_id", "message")})
+    open_now.sort(key=lambda e: SEVERITY_ORDER.index(e["severity"]) if e.get("severity") in SEVERITY_ORDER else 99)
+
+    data = {
+        "window_hours": a.hours,
+        "machine_id": a.machine_id,
+        "total_events": len(events),
+        "by_severity": dict(sorted(by_severity.items(),
+                                   key=lambda kv: SEVERITY_ORDER.index(kv[0]) if kv[0] in SEVERITY_ORDER else 99)),
+        "by_type": dict(sorted(by_type.items(), key=lambda kv: -kv[1])),
+        "by_machine": dict(sorted(by_machine.items(), key=lambda kv: -kv[1])),
+        "notable_events": notable,
+        "open_now": open_now,
+        "quiet": len(events) == 0,
+    }
+    head = f"{len(events)} events in {a.hours:g} h, {len(open_now)} still open"
+    return ToolResult(True, data, prov, head)
+
+
+# Numeric channels worth trending. Anything not listed is not summarised rather than guessed at.
+TREND_CHANNELS = ("hydraulic_temp_c", "coolant_temp_c", "fuel_level_pct", "fuel_used_l", "tip_over_margin",
+                  "speed_mps", "payload_kg", "idle_min", "engine_hours", "load_cycles", "fatigue_score")
+
+
+class MachineHistoryIn(_In):
+    machine_id: MachineId
+    hours: float = Field(2, gt=0, le=24, description="How far back to look.")
+
+
+async def get_machine_history(ctx: ToolContext, a: MachineHistoryIn) -> ToolResult:
+    """How one machine's readings have moved over a window - "has it been running hot?", "how much
+    fuel has it used?", "is the tip-over margin getting worse?". Min/max/first/last per channel."""
+    persister = getattr(ctx.hub, "persister", None)
+    if persister is None:
+        raise ToolError("no history store attached", "hub")
+    to_s = time.time()
+    from_s = to_s - a.hours * 3600
+    try:
+        rows = await persister.machine_history(a.machine_id, from_s, to_s, 5000)
+    except Exception as exc:
+        raise ToolError(f"history unavailable: {exc!r}", "db") from exc
+    if not rows:
+        known = await persister.known_machine(a.machine_id)
+        raise ToolError(
+            f"no stored readings for {a.machine_id} in the last {a.hours:g} h"
+            + ("" if known else f"; {a.machine_id} has never reported"), "db")
+
+    trends: dict[str, dict[str, float]] = {}
+    for ch in TREND_CHANNELS:
+        vals = [r[ch] for r in rows if isinstance(r.get(ch), int | float)]
+        if not vals:
+            continue
+        trends[ch] = {"first": round(vals[0], 2), "last": round(vals[-1], 2),
+                      "min": round(min(vals), 2), "max": round(max(vals), 2),
+                      "mean": round(sum(vals) / len(vals), 2),
+                      "change": round(vals[-1] - vals[0], 2)}
+    data = {"machine_id": a.machine_id, "window_hours": a.hours, "samples": len(rows),
+            "from": rows[0].get("ts"), "to": rows[-1].get("ts"), "trends": trends}
+    return ToolResult(True, data, "db", f"{len(rows)} readings over {a.hours:g} h")
 
 
 class TaskIn(_In):
@@ -468,6 +603,16 @@ def build_tools() -> list[Tool]:
         Tool("get_recent_events", "Recent site events (safety alerts, advisories, anomalies) from the live "
              "stream, optionally filtered.", RecentEventsIn, get_recent_events, ALL,
              frozenset({"safety", "maintenance", "reporting", "coordination", "general", "training"})),
+        Tool("get_shift_summary", "What has happened over a window and what is still open: event counts by "
+             "severity/type/machine, the notable safety events, and the alerts open right now. Use for "
+             "\"what happened this shift\", \"what changed\", \"anything I should know\", \"catch me up\".",
+             ShiftSummaryIn, get_shift_summary, ALL,
+             frozenset({"safety", "reporting", "coordination", "general", "maintenance", "training", "planner"}),
+             timeout_s=5.0),
+        Tool("get_machine_history", "How one machine's readings have moved over a window (first/last/min/max/"
+             "mean/change per channel). Use for \"has it been running hot\", \"how much fuel has it used\", "
+             "\"is the tip-over margin getting worse\".", MachineHistoryIn, get_machine_history, ALL,
+             frozenset({"maintenance", "safety", "reporting", "general", "planner"}), timeout_s=5.0),
         Tool("search_manual", "Search the machine manuals and fault codes; returns passages with page citations.",
              ManualIn, search_manual, ALL, frozenset({"maintenance", "safety", "training", "general"})),
         Tool("get_protocol", "The site protocol for a safety event or protocol id: steps to follow (verbatim), "

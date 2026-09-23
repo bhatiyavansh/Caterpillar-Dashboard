@@ -32,7 +32,7 @@ web-check:      ## typecheck + lint + node tests for my frontend files only
                 ## from the registry when node_modules is missing, and "passes".
 	@test -x ../node_modules/.bin/tsc || { echo "run 'npm install' at the repo root first"; exit 1; }
 	cd .. && npx --no-install tsc --noEmit -p web/lib/stream/tsconfig.json
-	cd .. && npx --no-install eslint web/lib web/components/avatar src/app/dev
+	cd .. && npx --no-install eslint web/lib web/components/avatar web/components/cv src/app/dev
 	cd .. && node web/lib/stream/test/run-tests.mjs
 
 check: contracts-check lint test web-check

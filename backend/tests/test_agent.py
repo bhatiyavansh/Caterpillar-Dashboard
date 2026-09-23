@@ -9,7 +9,7 @@ import pytest
 from copilot.agent.llm import FakeLLM, FakeStep
 from copilot.ml.auto import AutoML
 from copilot.ml.port import MLUnavailable
-from tests.conftest import FakeSimHTTP, machine
+from tests.conftest import FakeSimHTTP, event, machine
 
 NOW = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
@@ -58,6 +58,7 @@ READ_TOOLS = [
     ("get_anomalies", {"machine_id": "EXC002"}, "owner", "EXC002 idled; fuel cost 450 rupees."),
     ("get_maintenance_forecast", {"machine_id": "EXC001"}, "owner", "Hydraulic pump service in 1315 h."),
     ("get_recent_events", {"minutes": 30}, "command", "No major events."),
+    ("get_shift_summary", {"hours": 8}, "command", "Quiet shift so far."),
     ("run_what_if", {"trucks": 6, "weather": "rain"}, "command", "Throughput -11%."),
 ]
 
@@ -317,3 +318,95 @@ async def test_ml_auto_switch_and_labelled_fallback(monkeypatch):
     auto._probed = time.monotonic()
     out = await auto.estimate_task({"estimated_time_min": 50.0})
     assert out["provenance"].startswith("stub (real failed: libomp missing")
+
+
+# --------------------------------------------------------------------------- updates / recall
+#
+# These exercise the tool handlers through the registry rather than the SSE stream: the
+# `tool_result` event carries only ok/summary/provenance by contract, so the data a tool hands
+# the model is only inspectable here.
+
+
+async def call_tool(srv, name: str, args: dict, surface: str = "command", machine_id: str | None = None):
+    from copilot.contracts.assistant import AssistantRequest
+
+    ctx = srv.app.state.context_factory(
+        AssistantRequest(surface=surface, message="(test)", machine_id=machine_id))
+    res, _ms = await srv.app.state.registry.call(name, args, ctx)
+    return res
+
+
+async def test_shift_summary_counts_events_and_lists_what_is_open(agent_srv):
+    """The "catch me up" tool: counts by severity/type/machine, notable events, still-open alerts."""
+    for i, (kind, sev) in enumerate([("proximity_alert", "high"), ("proximity_alert", "high"),
+                                     ("seatbelt_unfastened", "high"), ("weather_change", "info")]):
+        agent_srv.hub.publish_event(event(f"e{i}", kind=kind, severity=sev))
+    await agent_srv.hub.persister.flush()
+
+    res = await call_tool(agent_srv, "get_shift_summary", {"hours": 8})
+    assert res.ok, res
+    d = res.data
+    assert d["total_events"] == 4, d
+    assert d["by_severity"] == {"high": 3, "info": 1}, d["by_severity"]
+    assert d["by_type"]["proximity_alert"] == 2, d["by_type"]
+    assert d["by_machine"]["EXC001"] == 4, d["by_machine"]
+    assert d["quiet"] is False
+    # Only high/critical are promoted to "notable"; the weather change is counted, not promoted.
+    assert {e["event"] for e in d["notable_events"]} == {"proximity_alert", "seatbelt_unfastened"}
+    # The proximity/seatbelt events are still inside their TTL, so they are open right now.
+    assert d["open_now"], d["open_now"]
+
+
+async def test_shift_summary_says_quiet_rather_than_inventing(agent_srv):
+    res = await call_tool(agent_srv, "get_shift_summary", {"hours": 1}, surface="cab")
+    assert res.ok, res
+    assert res.data["quiet"] is True and res.data["total_events"] == 0
+    assert res.data["notable_events"] == [] and res.data["open_now"] == []
+
+
+async def test_shift_summary_suppresses_the_one_minute_forest_noise(agent_srv):
+    """REPO_ANALYSIS C12: 60 s-window unusual_pattern anomalies misfire and must never be counted."""
+    agent_srv.hub.publish_event(event("n1", kind="anomaly_detected", severity="medium",
+                                      data={"anomaly_type": "unusual_pattern", "window_min": 1}))
+    agent_srv.hub.publish_event(event("r1", kind="anomaly_detected", severity="medium",
+                                      data={"anomaly_type": "unusual_pattern", "window_min": 60}))
+    await agent_srv.hub.persister.flush()
+
+    res = await call_tool(agent_srv, "get_shift_summary", {"hours": 8})
+    assert res.data["total_events"] == 1, res.data["by_type"]
+
+
+@pytest.fixture
+async def history_srv(hub_server_factory):
+    """The state persister throttles to one row per machine per `persist_state_interval_s`;
+    set it to 0 so a burst of readings in one test actually lands in the table."""
+    llm = FakeLLM([])
+    async with hub_server_factory(llm=llm, persist_state_interval_s=0.0) as srv:
+        srv.llm = llm
+        srv.app.state.sim = FakeSimHTTP()
+        yield srv
+
+
+async def test_machine_history_trends_only_channels_the_contract_carries(history_srv):
+    """Trends are computed, never invented: a channel with no readings is simply absent."""
+    for i, temp in enumerate([70.0, 80.0, 95.0]):
+        history_srv.hub.publish_machine(machine("EXC001", ts=NOW, hydraulic_temp_c=temp,
+                                                fuel_level_pct=90.0 - i, fuel_used_l=float(i * 5)))
+    await history_srv.hub.persister.flush()
+
+    res = await call_tool(history_srv, "get_machine_history", {"machine_id": "EXC001", "hours": 1})
+    assert res.ok and res.provenance == "db", res
+    t = res.data["trends"]
+    assert res.data["samples"] == 3, res.data
+    assert t["hydraulic_temp_c"]["first"] == 70.0 and t["hydraulic_temp_c"]["max"] == 95.0
+    assert t["hydraulic_temp_c"]["change"] == 25.0
+    assert t["fuel_used_l"]["change"] == 10.0  # answers "how many litres", in litres
+    assert "bubble" not in t  # not numeric: absent rather than coerced
+
+
+async def test_machine_history_is_honest_when_there_is_nothing_stored(agent_srv):
+    """A tool that has nothing to say says so; the registry turns ToolError into ok=False."""
+    res = await call_tool(agent_srv, "get_machine_history", {"machine_id": "TRK009", "hours": 1})
+    assert res.ok is False, res
+    assert "no stored readings" in str(res.data)
+    assert "never reported" in str(res.data)  # and it distinguishes "quiet" from "unknown"
