@@ -8,6 +8,8 @@ live WebSocket that A and D build against.
 from __future__ import annotations
 
 import logging
+from contextlib import AbstractAsyncContextManager
+from typing import Any, Callable
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,8 +37,11 @@ class SimulatorService:
         await self.emitter.broadcast(messages)
 
 
-def create_app(service: SimulatorService) -> FastAPI:
-    app = FastAPI(title="CAT Copilot simulator", version="0.1.0")
+def create_app(
+    service: SimulatorService,
+    lifespan: Callable[[FastAPI], AbstractAsyncContextManager[Any]] | None = None,
+) -> FastAPI:
+    app = FastAPI(title="CAT Copilot simulator", version="0.1.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],          # hackathon: every teammate's dev server
