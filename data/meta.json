@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-09-23T12:58:05",
+  "seed": 42,
+  "days": 30,
+  "diesel_price_inr": 90.0,
+  "rows": {
+    "operators": 10,
+    "machines": 10,
+    "maintenance": 300,
+    "tasks": 5100,
+    "telemetry": 180480,
+    "incidents": 150,
+    "injected_anomalies": 9,
+    "incident_tracks": 4,
+    "runs": 2
+  }
+}

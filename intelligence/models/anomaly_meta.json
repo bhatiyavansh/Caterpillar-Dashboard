@@ -1,0 +1,15 @@
+{
+  "windows": 1505,
+  "machines": 10,
+  "injected_shifts": 9,
+  "injected_shifts_detected": 7,
+  "injected_recall_pct": 77.8,
+  "flagged_windows": 73,
+  "flagged_shifts": 62,
+  "brief_sample": {
+    "rows": 4,
+    "expected_alerts": 2,
+    "detected": 2,
+    "false_alarms": 0
+  }
+}

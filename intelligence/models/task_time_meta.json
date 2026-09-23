@@ -1,0 +1,24 @@
+{
+  "rows_train": 4057,
+  "rows_test": 1043,
+  "p50_mape_pct": 9.7,
+  "p50_mae_min": 17.91,
+  "p10_p90_coverage_pct": 79.6,
+  "planner_baseline_mape_pct": 27.57,
+  "improvement_vs_planner_pct": 17.87,
+  "features": [
+    "task_type",
+    "machine_model",
+    "operator_skill",
+    "soil",
+    "weather",
+    "volume_m3",
+    "operator_years",
+    "temperature_c",
+    "visibility_m",
+    "site_congestion",
+    "time_of_day",
+    "machine_health",
+    "estimated_time_min"
+  ]
+}
