@@ -1,0 +1,157 @@
+"""Control API on :8100.
+
+Serves the director (POST /scenario/*), the world snapshot (GET /state), the
+task endpoints the `intelligence` wrappers call, and - in standalone mode - the
+live WebSocket that A and D build against.
+"""
+
+from __future__ import annotations
+
+import logging
+
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+
+from .emitter import Emitter, StandaloneBroadcaster
+from .scenarios import EMIT_SCRIPTED_EVENTS, SCENARIOS, ScenarioEngine
+from .site import SITE_LAYOUT
+from .world import World
+
+log = logging.getLogger("simulator.api")
+
+
+class SimulatorService:
+    """Holds the one World and the one ScenarioEngine the API talks to."""
+
+    def __init__(self, seed: int = 42) -> None:
+        self.world = World(seed=seed)
+        self.engine = ScenarioEngine(self.world)
+        self.broadcaster = StandaloneBroadcaster()
+        self.emitter = Emitter(self.broadcaster)
+        self.mode = "standalone"
+
+    async def step(self, dt: float = 1.0) -> None:
+        messages = self.world.tick(dt)
+        await self.emitter.broadcast(messages)
+
+
+def create_app(service: SimulatorService) -> FastAPI:
+    app = FastAPI(title="CAT Copilot simulator", version="0.1.0")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],          # hackathon: every teammate's dev server
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    app.state.service = service
+
+    # -- health / introspection -------------------------------------------
+    @app.get("/health")
+    def health() -> dict:
+        w = service.world
+        return {
+            "ok": True,
+            "mode": service.mode,
+            "tick": w.tick_no,
+            "sim_time_s": round(w.sim_time_s, 1),
+            "machines": len(w.machines),
+            "workers": len(w.workers),
+            **service.emitter.status(),
+        }
+
+    @app.get("/state")
+    def state() -> dict:
+        return service.world.snapshot()
+
+    @app.get("/site")
+    def site() -> dict:
+        return SITE_LAYOUT
+
+    @app.get("/machines/{machine_id}")
+    def machine(machine_id: str) -> dict:
+        st = service.world.last_states.get(machine_id)
+        if st is None:
+            raise HTTPException(404, f"unknown machine {machine_id}")
+        return st
+
+    @app.get("/events")
+    def events(limit: int = 50) -> list[dict]:
+        return service.world.bus.history[-limit:]
+
+    # -- tasks -------------------------------------------------------------
+    @app.get("/tasks")
+    def all_tasks() -> list[dict]:
+        return service.world.tasks.all_tasks()
+
+    @app.get("/tasks/{operator_id}")
+    def operator_tasks(operator_id: str) -> list[dict]:
+        tasks = service.world.tasks.for_operator(operator_id)
+        if not tasks:
+            raise HTTPException(404, f"no tasks for {operator_id}")
+        return tasks
+
+    @app.post("/tasks/{operator_id}/reorder")
+    def reorder(operator_id: str, reason: str = "manual") -> dict:
+        w = service.world
+        if operator_id not in w.tasks.by_operator:
+            raise HTTPException(404, f"no tasks for {operator_id}")
+        payload = w.tasks.reorder(operator_id, reason)
+        w.bus.emit(
+            "task_reordered", "info",
+            f"Tasks resequenced for {operator_id}",
+            None, "simulator", payload, w.sim_time_s, force=True,
+        )
+        return payload
+
+    # -- director ----------------------------------------------------------
+    @app.get("/scenarios")
+    def scenarios() -> list[dict]:
+        return [
+            {
+                "name": s.name,
+                "label": s.label,
+                "description": s.description,
+                "scripted": EMIT_SCRIPTED_EVENTS.get(s.name, True),
+                "active": s.name in service.world.active_scenarios,
+            }
+            for s in SCENARIOS
+        ]
+
+    @app.post("/scenario/reset")
+    def scenario_reset() -> dict:
+        return service.engine.trigger("reset")
+
+    @app.post("/scenario/{name}")
+    async def scenario(name: str, params: dict | None = None) -> dict:
+        result = service.engine.trigger(name, **(params or {}))
+        if not result.get("ok"):
+            raise HTTPException(404, result.get("error", "unknown scenario"))
+        # push the scripted events straight out so the UI reacts on the click,
+        # rather than on the next tick
+        pending = service.world.bus.drain()
+        if pending:
+            await service.emitter.broadcast(pending)
+        return result
+
+    # -- live stream (standalone mode) ------------------------------------
+    @app.websocket("/ws/live")
+    async def ws_live(websocket: WebSocket) -> None:
+        await websocket.accept()
+        await service.broadcaster.register(websocket)
+        try:
+            # prime the new client with the current world so screens are never
+            # blank while they wait for the next tick
+            for st in service.world.last_states.values():
+                await websocket.send_json(st)
+            for st in service.world.last_worker_states.values():
+                await websocket.send_json(st)
+            while True:
+                await websocket.receive_text()      # clients are read-only
+        except WebSocketDisconnect:
+            pass
+        except Exception:
+            pass
+        finally:
+            await service.broadcaster.unregister(websocket)
+
+    return app

@@ -39,3 +39,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# --- Python (Person C: simulator, data-gen, intelligence) ---
+__pycache__/
+*.py[cod]
+.venv/
+.uv/
+*.egg-info/
+.pytest_cache/
+
+# generated data: keep the small json fixtures, drop the large csvs
+data/*.csv
+data/incident_tracks/
+data/runs/
+intelligence/models/*.joblib
+intelligence/models/*.txt
