@@ -40,3 +40,16 @@ Newest entry at the bottom. The format follows `docs/P2_SPEC.md` §17. Person na
 ### → Repo owner
 
 `README copy.md` (the real README, with §10) and `VISION.md` are untracked. Please commit them.
+
+---
+
+## Phase 1 — spec (branch `p2/spec`)
+
+### → Person C
+Ready: `docs/P2_SPEC.md`. §2 (I import your `simulator.schemas` as canonical), §3.3 (director proxy to :8100 with JSON body), §5.5 (ML port wraps `intelligence` via to_thread). **Decision needed:** §20 — shared `coordination/` package owner + sim command channel (`/machines/{id}/assignment|hold|release`). I won't start Phase E until agreed.
+
+### → Person A
+Ready: `docs/P2_SPEC.md` §3.2 (`TwinAdapter`, all mapping in one file), §4 (`LiveTelemetryProvider`, `siteToTwin`). **Confirm:** live stream vs standalone for `/twin`; transform constants.
+
+### → Person D
+Ready: `docs/P2_SPEC.md` §4, §13, §15. **Confirm:** I own `src/app/dev/*` (dev-only pages); you add `"@web/*": ["./web/*"]` to tsconfig paths when convenient; avatar mounts in your `AvatarSlot` using your `AvatarState` names.
