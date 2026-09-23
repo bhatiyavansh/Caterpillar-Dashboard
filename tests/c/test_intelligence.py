@@ -292,3 +292,26 @@ def test_every_scenario_has_a_director_button():
 
     listed = {s["name"] for s in json.loads((FIXTURES / "scenarios.json").read_text())}
     assert listed == {s.name for s in SCENARIOS}
+
+
+@needs_data
+def test_incident_tracks_match_the_incident_list():
+    """A builds replays from these files; a stale one shows the wrong machine.
+
+    Incident ids are sequential, so a track left behind by an earlier generator
+    run keeps a valid-looking filename while describing something else entirely.
+    """
+    import pandas as pd
+
+    tracks_dir = DATA / "incident_tracks"
+    incidents = pd.read_csv(DATA / "incidents.csv").set_index("incident_id")
+    files = sorted(tracks_dir.glob("*.json"))
+    assert files, "expected a few incident replay tracks"
+
+    for path in files:
+        track = json.loads(path.read_text())
+        assert track["incident_id"] == path.stem
+        row = incidents.loc[track["incident_id"]]
+        assert track["machine_id"] == row["machine_id"], f"{path.stem} is stale"
+        assert track["timestamp"] == row["timestamp"], f"{path.stem} is stale"
+        assert len(track["frames"]) == 61

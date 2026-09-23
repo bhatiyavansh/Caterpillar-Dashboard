@@ -2,7 +2,7 @@
   {
     "type": "event",
     "id": "evt_000029",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "event": "seatbelt_unfastened",
     "severity": "high",
     "machine_id": "EXC001",
@@ -15,7 +15,7 @@
   {
     "type": "event",
     "id": "evt_000038",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "event": "seatbelt_fastened",
     "severity": "info",
     "machine_id": "EXC001",
@@ -26,7 +26,7 @@
   {
     "type": "event",
     "id": "evt_000001",
-    "ts": "2026-09-23T07:44:34Z",
+    "ts": "2026-09-23T08:04:11Z",
     "event": "proximity_alert",
     "severity": "high",
     "machine_id": "GRD001",
@@ -41,7 +41,7 @@
   {
     "type": "event",
     "id": "evt_000048",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "event": "fatigue_alert",
     "severity": "high",
     "machine_id": "EXC001",
@@ -55,7 +55,7 @@
   {
     "type": "event",
     "id": "evt_000058",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "event": "tip_over_warning",
     "severity": "critical",
     "machine_id": "EXC001",
@@ -70,7 +70,7 @@
   {
     "type": "event",
     "id": "evt_000051",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "event": "v2v_collision_risk",
     "severity": "high",
     "machine_id": "EXC001",
@@ -178,7 +178,7 @@
   {
     "type": "event",
     "id": "evt_000073",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "event": "v2i_suggestion",
     "severity": "info",
     "machine_id": "TRK003",
@@ -194,7 +194,7 @@
   {
     "type": "event",
     "id": "evt_000003",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "event": "anomaly_detected",
     "severity": "medium",
     "machine_id": "WHL001",
@@ -210,7 +210,7 @@
   {
     "type": "event",
     "id": "evt_000062",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "event": "maintenance_due",
     "severity": "medium",
     "machine_id": "EXC001",
@@ -225,7 +225,7 @@
   {
     "type": "event",
     "id": "evt_000018",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "event": "weather_change",
     "severity": "medium",
     "machine_id": null,
@@ -240,7 +240,7 @@
   {
     "type": "event",
     "id": "evt_000009",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "event": "task_reordered",
     "severity": "info",
     "machine_id": null,
@@ -264,7 +264,7 @@
   {
     "type": "event",
     "id": "evt_000019",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "event": "working_risk_changed",
     "severity": "medium",
     "machine_id": null,
@@ -283,7 +283,7 @@
   {
     "type": "event",
     "id": "evt_999001",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "event": "incident_created",
     "severity": "high",
     "machine_id": "EXC001",

@@ -1,7 +1,7 @@
 [
   {
     "type": "machine_state",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "machine_id": "EXC001",
     "model": "320",
     "machine_type": "excavator",
@@ -43,7 +43,7 @@
   },
   {
     "type": "machine_state",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "machine_id": "EXC002",
     "model": "320",
     "machine_type": "excavator",
@@ -85,7 +85,7 @@
   },
   {
     "type": "machine_state",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "machine_id": "WHL001",
     "model": "950",
     "machine_type": "wheel_loader",
@@ -127,7 +127,7 @@
   },
   {
     "type": "machine_state",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "machine_id": "DOZ001",
     "model": "D6",
     "machine_type": "dozer",
@@ -169,7 +169,7 @@
   },
   {
     "type": "machine_state",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "machine_id": "TRK001",
     "model": "745",
     "machine_type": "truck",
@@ -211,7 +211,7 @@
   },
   {
     "type": "machine_state",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "machine_id": "TRK002",
     "model": "745",
     "machine_type": "truck",
@@ -253,7 +253,7 @@
   },
   {
     "type": "machine_state",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "machine_id": "TRK003",
     "model": "745",
     "machine_type": "truck",
@@ -295,7 +295,7 @@
   },
   {
     "type": "machine_state",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "machine_id": "TRK004",
     "model": "745",
     "machine_type": "truck",
@@ -337,7 +337,7 @@
   },
   {
     "type": "machine_state",
-    "ts": "2026-09-23T07:44:35Z",
+    "ts": "2026-09-23T08:04:12Z",
     "machine_id": "GRD001",
     "model": "140",
     "machine_type": "grader",

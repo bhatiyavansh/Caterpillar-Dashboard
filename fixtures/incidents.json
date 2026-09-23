@@ -1033,7 +1033,7 @@
     "y": 252.5,
     "weather": "clear",
     "description": "Operated with seatbelt unfastened",
-    "has_replay": true
+    "has_replay": false
   },
   {
     "incident_id": "INC-0007",
@@ -1103,7 +1103,7 @@
     "y": 225.7,
     "weather": "clear",
     "description": "Operated with seatbelt unfastened",
-    "has_replay": true
+    "has_replay": false
   },
   {
     "incident_id": "INC-0113",
@@ -1271,7 +1271,7 @@
     "y": 233.1,
     "weather": "heat",
     "description": "Operated with seatbelt unfastened",
-    "has_replay": true
+    "has_replay": false
   },
   {
     "incident_id": "INC-0044",

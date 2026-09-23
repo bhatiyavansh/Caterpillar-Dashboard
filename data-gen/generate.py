@@ -651,8 +651,15 @@ def main(argv: list[str] | None = None) -> None:
     rng = np.random.default_rng(args.seed)
     out = args.out
     out.mkdir(parents=True, exist_ok=True)
-    (out / "incident_tracks").mkdir(exist_ok=True)
-    (out / "runs").mkdir(exist_ok=True)
+    # Clear the per-run JSON directories first.  Incident ids are sequential,
+    # so a track left behind by an earlier run keeps a valid-looking filename
+    # while describing a different machine at a different time - and whatever
+    # reads it has no way to tell.
+    for sub in ("incident_tracks", "runs"):
+        folder = out / sub
+        folder.mkdir(exist_ok=True)
+        for old in folder.glob("*.json"):
+            old.unlink()
 
     end = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     days = [end - timedelta(days=d) for d in range(args.days - 1, -1, -1)]
