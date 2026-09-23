@@ -1,0 +1,583 @@
+{
+  "ts": "2026-09-23T07:44:37Z",
+  "days": 7,
+  "fuel_l": 12234.3,
+  "fuel_spend_inr": 1101087,
+  "idle_cost_inr": 41446,
+  "idle_cost_share_pct": 3.8,
+  "co2_kg": 32787.9,
+  "utilization_pct": 84.2,
+  "cycles": 45099,
+  "daily": [
+    {
+      "date": "2026-09-17",
+      "utilization_pct": 83.8,
+      "fuel_l": 1745.7,
+      "idle_pct": 16.2,
+      "idle_cost_inr": 6015,
+      "cycles": 6432,
+      "per_machine": [
+        {
+          "machine_id": "DOZ001",
+          "utilization_pct": 83.0,
+          "fuel_l": 172.9,
+          "idle_pct": 17.0
+        },
+        {
+          "machine_id": "EXC001",
+          "utilization_pct": 83.3,
+          "fuel_l": 138.5,
+          "idle_pct": 16.7
+        },
+        {
+          "machine_id": "EXC002",
+          "utilization_pct": 84.5,
+          "fuel_l": 140.7,
+          "idle_pct": 15.5
+        },
+        {
+          "machine_id": "EXC003",
+          "utilization_pct": 82.2,
+          "fuel_l": 137.9,
+          "idle_pct": 17.8
+        },
+        {
+          "machine_id": "GRD001",
+          "utilization_pct": 82.3,
+          "fuel_l": 120.2,
+          "idle_pct": 17.7
+        },
+        {
+          "machine_id": "TRK001",
+          "utilization_pct": 85.2,
+          "fuel_l": 220.1,
+          "idle_pct": 14.8
+        },
+        {
+          "machine_id": "TRK002",
+          "utilization_pct": 84.0,
+          "fuel_l": 218.8,
+          "idle_pct": 16.0
+        },
+        {
+          "machine_id": "TRK003",
+          "utilization_pct": 87.0,
+          "fuel_l": 223.7,
+          "idle_pct": 13.0
+        },
+        {
+          "machine_id": "TRK004",
+          "utilization_pct": 79.5,
+          "fuel_l": 210.4,
+          "idle_pct": 20.5
+        },
+        {
+          "machine_id": "WHL001",
+          "utilization_pct": 87.3,
+          "fuel_l": 162.5,
+          "idle_pct": 12.7
+        }
+      ]
+    },
+    {
+      "date": "2026-09-18",
+      "utilization_pct": 84.5,
+      "fuel_l": 1751.9,
+      "idle_pct": 15.5,
+      "idle_cost_inr": 5776,
+      "cycles": 6436,
+      "per_machine": [
+        {
+          "machine_id": "DOZ001",
+          "utilization_pct": 84.0,
+          "fuel_l": 174.5,
+          "idle_pct": 16.0
+        },
+        {
+          "machine_id": "EXC001",
+          "utilization_pct": 85.8,
+          "fuel_l": 142.0,
+          "idle_pct": 14.2
+        },
+        {
+          "machine_id": "EXC002",
+          "utilization_pct": 85.2,
+          "fuel_l": 141.2,
+          "idle_pct": 14.8
+        },
+        {
+          "machine_id": "EXC003",
+          "utilization_pct": 82.0,
+          "fuel_l": 137.5,
+          "idle_pct": 18.0
+        },
+        {
+          "machine_id": "GRD001",
+          "utilization_pct": 84.2,
+          "fuel_l": 122.3,
+          "idle_pct": 15.8
+        },
+        {
+          "machine_id": "TRK001",
+          "utilization_pct": 85.8,
+          "fuel_l": 220.8,
+          "idle_pct": 14.2
+        },
+        {
+          "machine_id": "TRK002",
+          "utilization_pct": 81.5,
+          "fuel_l": 212.9,
+          "idle_pct": 18.5
+        },
+        {
+          "machine_id": "TRK003",
+          "utilization_pct": 86.0,
+          "fuel_l": 221.7,
+          "idle_pct": 14.0
+        },
+        {
+          "machine_id": "TRK004",
+          "utilization_pct": 84.2,
+          "fuel_l": 217.8,
+          "idle_pct": 15.8
+        },
+        {
+          "machine_id": "WHL001",
+          "utilization_pct": 86.7,
+          "fuel_l": 161.1,
+          "idle_pct": 13.3
+        }
+      ]
+    },
+    {
+      "date": "2026-09-19",
+      "utilization_pct": 84.3,
+      "fuel_l": 1749.9,
+      "idle_pct": 15.7,
+      "idle_cost_inr": 5882,
+      "cycles": 6535,
+      "per_machine": [
+        {
+          "machine_id": "DOZ001",
+          "utilization_pct": 82.5,
+          "fuel_l": 172.5,
+          "idle_pct": 17.5
+        },
+        {
+          "machine_id": "EXC001",
+          "utilization_pct": 82.8,
+          "fuel_l": 138.8,
+          "idle_pct": 17.2
+        },
+        {
+          "machine_id": "EXC002",
+          "utilization_pct": 86.5,
+          "fuel_l": 142.7,
+          "idle_pct": 13.5
+        },
+        {
+          "machine_id": "EXC003",
+          "utilization_pct": 83.8,
+          "fuel_l": 140.5,
+          "idle_pct": 16.2
+        },
+        {
+          "machine_id": "GRD001",
+          "utilization_pct": 84.8,
+          "fuel_l": 123.0,
+          "idle_pct": 15.2
+        },
+        {
+          "machine_id": "TRK001",
+          "utilization_pct": 85.2,
+          "fuel_l": 219.8,
+          "idle_pct": 14.8
+        },
+        {
+          "machine_id": "TRK002",
+          "utilization_pct": 81.5,
+          "fuel_l": 213.0,
+          "idle_pct": 18.5
+        },
+        {
+          "machine_id": "TRK003",
+          "utilization_pct": 84.8,
+          "fuel_l": 219.9,
+          "idle_pct": 15.2
+        },
+        {
+          "machine_id": "TRK004",
+          "utilization_pct": 84.3,
+          "fuel_l": 218.3,
+          "idle_pct": 15.7
+        },
+        {
+          "machine_id": "WHL001",
+          "utilization_pct": 86.7,
+          "fuel_l": 161.4,
+          "idle_pct": 13.3
+        }
+      ]
+    },
+    {
+      "date": "2026-09-20",
+      "utilization_pct": 84.9,
+      "fuel_l": 1762.3,
+      "idle_pct": 15.1,
+      "idle_cost_inr": 5628,
+      "cycles": 6451,
+      "per_machine": [
+        {
+          "machine_id": "DOZ001",
+          "utilization_pct": 85.2,
+          "fuel_l": 176.4,
+          "idle_pct": 14.8
+        },
+        {
+          "machine_id": "EXC001",
+          "utilization_pct": 85.7,
+          "fuel_l": 142.2,
+          "idle_pct": 14.3
+        },
+        {
+          "machine_id": "EXC002",
+          "utilization_pct": 86.3,
+          "fuel_l": 143.2,
+          "idle_pct": 13.7
+        },
+        {
+          "machine_id": "EXC003",
+          "utilization_pct": 81.7,
+          "fuel_l": 137.0,
+          "idle_pct": 18.3
+        },
+        {
+          "machine_id": "GRD001",
+          "utilization_pct": 84.5,
+          "fuel_l": 122.8,
+          "idle_pct": 15.5
+        },
+        {
+          "machine_id": "TRK001",
+          "utilization_pct": 85.8,
+          "fuel_l": 221.8,
+          "idle_pct": 14.2
+        },
+        {
+          "machine_id": "TRK002",
+          "utilization_pct": 83.8,
+          "fuel_l": 217.8,
+          "idle_pct": 16.2
+        },
+        {
+          "machine_id": "TRK003",
+          "utilization_pct": 87.5,
+          "fuel_l": 225.5,
+          "idle_pct": 12.5
+        },
+        {
+          "machine_id": "TRK004",
+          "utilization_pct": 82.3,
+          "fuel_l": 214.2,
+          "idle_pct": 17.7
+        },
+        {
+          "machine_id": "WHL001",
+          "utilization_pct": 86.3,
+          "fuel_l": 161.4,
+          "idle_pct": 13.7
+        }
+      ]
+    },
+    {
+      "date": "2026-09-21",
+      "utilization_pct": 82.5,
+      "fuel_l": 1716.9,
+      "idle_pct": 17.5,
+      "idle_cost_inr": 6621,
+      "cycles": 6328,
+      "per_machine": [
+        {
+          "machine_id": "DOZ001",
+          "utilization_pct": 83.2,
+          "fuel_l": 173.0,
+          "idle_pct": 16.8
+        },
+        {
+          "machine_id": "EXC001",
+          "utilization_pct": 84.5,
+          "fuel_l": 140.1,
+          "idle_pct": 15.5
+        },
+        {
+          "machine_id": "EXC002",
+          "utilization_pct": 85.7,
+          "fuel_l": 141.9,
+          "idle_pct": 14.3
+        },
+        {
+          "machine_id": "EXC003",
+          "utilization_pct": 79.5,
+          "fuel_l": 134.5,
+          "idle_pct": 20.5
+        },
+        {
+          "machine_id": "GRD001",
+          "utilization_pct": 83.3,
+          "fuel_l": 122.1,
+          "idle_pct": 16.7
+        },
+        {
+          "machine_id": "TRK001",
+          "utilization_pct": 86.5,
+          "fuel_l": 223.1,
+          "idle_pct": 13.5
+        },
+        {
+          "machine_id": "TRK002",
+          "utilization_pct": 83.7,
+          "fuel_l": 217.0,
+          "idle_pct": 16.3
+        },
+        {
+          "machine_id": "TRK003",
+          "utilization_pct": 70.0,
+          "fuel_l": 189.8,
+          "idle_pct": 30.0
+        },
+        {
+          "machine_id": "TRK004",
+          "utilization_pct": 81.8,
+          "fuel_l": 214.1,
+          "idle_pct": 18.2
+        },
+        {
+          "machine_id": "WHL001",
+          "utilization_pct": 87.0,
+          "fuel_l": 161.4,
+          "idle_pct": 13.0
+        }
+      ]
+    },
+    {
+      "date": "2026-09-22",
+      "utilization_pct": 84.9,
+      "fuel_l": 1757.1,
+      "idle_pct": 15.1,
+      "idle_cost_inr": 5664,
+      "cycles": 6541,
+      "per_machine": [
+        {
+          "machine_id": "DOZ001",
+          "utilization_pct": 86.2,
+          "fuel_l": 177.9,
+          "idle_pct": 13.8
+        },
+        {
+          "machine_id": "EXC001",
+          "utilization_pct": 84.0,
+          "fuel_l": 140.1,
+          "idle_pct": 16.0
+        },
+        {
+          "machine_id": "EXC002",
+          "utilization_pct": 87.2,
+          "fuel_l": 143.5,
+          "idle_pct": 12.8
+        },
+        {
+          "machine_id": "EXC003",
+          "utilization_pct": 82.8,
+          "fuel_l": 137.6,
+          "idle_pct": 17.2
+        },
+        {
+          "machine_id": "GRD001",
+          "utilization_pct": 84.7,
+          "fuel_l": 123.2,
+          "idle_pct": 15.3
+        },
+        {
+          "machine_id": "TRK001",
+          "utilization_pct": 84.5,
+          "fuel_l": 218.7,
+          "idle_pct": 15.5
+        },
+        {
+          "machine_id": "TRK002",
+          "utilization_pct": 83.0,
+          "fuel_l": 215.2,
+          "idle_pct": 17.0
+        },
+        {
+          "machine_id": "TRK003",
+          "utilization_pct": 86.2,
+          "fuel_l": 221.7,
+          "idle_pct": 13.8
+        },
+        {
+          "machine_id": "TRK004",
+          "utilization_pct": 84.0,
+          "fuel_l": 218.9,
+          "idle_pct": 16.0
+        },
+        {
+          "machine_id": "WHL001",
+          "utilization_pct": 86.2,
+          "fuel_l": 160.4,
+          "idle_pct": 13.8
+        }
+      ]
+    },
+    {
+      "date": "2026-09-23",
+      "utilization_pct": 84.3,
+      "fuel_l": 1750.5,
+      "idle_pct": 15.7,
+      "idle_cost_inr": 5860,
+      "cycles": 6376,
+      "per_machine": [
+        {
+          "machine_id": "DOZ001",
+          "utilization_pct": 84.3,
+          "fuel_l": 175.3,
+          "idle_pct": 15.7
+        },
+        {
+          "machine_id": "EXC001",
+          "utilization_pct": 83.5,
+          "fuel_l": 138.5,
+          "idle_pct": 16.5
+        },
+        {
+          "machine_id": "EXC002",
+          "utilization_pct": 86.2,
+          "fuel_l": 142.7,
+          "idle_pct": 13.8
+        },
+        {
+          "machine_id": "EXC003",
+          "utilization_pct": 80.8,
+          "fuel_l": 136.5,
+          "idle_pct": 19.2
+        },
+        {
+          "machine_id": "GRD001",
+          "utilization_pct": 85.2,
+          "fuel_l": 123.5,
+          "idle_pct": 14.8
+        },
+        {
+          "machine_id": "TRK001",
+          "utilization_pct": 86.0,
+          "fuel_l": 221.4,
+          "idle_pct": 14.0
+        },
+        {
+          "machine_id": "TRK002",
+          "utilization_pct": 84.5,
+          "fuel_l": 218.8,
+          "idle_pct": 15.5
+        },
+        {
+          "machine_id": "TRK003",
+          "utilization_pct": 85.3,
+          "fuel_l": 220.6,
+          "idle_pct": 14.7
+        },
+        {
+          "machine_id": "TRK004",
+          "utilization_pct": 81.5,
+          "fuel_l": 212.8,
+          "idle_pct": 18.5
+        },
+        {
+          "machine_id": "WHL001",
+          "utilization_pct": 85.7,
+          "fuel_l": 160.4,
+          "idle_pct": 14.3
+        }
+      ]
+    }
+  ],
+  "top_anomalies": [
+    {
+      "anomaly_id": "AN-0012",
+      "machine_id": "TRK003",
+      "operator_id": "OP1007",
+      "type": "excessive_idling",
+      "related": [
+        "seatbelt_violation",
+        "low_productivity"
+      ],
+      "score": 0.87,
+      "detected_by": "rules",
+      "window": {
+        "start": "2026-09-21T16:00:00Z",
+        "end": "2026-09-21T18:00:00Z"
+      },
+      "evidence": {
+        "idle_min": 74.0,
+        "load_cycles": 14,
+        "seatbelt_off_min": 77.0,
+        "mean_payload_kg": 10975.0,
+        "peak_payload_kg": 31561.0,
+        "mean_hydraulic_temp_c": 75.2,
+        "peak_hydraulic_temp_c": 87.1,
+        "baseline_idle_min": 17.1
+      },
+      "fuel_wasted_l": 6.2,
+      "fuel_cost_inr": 558
+    },
+    {
+      "anomaly_id": "AN-0011",
+      "machine_id": "TRK003",
+      "operator_id": "OP1007",
+      "type": "seatbelt_violation",
+      "related": [],
+      "score": 0.75,
+      "detected_by": "rules",
+      "window": {
+        "start": "2026-09-21T14:00:00Z",
+        "end": "2026-09-21T16:00:00Z"
+      },
+      "evidence": {
+        "idle_min": 47.0,
+        "load_cycles": 34,
+        "seatbelt_off_min": 39.0,
+        "mean_payload_kg": 17512.0,
+        "peak_payload_kg": 33011.0,
+        "mean_hydraulic_temp_c": 79.1,
+        "peak_hydraulic_temp_c": 87.4,
+        "baseline_idle_min": 17.1
+      },
+      "fuel_wasted_l": 3.9,
+      "fuel_cost_inr": 351
+    },
+    {
+      "anomaly_id": "AN-0005",
+      "machine_id": "TRK002",
+      "operator_id": "OP1006",
+      "type": "overload",
+      "related": [],
+      "score": 0.67,
+      "detected_by": "isolation_forest",
+      "window": {
+        "start": "2026-09-17T12:00:00Z",
+        "end": "2026-09-17T14:00:00Z"
+      },
+      "evidence": {
+        "idle_min": 58.0,
+        "load_cycles": 16,
+        "seatbelt_off_min": 31.0,
+        "mean_payload_kg": 14552.0,
+        "peak_payload_kg": 32025.0,
+        "mean_hydraulic_temp_c": 79.5,
+        "peak_hydraulic_temp_c": 89.2,
+        "baseline_idle_min": 20.3
+      },
+      "fuel_wasted_l": 4.8,
+      "fuel_cost_inr": 432
+    }
+  ]
+}

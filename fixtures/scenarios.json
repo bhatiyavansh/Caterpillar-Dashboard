@@ -1,0 +1,62 @@
+[
+  {
+    "name": "start_shift",
+    "label": "Start shift",
+    "description": "Reset positions, engines on, tasks loaded and ordered."
+  },
+  {
+    "name": "rain",
+    "label": "Rain moves in",
+    "description": "Weather turns to rain, visibility drops, ground goes wet then muddy, tasks reorder."
+  },
+  {
+    "name": "unbuckle",
+    "label": "Seatbelt off",
+    "description": "EXC001 seatbelt unfastened; warning escalates chime -> voice -> travel locked."
+  },
+  {
+    "name": "buckle",
+    "label": "Seatbelt on",
+    "description": "EXC001 seatbelt refastened; alert clears."
+  },
+  {
+    "name": "worker_behind",
+    "label": "Worker behind machine",
+    "description": "A ground worker steps 3 m behind EXC001 for 10 seconds."
+  },
+  {
+    "name": "fatigue",
+    "label": "Operator fatigue",
+    "description": "EXC001 operator fatigue score rises to 0.85."
+  },
+  {
+    "name": "dozer_reversing",
+    "label": "Dozer reversing",
+    "description": "DOZ001 reverses onto a path converging with EXC001."
+  },
+  {
+    "name": "heavy_lift",
+    "label": "Heavy lift on a slope",
+    "description": "EXC001 lifts 3,200 kg with the boom low on an 8 degree slope."
+  },
+  {
+    "name": "hydraulic_spike",
+    "label": "Hydraulic temperature spike",
+    "description": "EXC001 hydraulic temperature climbs 25 C over 20 seconds."
+  },
+  {
+    "name": "idle_anomaly",
+    "label": "Excessive idling",
+    "description": "EXC002 has idled 50 minutes with almost no load cycles."
+  },
+  {
+    "name": "loader_queue",
+    "label": "Loader queue backs up",
+    "description": "Three trucks queue at the loader point."
+  },
+  {
+    "name": "reset",
+    "label": "Reset",
+    "description": "Clear every override and return the site to normal."
+  }
+]

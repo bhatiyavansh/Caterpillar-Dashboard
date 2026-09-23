@@ -63,6 +63,12 @@ ANOMALY_TYPES = (
 )
 ANOMALY_SHIFT_RATE = 0.05
 
+# How often an operator leaves the belt off while idling, and how much idle
+# they accumulate.  Without this every operator has identical seatbelt
+# compliance and the leaderboard column carries no information.
+SKILL_BELT_OFF_PROB = {"novice": 0.55, "intermediate": 0.32, "expert": 0.16}
+SKILL_IDLE_SCATTER = {"novice": (7, 14), "intermediate": (4, 10), "expert": (2, 7)}
+
 
 def base_rate(task_type: str, model: str) -> float:
     return BASE_RATE.get((task_type, model), DEFAULT_BASE_RATE)
@@ -294,11 +300,12 @@ def build_telemetry(machines: pd.DataFrame, operators: pd.DataFrame,
                 lo = int(np.clip(centre + rng.normal(0, 10), 0, n - 1))
                 idle_flag[lo:lo + width] = True
             # scattered short idles
-            for _ in range(int(rng.integers(4, 10))):
+            lo_n, hi_n = SKILL_IDLE_SCATTER[skill]
+            for _ in range(int(rng.integers(lo_n, hi_n))):
                 lo = int(rng.integers(0, n - 6))
                 idle_flag[lo:lo + int(rng.integers(2, 7))] = True
 
-            belt_off = idle_flag & (rng.random(n) < 0.35)
+            belt_off = idle_flag & (rng.random(n) < SKILL_BELT_OFF_PROB[skill])
 
             anomaly_window = None
             if anomaly == "excessive_idling":
@@ -496,10 +503,22 @@ INCIDENT_SEVERITY = {
 }
 
 
+# Incidents are not spread evenly across the crew: a novice has them several
+# times more often than an expert.  Without this the safety leaderboard is pure
+# noise and ranks the trainee first.
+SKILL_INCIDENT_WEIGHT = {"novice": 3.0, "intermediate": 1.3, "expert": 0.5}
+
+
 def build_incidents(days: list[datetime], rng: np.random.Generator,
                     count: int = 150) -> pd.DataFrame:
     machine_ids = [f.machine_id for f in FLEET]
     machine_operator = {f.machine_id: f.operator_id for f in FLEET}
+    skill_by_operator = {o.operator_id: o.skill for o in OPERATORS}
+    weights = np.array([
+        SKILL_INCIDENT_WEIGHT[skill_by_operator[machine_operator[m]]] for m in machine_ids
+    ])
+    weights = weights / weights.sum()
+
     rows = []
     for i in range(count):
         day = days[int(rng.integers(0, len(days)))]
@@ -507,7 +526,7 @@ def build_incidents(days: list[datetime], rng: np.random.Generator,
             hour=int(rng.integers(SHIFT_START_HOUR, SHIFT_START_HOUR + SHIFT_HOURS)),
             minute=int(rng.integers(0, 60)), second=0, microsecond=0,
         )
-        machine_id = str(rng.choice(machine_ids))
+        machine_id = str(rng.choice(machine_ids, p=weights))
         itype = str(rng.choice(INCIDENT_TYPES, p=[0.38, 0.24, 0.10, 0.18, 0.10]))
         zone = ZONES[int(rng.integers(0, len(ZONES)))]
         x, y = zone.random_point(_RngShim(rng))

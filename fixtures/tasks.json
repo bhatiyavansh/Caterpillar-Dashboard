@@ -1,0 +1,515 @@
+[
+  {
+    "task_id": "T-0001",
+    "operator_id": "OP1001",
+    "machine_id": "EXC001",
+    "task_type": "trenching",
+    "zone": "B",
+    "volume_m3": 164.3,
+    "soil": "clay",
+    "status": "in_progress",
+    "order": 1,
+    "progress": 0.0345,
+    "planned_start": "2026-09-23T08:00:00Z",
+    "eta_min": 199.0,
+    "estimate": {
+      "p10": 175.2,
+      "p50": 206.1,
+      "p90": 257.6
+    }
+  },
+  {
+    "task_id": "T-0002",
+    "operator_id": "OP1001",
+    "machine_id": "EXC001",
+    "task_type": "trenching",
+    "zone": "B",
+    "volume_m3": 164.6,
+    "soil": "rock",
+    "status": "pending",
+    "order": 2,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T11:00:00Z",
+    "eta_min": 251.4,
+    "estimate": {
+      "p10": 213.7,
+      "p50": 251.4,
+      "p90": 314.2
+    }
+  },
+  {
+    "task_id": "T-0003",
+    "operator_id": "OP1001",
+    "machine_id": "EXC001",
+    "task_type": "trenching",
+    "zone": "B",
+    "volume_m3": 185.7,
+    "soil": "rock",
+    "status": "pending",
+    "order": 3,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T14:00:00Z",
+    "eta_min": 283.6,
+    "estimate": {
+      "p10": 241.1,
+      "p50": 283.6,
+      "p90": 354.5
+    }
+  },
+  {
+    "task_id": "T-0004",
+    "operator_id": "OP1002",
+    "machine_id": "EXC002",
+    "task_type": "trenching",
+    "zone": "A",
+    "volume_m3": 110.7,
+    "soil": "mixed",
+    "status": "in_progress",
+    "order": 1,
+    "progress": 0.0652,
+    "planned_start": "2026-09-23T08:00:00Z",
+    "eta_min": 96.0,
+    "estimate": {
+      "p10": 102.7,
+      "p50": 120.8,
+      "p90": 151.0
+    }
+  },
+  {
+    "task_id": "T-0005",
+    "operator_id": "OP1002",
+    "machine_id": "EXC002",
+    "task_type": "trenching",
+    "zone": "A",
+    "volume_m3": 131.3,
+    "soil": "sand",
+    "status": "pending",
+    "order": 2,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T11:00:00Z",
+    "eta_min": 128.9,
+    "estimate": {
+      "p10": 109.6,
+      "p50": 128.9,
+      "p90": 161.1
+    }
+  },
+  {
+    "task_id": "T-0006",
+    "operator_id": "OP1002",
+    "machine_id": "EXC002",
+    "task_type": "trenching",
+    "zone": "A",
+    "volume_m3": 165.8,
+    "soil": "sand",
+    "status": "pending",
+    "order": 3,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T14:00:00Z",
+    "eta_min": 162.8,
+    "estimate": {
+      "p10": 138.4,
+      "p50": 162.8,
+      "p90": 203.5
+    }
+  },
+  {
+    "task_id": "T-0007",
+    "operator_id": "OP1003",
+    "machine_id": "WHL001",
+    "task_type": "loading",
+    "zone": "C",
+    "volume_m3": 12.0,
+    "soil": "mixed",
+    "status": "in_progress",
+    "order": 1,
+    "progress": 0.032,
+    "planned_start": "2026-09-23T08:00:00Z",
+    "eta_min": 98.7,
+    "estimate": {
+      "p10": 102.0,
+      "p50": 120.0,
+      "p90": 150.0
+    }
+  },
+  {
+    "task_id": "T-0008",
+    "operator_id": "OP1003",
+    "machine_id": "WHL001",
+    "task_type": "loading",
+    "zone": "C",
+    "volume_m3": 20.0,
+    "soil": "rock",
+    "status": "pending",
+    "order": 2,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T11:00:00Z",
+    "eta_min": 280.0,
+    "estimate": {
+      "p10": 238.0,
+      "p50": 280.0,
+      "p90": 350.0
+    }
+  },
+  {
+    "task_id": "T-0009",
+    "operator_id": "OP1003",
+    "machine_id": "WHL001",
+    "task_type": "loading",
+    "zone": "C",
+    "volume_m3": 19.0,
+    "soil": "sand",
+    "status": "pending",
+    "order": 3,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T14:00:00Z",
+    "eta_min": 171.0,
+    "estimate": {
+      "p10": 145.3,
+      "p50": 171.0,
+      "p90": 213.8
+    }
+  },
+  {
+    "task_id": "T-0010",
+    "operator_id": "OP1004",
+    "machine_id": "DOZ001",
+    "task_type": "dozing",
+    "zone": "A",
+    "volume_m3": 246.2,
+    "soil": "rock",
+    "status": "in_progress",
+    "order": 1,
+    "progress": 0.0141,
+    "planned_start": "2026-09-23T08:00:00Z",
+    "eta_min": 226.6,
+    "estimate": {
+      "p10": 195.2,
+      "p50": 229.7,
+      "p90": 287.1
+    }
+  },
+  {
+    "task_id": "T-0011",
+    "operator_id": "OP1004",
+    "machine_id": "DOZ001",
+    "task_type": "dozing",
+    "zone": "A",
+    "volume_m3": 282.3,
+    "soil": "sand",
+    "status": "pending",
+    "order": 2,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T11:00:00Z",
+    "eta_min": 169.4,
+    "estimate": {
+      "p10": 144.0,
+      "p50": 169.4,
+      "p90": 211.8
+    }
+  },
+  {
+    "task_id": "T-0012",
+    "operator_id": "OP1004",
+    "machine_id": "DOZ001",
+    "task_type": "dozing",
+    "zone": "A",
+    "volume_m3": 320.1,
+    "soil": "sand",
+    "status": "pending",
+    "order": 3,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T14:00:00Z",
+    "eta_min": 192.1,
+    "estimate": {
+      "p10": 163.3,
+      "p50": 192.1,
+      "p90": 240.1
+    }
+  },
+  {
+    "task_id": "T-0013",
+    "operator_id": "OP1005",
+    "machine_id": "TRK001",
+    "task_type": "hauling",
+    "zone": "road",
+    "volume_m3": 16.0,
+    "soil": "clay",
+    "status": "in_progress",
+    "order": 1,
+    "progress": 0.0097,
+    "planned_start": "2026-09-23T08:00:00Z",
+    "eta_min": 136.7,
+    "estimate": {
+      "p10": 117.3,
+      "p50": 138.0,
+      "p90": 172.5
+    }
+  },
+  {
+    "task_id": "T-0014",
+    "operator_id": "OP1005",
+    "machine_id": "TRK001",
+    "task_type": "hauling",
+    "zone": "road",
+    "volume_m3": 13.0,
+    "soil": "sand",
+    "status": "pending",
+    "order": 2,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T11:00:00Z",
+    "eta_min": 87.8,
+    "estimate": {
+      "p10": 74.6,
+      "p50": 87.8,
+      "p90": 109.8
+    }
+  },
+  {
+    "task_id": "T-0015",
+    "operator_id": "OP1005",
+    "machine_id": "TRK001",
+    "task_type": "hauling",
+    "zone": "road",
+    "volume_m3": 12.0,
+    "soil": "rock",
+    "status": "pending",
+    "order": 3,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T14:00:00Z",
+    "eta_min": 126.0,
+    "estimate": {
+      "p10": 107.1,
+      "p50": 126.0,
+      "p90": 157.5
+    }
+  },
+  {
+    "task_id": "T-0016",
+    "operator_id": "OP1006",
+    "machine_id": "TRK002",
+    "task_type": "hauling",
+    "zone": "road",
+    "volume_m3": 10.0,
+    "soil": "rock",
+    "status": "in_progress",
+    "order": 1,
+    "progress": 0.0104,
+    "planned_start": "2026-09-23T08:00:00Z",
+    "eta_min": 135.1,
+    "estimate": {
+      "p10": 89.2,
+      "p50": 105.0,
+      "p90": 131.2
+    }
+  },
+  {
+    "task_id": "T-0017",
+    "operator_id": "OP1006",
+    "machine_id": "TRK002",
+    "task_type": "hauling",
+    "zone": "road",
+    "volume_m3": 8.0,
+    "soil": "clay",
+    "status": "pending",
+    "order": 2,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T11:00:00Z",
+    "eta_min": 69.0,
+    "estimate": {
+      "p10": 58.6,
+      "p50": 69.0,
+      "p90": 86.2
+    }
+  },
+  {
+    "task_id": "T-0018",
+    "operator_id": "OP1006",
+    "machine_id": "TRK002",
+    "task_type": "hauling",
+    "zone": "road",
+    "volume_m3": 16.0,
+    "soil": "mixed",
+    "status": "pending",
+    "order": 3,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T14:00:00Z",
+    "eta_min": 120.0,
+    "estimate": {
+      "p10": 102.0,
+      "p50": 120.0,
+      "p90": 150.0
+    }
+  },
+  {
+    "task_id": "T-0019",
+    "operator_id": "OP1007",
+    "machine_id": "TRK003",
+    "task_type": "hauling",
+    "zone": "road",
+    "volume_m3": 16.0,
+    "soil": "sand",
+    "status": "in_progress",
+    "order": 1,
+    "progress": 0.0138,
+    "planned_start": "2026-09-23T08:00:00Z",
+    "eta_min": 90.5,
+    "estimate": {
+      "p10": 91.8,
+      "p50": 108.0,
+      "p90": 135.0
+    }
+  },
+  {
+    "task_id": "T-0020",
+    "operator_id": "OP1007",
+    "machine_id": "TRK003",
+    "task_type": "hauling",
+    "zone": "road",
+    "volume_m3": 12.0,
+    "soil": "mixed",
+    "status": "pending",
+    "order": 2,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T11:00:00Z",
+    "eta_min": 90.0,
+    "estimate": {
+      "p10": 76.5,
+      "p50": 90.0,
+      "p90": 112.5
+    }
+  },
+  {
+    "task_id": "T-0021",
+    "operator_id": "OP1007",
+    "machine_id": "TRK003",
+    "task_type": "hauling",
+    "zone": "road",
+    "volume_m3": 10.0,
+    "soil": "clay",
+    "status": "pending",
+    "order": 3,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T14:00:00Z",
+    "eta_min": 86.2,
+    "estimate": {
+      "p10": 73.3,
+      "p50": 86.2,
+      "p90": 107.8
+    }
+  },
+  {
+    "task_id": "T-0022",
+    "operator_id": "OP1008",
+    "machine_id": "TRK004",
+    "task_type": "hauling",
+    "zone": "road",
+    "volume_m3": 10.0,
+    "soil": "sand",
+    "status": "in_progress",
+    "order": 1,
+    "progress": 0.0144,
+    "planned_start": "2026-09-23T08:00:00Z",
+    "eta_min": 86.5,
+    "estimate": {
+      "p10": 57.4,
+      "p50": 67.5,
+      "p90": 84.4
+    }
+  },
+  {
+    "task_id": "T-0023",
+    "operator_id": "OP1008",
+    "machine_id": "TRK004",
+    "task_type": "hauling",
+    "zone": "road",
+    "volume_m3": 13.0,
+    "soil": "rock",
+    "status": "pending",
+    "order": 2,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T11:00:00Z",
+    "eta_min": 136.5,
+    "estimate": {
+      "p10": 116.0,
+      "p50": 136.5,
+      "p90": 170.6
+    }
+  },
+  {
+    "task_id": "T-0024",
+    "operator_id": "OP1008",
+    "machine_id": "TRK004",
+    "task_type": "hauling",
+    "zone": "road",
+    "volume_m3": 8.0,
+    "soil": "sand",
+    "status": "pending",
+    "order": 3,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T14:00:00Z",
+    "eta_min": 54.0,
+    "estimate": {
+      "p10": 45.9,
+      "p50": 54.0,
+      "p90": 67.5
+    }
+  },
+  {
+    "task_id": "T-0025",
+    "operator_id": "OP1009",
+    "machine_id": "GRD001",
+    "task_type": "grading",
+    "zone": "C",
+    "volume_m3": 5716.0,
+    "soil": "clay",
+    "status": "in_progress",
+    "order": 1,
+    "progress": 0.0253,
+    "planned_start": "2026-09-23T08:00:00Z",
+    "eta_min": 274.6,
+    "estimate": {
+      "p10": 239.5,
+      "p50": 281.8,
+      "p90": 352.2
+    }
+  },
+  {
+    "task_id": "T-0026",
+    "operator_id": "OP1009",
+    "machine_id": "GRD001",
+    "task_type": "grading",
+    "zone": "C",
+    "volume_m3": 2958.0,
+    "soil": "mixed",
+    "status": "pending",
+    "order": 2,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T11:00:00Z",
+    "eta_min": 126.8,
+    "estimate": {
+      "p10": 107.8,
+      "p50": 126.8,
+      "p90": 158.5
+    }
+  },
+  {
+    "task_id": "T-0027",
+    "operator_id": "OP1009",
+    "machine_id": "GRD001",
+    "task_type": "grading",
+    "zone": "C",
+    "volume_m3": 5512.0,
+    "soil": "sand",
+    "status": "pending",
+    "order": 3,
+    "progress": 0.0,
+    "planned_start": "2026-09-23T14:00:00Z",
+    "eta_min": 212.6,
+    "estimate": {
+      "p10": 180.7,
+      "p50": 212.6,
+      "p90": 265.8
+    }
+  }
+]

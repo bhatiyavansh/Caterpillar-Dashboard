@@ -1,0 +1,412 @@
+[
+  {
+    "machine_id": "EXC003",
+    "component": "hydraulic_pump",
+    "health_pct": 51.3,
+    "decline_pct_per_day": 0.373,
+    "hours_to_service": 571,
+    "due_date": "2026-11-19",
+    "confidence": "high",
+    "recommended_parts": [
+      "Hydraulic oil filter",
+      "Pump seal kit"
+    ]
+  },
+  {
+    "machine_id": "TRK001",
+    "component": "hydraulic_pump",
+    "health_pct": 53.4,
+    "decline_pct_per_day": 0.308,
+    "hours_to_service": 758,
+    "due_date": "2026-12-07",
+    "confidence": "high",
+    "recommended_parts": [
+      "Hydraulic oil filter",
+      "Pump seal kit"
+    ]
+  },
+  {
+    "machine_id": "TRK002",
+    "component": "hydraulic_pump",
+    "health_pct": 53.5,
+    "decline_pct_per_day": 0.279,
+    "hours_to_service": 843,
+    "due_date": "2026-12-16",
+    "confidence": "high",
+    "recommended_parts": [
+      "Hydraulic oil filter",
+      "Pump seal kit"
+    ]
+  },
+  {
+    "machine_id": "DOZ001",
+    "component": "hydraulic_pump",
+    "health_pct": 60.4,
+    "decline_pct_per_day": 0.347,
+    "hours_to_service": 877,
+    "due_date": "2026-12-19",
+    "confidence": "high",
+    "recommended_parts": [
+      "Hydraulic oil filter",
+      "Pump seal kit"
+    ]
+  },
+  {
+    "machine_id": "TRK004",
+    "component": "hydraulic_pump",
+    "health_pct": 73.1,
+    "decline_pct_per_day": 0.433,
+    "hours_to_service": 996,
+    "due_date": "2026-12-31",
+    "confidence": "high",
+    "recommended_parts": [
+      "Hydraulic oil filter",
+      "Pump seal kit"
+    ]
+  },
+  {
+    "machine_id": "EXC001",
+    "component": "hydraulic_pump",
+    "health_pct": 77.8,
+    "decline_pct_per_day": 0.363,
+    "hours_to_service": 1315,
+    "due_date": "2027-02-01",
+    "confidence": "high",
+    "recommended_parts": [
+      "Hydraulic oil filter",
+      "Pump seal kit"
+    ]
+  },
+  {
+    "machine_id": "EXC001",
+    "component": "undercarriage",
+    "health_pct": 80.6,
+    "decline_pct_per_day": 0.289,
+    "hours_to_service": 1753,
+    "due_date": "2027-03-17",
+    "confidence": "high",
+    "recommended_parts": [
+      "Track chain",
+      "Idler seal",
+      "Sprocket"
+    ]
+  },
+  {
+    "machine_id": "TRK003",
+    "component": "undercarriage",
+    "health_pct": 52.1,
+    "decline_pct_per_day": 0.115,
+    "hours_to_service": 1926,
+    "due_date": "2027-04-03",
+    "confidence": "medium",
+    "recommended_parts": [
+      "Track chain",
+      "Idler seal",
+      "Sprocket"
+    ]
+  },
+  {
+    "machine_id": "GRD001",
+    "component": "undercarriage",
+    "health_pct": 63.8,
+    "decline_pct_per_day": 0.174,
+    "hours_to_service": 1941,
+    "due_date": "2027-04-05",
+    "confidence": "medium",
+    "recommended_parts": [
+      "Track chain",
+      "Idler seal",
+      "Sprocket"
+    ]
+  },
+  {
+    "machine_id": "EXC003",
+    "component": "undercarriage",
+    "health_pct": 71.3,
+    "decline_pct_per_day": 0.21,
+    "hours_to_service": 1963,
+    "due_date": "2027-04-07",
+    "confidence": "medium",
+    "recommended_parts": [
+      "Track chain",
+      "Idler seal",
+      "Sprocket"
+    ]
+  },
+  {
+    "machine_id": "GRD001",
+    "component": "hydraulic_pump",
+    "health_pct": 86.5,
+    "decline_pct_per_day": 0.286,
+    "hours_to_service": 1972,
+    "due_date": "2027-04-08",
+    "confidence": "high",
+    "recommended_parts": [
+      "Hydraulic oil filter",
+      "Pump seal kit"
+    ]
+  },
+  {
+    "machine_id": "WHL001",
+    "component": "hydraulic_pump",
+    "health_pct": 81.5,
+    "decline_pct_per_day": 0.26,
+    "hours_to_service": 1977,
+    "due_date": "2027-04-08",
+    "confidence": "high",
+    "recommended_parts": [
+      "Hydraulic oil filter",
+      "Pump seal kit"
+    ]
+  },
+  {
+    "machine_id": "DOZ001",
+    "component": "engine",
+    "health_pct": 82.0,
+    "decline_pct_per_day": 0.137,
+    "hours_to_service": 2000,
+    "due_date": "2027-10-07",
+    "confidence": "medium",
+    "recommended_parts": [
+      "Engine oil filter",
+      "Air filter",
+      "Fuel filter"
+    ]
+  },
+  {
+    "machine_id": "DOZ001",
+    "component": "undercarriage",
+    "health_pct": 71.4,
+    "decline_pct_per_day": 0.198,
+    "hours_to_service": 2000,
+    "due_date": "2027-04-19",
+    "confidence": "high",
+    "recommended_parts": [
+      "Track chain",
+      "Idler seal",
+      "Sprocket"
+    ]
+  },
+  {
+    "machine_id": "EXC001",
+    "component": "engine",
+    "health_pct": 79.9,
+    "decline_pct_per_day": 0.073,
+    "hours_to_service": 2000,
+    "due_date": "2028-08-11",
+    "confidence": "medium",
+    "recommended_parts": [
+      "Engine oil filter",
+      "Air filter",
+      "Fuel filter"
+    ]
+  },
+  {
+    "machine_id": "EXC002",
+    "component": "hydraulic_pump",
+    "health_pct": 83.5,
+    "decline_pct_per_day": 0.156,
+    "hours_to_service": 2000,
+    "due_date": "2027-08-31",
+    "confidence": "medium",
+    "recommended_parts": [
+      "Hydraulic oil filter",
+      "Pump seal kit"
+    ]
+  },
+  {
+    "machine_id": "EXC002",
+    "component": "engine",
+    "health_pct": 72.0,
+    "decline_pct_per_day": 0.08,
+    "hours_to_service": 2000,
+    "due_date": "2028-03-02",
+    "confidence": "low",
+    "recommended_parts": [
+      "Engine oil filter",
+      "Air filter",
+      "Fuel filter"
+    ]
+  },
+  {
+    "machine_id": "EXC002",
+    "component": "undercarriage",
+    "health_pct": 86.9,
+    "decline_pct_per_day": 0.179,
+    "hours_to_service": 2000,
+    "due_date": "2027-08-07",
+    "confidence": "medium",
+    "recommended_parts": [
+      "Track chain",
+      "Idler seal",
+      "Sprocket"
+    ]
+  },
+  {
+    "machine_id": "EXC003",
+    "component": "engine",
+    "health_pct": 71.8,
+    "decline_pct_per_day": 0.126,
+    "hours_to_service": 2000,
+    "due_date": "2027-08-21",
+    "confidence": "medium",
+    "recommended_parts": [
+      "Engine oil filter",
+      "Air filter",
+      "Fuel filter"
+    ]
+  },
+  {
+    "machine_id": "GRD001",
+    "component": "engine",
+    "health_pct": 76.8,
+    "decline_pct_per_day": 0.175,
+    "hours_to_service": 2000,
+    "due_date": "2027-06-16",
+    "confidence": "medium",
+    "recommended_parts": [
+      "Engine oil filter",
+      "Air filter",
+      "Fuel filter"
+    ]
+  },
+  {
+    "machine_id": "TRK001",
+    "component": "engine",
+    "health_pct": 78.6,
+    "decline_pct_per_day": 0.077,
+    "hours_to_service": 2000,
+    "due_date": "2028-06-12",
+    "confidence": "low",
+    "recommended_parts": [
+      "Engine oil filter",
+      "Air filter",
+      "Fuel filter"
+    ]
+  },
+  {
+    "machine_id": "TRK001",
+    "component": "undercarriage",
+    "health_pct": 83.3,
+    "decline_pct_per_day": 0.24,
+    "hours_to_service": 2000,
+    "due_date": "2027-05-03",
+    "confidence": "high",
+    "recommended_parts": [
+      "Track chain",
+      "Idler seal",
+      "Sprocket"
+    ]
+  },
+  {
+    "machine_id": "TRK002",
+    "component": "engine",
+    "health_pct": 69.4,
+    "decline_pct_per_day": 0.015,
+    "hours_to_service": 2000,
+    "due_date": "2033-12-11",
+    "confidence": "low",
+    "recommended_parts": [
+      "Engine oil filter",
+      "Air filter",
+      "Fuel filter"
+    ]
+  },
+  {
+    "machine_id": "TRK002",
+    "component": "undercarriage",
+    "health_pct": 87.6,
+    "decline_pct_per_day": 0.221,
+    "hours_to_service": 2000,
+    "due_date": "2027-06-10",
+    "confidence": "high",
+    "recommended_parts": [
+      "Track chain",
+      "Idler seal",
+      "Sprocket"
+    ]
+  },
+  {
+    "machine_id": "TRK003",
+    "component": "hydraulic_pump",
+    "health_pct": 64.2,
+    "decline_pct_per_day": 0.137,
+    "hours_to_service": 2000,
+    "due_date": "2027-05-31",
+    "confidence": "medium",
+    "recommended_parts": [
+      "Hydraulic oil filter",
+      "Pump seal kit"
+    ]
+  },
+  {
+    "machine_id": "TRK003",
+    "component": "engine",
+    "health_pct": 72.5,
+    "decline_pct_per_day": 0.185,
+    "hours_to_service": 2000,
+    "due_date": "2027-05-11",
+    "confidence": "high",
+    "recommended_parts": [
+      "Engine oil filter",
+      "Air filter",
+      "Fuel filter"
+    ]
+  },
+  {
+    "machine_id": "TRK004",
+    "component": "engine",
+    "health_pct": 84.8,
+    "decline_pct_per_day": 0.145,
+    "hours_to_service": 2000,
+    "due_date": "2027-10-06",
+    "confidence": "medium",
+    "recommended_parts": [
+      "Engine oil filter",
+      "Air filter",
+      "Fuel filter"
+    ]
+  },
+  {
+    "machine_id": "TRK004",
+    "component": "undercarriage",
+    "health_pct": 92.8,
+    "decline_pct_per_day": 0.059,
+    "hours_to_service": 2000,
+    "due_date": "2029-08-24",
+    "confidence": "low",
+    "recommended_parts": [
+      "Track chain",
+      "Idler seal",
+      "Sprocket"
+    ]
+  },
+  {
+    "machine_id": "WHL001",
+    "component": "engine",
+    "health_pct": 84.0,
+    "decline_pct_per_day": 0.126,
+    "hours_to_service": 2000,
+    "due_date": "2027-11-25",
+    "confidence": "medium",
+    "recommended_parts": [
+      "Engine oil filter",
+      "Air filter",
+      "Fuel filter"
+    ]
+  },
+  {
+    "machine_id": "WHL001",
+    "component": "undercarriage",
+    "health_pct": 83.2,
+    "decline_pct_per_day": 0.116,
+    "hours_to_service": 2000,
+    "due_date": "2027-12-23",
+    "confidence": "high",
+    "recommended_parts": [
+      "Track chain",
+      "Idler seal",
+      "Sprocket"
+    ]
+  }
+]

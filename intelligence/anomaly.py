@@ -30,15 +30,23 @@ WINDOW_MIN = 120
 
 # thresholds straight from section 9 of the brief
 IDLE_RATIO_HIGH = 0.45
-CYCLES_PER_HOUR_LOW = 30.0
+# "cycles near zero" has to be relative: a 745 truck does ~21 loads an hour
+# while a 320 excavator does ~150 cycles, so any absolute threshold either
+# flags every truck or misses every excavator.
+PRODUCTIVITY_LOW_RATIO = 0.5
+CYCLES_PER_HOUR_FALLBACK = 30.0
 OVERLOAD_RATIO = 1.10
 HARSH_MULTIPLIER = 3.0
 TEMP_HIGH_C = 95.0
 SEATBELT_OFF_RATIO = 0.30
 
+# Peaks as well as means: an overload or a temperature excursion lasts under an
+# hour, so averaged over a 2-hour window it disappears entirely.  The rules key
+# off the peaks; the forest gets both.
 FEATURES = [
     "idle_ratio", "fuel_per_cycle", "cycles_per_hour", "mean_payload",
-    "harsh_swing_rate", "mean_hydraulic_temp", "seatbelt_off_ratio",
+    "peak_payload", "harsh_swing_rate", "mean_hydraulic_temp",
+    "peak_hydraulic_temp", "seatbelt_off_ratio",
 ]
 
 _forest = None
@@ -62,8 +70,14 @@ def window_features(rows: pd.DataFrame) -> dict:
         "fuel_per_cycle": fuel / cycles if cycles > 0 else fuel * 10.0,
         "cycles_per_hour": cycles / minutes * 60.0,
         "mean_payload": float(rows["payload_kg"].mean()) if "payload_kg" in rows else 0.0,
+        # 90th percentile, not the outright max, so one bad sample is not an
+        # overload but a sustained excursion is
+        "peak_payload": float(rows["payload_kg"].quantile(0.90))
+        if "payload_kg" in rows else 0.0,
         "harsh_swing_rate": harsh / minutes,
         "mean_hydraulic_temp": float(rows["hydraulic_temp_c"].mean())
+        if "hydraulic_temp_c" in rows else 0.0,
+        "peak_hydraulic_temp": float(rows["hydraulic_temp_c"].quantile(0.90))
         if "hydraulic_temp_c" in rows else 0.0,
         "seatbelt_off_ratio": belt_off / minutes,
         # carried along for evidence, not used as model features
@@ -75,19 +89,27 @@ def window_features(rows: pd.DataFrame) -> dict:
     }
 
 
-def _rules(feat: dict, max_payload_kg: float, harsh_baseline: float) -> list[str]:
+def _rules(feat: dict, max_payload_kg: float, baseline: dict | None = None) -> list[str]:
     """Which named patterns fired in this window."""
+    baseline = baseline or {}
+    harsh_baseline = baseline.get("harsh_swing_rate", {}).get("mean", 0.06)
+    normal_cph = baseline.get("cycles_per_hour", {}).get("mean")
+    productivity_floor = (
+        normal_cph * PRODUCTIVITY_LOW_RATIO if normal_cph
+        else CYCLES_PER_HOUR_FALLBACK
+    )
+
     fired = []
-    # idling most of the window while barely producing anything
-    if feat["idle_ratio"] > IDLE_RATIO_HIGH and feat["cycles_per_hour"] < CYCLES_PER_HOUR_LOW:
+    # idling most of the window while producing well below this machine's norm
+    if feat["idle_ratio"] > IDLE_RATIO_HIGH and feat["cycles_per_hour"] < productivity_floor:
         fired.append("excessive_idling")
     if feat["seatbelt_off_ratio"] > SEATBELT_OFF_RATIO:
         fired.append("seatbelt_violation")
-    if max_payload_kg and feat["mean_payload"] > max_payload_kg * OVERLOAD_RATIO:
+    if max_payload_kg and feat["peak_payload"] > max_payload_kg * OVERLOAD_RATIO:
         fired.append("overload")
     if harsh_baseline > 0 and feat["harsh_swing_rate"] > harsh_baseline * HARSH_MULTIPLIER:
         fired.append("harsh_operation")
-    if feat["mean_hydraulic_temp"] > TEMP_HIGH_C:
+    if feat["peak_hydraulic_temp"] > TEMP_HIGH_C:
         fired.append("temperature_anomaly")
     return fired
 
@@ -144,8 +166,10 @@ def _largest_deviation(feat: dict, baseline: dict | None) -> str:
         "idle_ratio": "excessive_idling",
         "seatbelt_off_ratio": "seatbelt_violation",
         "mean_payload": "overload",
+        "peak_payload": "overload",
         "harsh_swing_rate": "harsh_operation",
         "mean_hydraulic_temp": "temperature_anomaly",
+        "peak_hydraulic_temp": "temperature_anomaly",
         "fuel_per_cycle": "low_productivity",
         "cycles_per_hour": "low_productivity",
     }.get(worst, "unusual_pattern")
@@ -180,24 +204,26 @@ def analyse_windows(telemetry: pd.DataFrame, window_min: int = WINDOW_MIN) -> li
         model = model_by_machine.get(machine_id, "320")
         spec = SPECS.get(model)
         baseline = (baselines or {}).get(machine_id, {})
-        harsh_baseline = baseline.get("harsh_swing_rate", {}).get("mean", 0.06)
-
-        fired = _rules(feat, spec.max_payload_kg if spec else 0.0, harsh_baseline)
+        fired = _rules(feat, spec.max_payload_kg if spec else 0.0, baseline)
         score = _score(feat)
         if not fired and score < 0.55:
             continue
 
         counter += 1
         primary = fired[0] if fired else _largest_deviation(feat, baseline)
+        related = list(fired[1:])
+        if feat["cycles_per_hour"] < (
+            baseline.get("cycles_per_hour", {}).get("mean", 1e9) * PRODUCTIVITY_LOW_RATIO
+        ):
+            related.append("low_productivity")
+        related = [r for r in dict.fromkeys(related) if r != primary]
         wasted = _fuel_wasted_l(feat, model)
         out.append({
             "anomaly_id": f"AN-{counter:04d}",
             "machine_id": machine_id,
             "operator_id": str(rows["operator_id"].iloc[0]),
             "type": primary,
-            "related": [f for f in fired[1:]] + (
-                ["low_productivity"] if feat["cycles_per_hour"] < 30 else []
-            ),
+            "related": related,
             "score": round(max(score, 0.75 if fired else score), 2),
             "detected_by": "rules" if fired else "isolation_forest",
             "window": {"start": _iso(window),
@@ -207,7 +233,9 @@ def analyse_windows(telemetry: pd.DataFrame, window_min: int = WINDOW_MIN) -> li
                 "load_cycles": feat["_load_cycles"],
                 "seatbelt_off_min": round(feat["_seatbelt_off_min"], 1),
                 "mean_payload_kg": round(feat["mean_payload"], 0),
+                "peak_payload_kg": round(feat["peak_payload"], 0),
                 "mean_hydraulic_temp_c": round(feat["mean_hydraulic_temp"], 1),
+                "peak_hydraulic_temp_c": round(feat["peak_hydraulic_temp"], 1),
                 "baseline_idle_min": round(
                     baseline.get("idle_ratio", {}).get("mean", 0.2) * window_min, 1
                 ),
@@ -261,8 +289,12 @@ def score_live_window(states: list[dict]) -> dict | None:
         "fuel_per_cycle": fuel / cycles if cycles else fuel * 10.0,
         "cycles_per_hour": cycles / minutes * 60.0,
         "mean_payload": float(np.mean([s["payload_kg"] for s in states])),
+        "peak_payload": float(np.quantile([s["payload_kg"] for s in states], 0.90)),
         "harsh_swing_rate": 0.0,
         "mean_hydraulic_temp": float(np.mean([s["hydraulic_temp_c"] for s in states])),
+        "peak_hydraulic_temp": float(
+            np.quantile([s["hydraulic_temp_c"] for s in states], 0.90)
+        ),
         "seatbelt_off_ratio": belt_off / len(states),
         "_idle_min": idle_min,
         "_load_cycles": cycles,
@@ -273,7 +305,9 @@ def score_live_window(states: list[dict]) -> dict | None:
 
     model = str(last.get("model", "320"))
     spec = SPECS.get(model)
-    fired = _rules(feat, spec.max_payload_kg if spec else 0.0, 0.06)
+    _, baselines = _load_forest()
+    baseline = (baselines or {}).get(last["machine_id"], {})
+    fired = _rules(feat, spec.max_payload_kg if spec else 0.0, baseline)
     score = _score(feat)
     if not fired and score < 0.6:
         return None
@@ -283,7 +317,7 @@ def score_live_window(states: list[dict]) -> dict | None:
         "machine_id": last["machine_id"],
         "operator_id": last["operator_id"],
         "type": fired[0] if fired else "unusual_pattern",
-        "related": fired[1:],
+        "related": list(fired[1:]),
         "score": round(max(score, 0.75 if fired else score), 2),
         "detected_by": "rules" if fired else "isolation_forest",
         "evidence": {
@@ -315,8 +349,10 @@ def score_brief_sample() -> list[dict]:
             "fuel_per_cycle": float(r["fuel_used_l"]) / max(int(r["load_cycles"]), 1),
             "cycles_per_hour": int(r["load_cycles"]) / minutes * 60.0,
             "mean_payload": 1_500.0,
+            "peak_payload": 1_800.0,
             "harsh_swing_rate": 0.0,
             "mean_hydraulic_temp": 78.0,
+            "peak_hydraulic_temp": 82.0,
             "seatbelt_off_ratio": (
                 float(r["idling_time_min"]) / minutes
                 if str(r["seatbelt_status"]).lower() == "unfastened" else 0.0
@@ -330,7 +366,9 @@ def score_brief_sample() -> list[dict]:
             "_fuel_l": float(r["fuel_used_l"]),
             "_minutes": minutes,
         }
-        fired = _rules(feat, SPECS["320"].max_payload_kg, 0.06)
+        _, baselines = _load_forest()
+        fired = _rules(feat, SPECS["320"].max_payload_kg,
+                       (baselines or {}).get("EXC001", {}))
         out.append({
             "timestamp": str(r["timestamp"]),
             "machine_id": str(r["machine_id"]),

@@ -118,7 +118,7 @@ class World:
             w.tick(self.tick_no, dt, self.machines)
 
         for m in self.machines:
-            self._maybe_break(m)
+            self._maybe_break(m, dt)
             m.tick(dt, self)
             self._apply_work(m, dt)
 
@@ -167,7 +167,7 @@ class World:
         task.eta_min = task.linear_eta_min(rate)
         machine.task_eta_min = task.eta_min
 
-    def _maybe_break(self, machine) -> None:
+    def _maybe_break(self, machine, dt: float = 1.0) -> None:
         """Operators occasionally leave the seat with the engine running.
 
         This is the pattern the brief's sample data shows - unfastened seatbelt
@@ -177,7 +177,9 @@ class World:
         """
         if machine.machine_id == HERO_MACHINE or machine.on_break:
             return
-        if self.rng.random() < BREAK_PROB_PER_TICK:
+        # scaled by dt so a headless run at a coarser step sees the same
+        # number of breaks per simulated hour as the live 1 Hz loop
+        if self.rng.random() < BREAK_PROB_PER_TICK * dt:
             machine.on_break = True
             machine.break_s = self.rng.uniform(BREAK_MIN_S, BREAK_MAX_S)
 

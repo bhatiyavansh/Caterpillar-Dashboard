@@ -1,0 +1,196 @@
+[
+  {
+    "operator_id": "OP1002",
+    "name": "Meera Nair",
+    "skill": "expert",
+    "years_experience": 12.0,
+    "skills": {
+      "digging": 96,
+      "swinging": 90,
+      "slope_work": 84,
+      "safety": 94,
+      "fuel_efficiency": 91
+    },
+    "overall": 91,
+    "completed_modules": [
+      "Pre-start inspection",
+      "Trenching technique",
+      "Slope and bench safety"
+    ],
+    "recommended_next_module": "Slope and bench safety",
+    "weakest_skill": "slope_work"
+  },
+  {
+    "operator_id": "OP1003",
+    "name": "Arun Kumar",
+    "skill": "expert",
+    "years_experience": 14.0,
+    "skills": {
+      "digging": 94,
+      "swinging": 89,
+      "slope_work": 85,
+      "safety": 96,
+      "fuel_efficiency": 91
+    },
+    "overall": 91,
+    "completed_modules": [
+      "Pre-start inspection",
+      "Trenching technique",
+      "Slope and bench safety"
+    ],
+    "recommended_next_module": "Slope and bench safety",
+    "weakest_skill": "slope_work"
+  },
+  {
+    "operator_id": "OP1007",
+    "name": "Divya Menon",
+    "skill": "expert",
+    "years_experience": 10.0,
+    "skills": {
+      "digging": 96,
+      "swinging": 90,
+      "slope_work": 81,
+      "safety": 82,
+      "fuel_efficiency": 91
+    },
+    "overall": 88,
+    "completed_modules": [
+      "Pre-start inspection",
+      "Trenching technique",
+      "Slope and bench safety"
+    ],
+    "recommended_next_module": "Slope and bench safety",
+    "weakest_skill": "slope_work"
+  },
+  {
+    "operator_id": "OP1005",
+    "name": "Priya Raman",
+    "skill": "intermediate",
+    "years_experience": 5.0,
+    "skills": {
+      "digging": 78,
+      "swinging": 72,
+      "slope_work": 64,
+      "safety": 87,
+      "fuel_efficiency": 73
+    },
+    "overall": 75,
+    "completed_modules": [
+      "Pre-start inspection",
+      "Trenching technique"
+    ],
+    "recommended_next_module": "Slope and bench safety",
+    "weakest_skill": "slope_work"
+  },
+  {
+    "operator_id": "OP1009",
+    "name": "Lakshmi Devi",
+    "skill": "intermediate",
+    "years_experience": 8.0,
+    "skills": {
+      "digging": 76,
+      "swinging": 70,
+      "slope_work": 65,
+      "safety": 90,
+      "fuel_efficiency": 73
+    },
+    "overall": 75,
+    "completed_modules": [
+      "Pre-start inspection",
+      "Trenching technique"
+    ],
+    "recommended_next_module": "Slope and bench safety",
+    "weakest_skill": "slope_work"
+  },
+  {
+    "operator_id": "OP1004",
+    "name": "Suresh Babu",
+    "skill": "intermediate",
+    "years_experience": 7.5,
+    "skills": {
+      "digging": 76,
+      "swinging": 70,
+      "slope_work": 63,
+      "safety": 84,
+      "fuel_efficiency": 73
+    },
+    "overall": 73,
+    "completed_modules": [
+      "Pre-start inspection",
+      "Trenching technique"
+    ],
+    "recommended_next_module": "Slope and bench safety",
+    "weakest_skill": "slope_work"
+  },
+  {
+    "operator_id": "OP1001",
+    "name": "Ravi Shankar",
+    "skill": "intermediate",
+    "years_experience": 6.0,
+    "skills": {
+      "digging": 76,
+      "swinging": 70,
+      "slope_work": 62,
+      "safety": 81,
+      "fuel_efficiency": 73
+    },
+    "overall": 72,
+    "completed_modules": [
+      "Pre-start inspection",
+      "Trenching technique"
+    ],
+    "recommended_next_module": "Slope and bench safety",
+    "weakest_skill": "slope_work"
+  },
+  {
+    "operator_id": "OP1010",
+    "name": "Anand Pillai",
+    "skill": "novice",
+    "years_experience": 0.5,
+    "skills": {
+      "digging": 48,
+      "swinging": 44,
+      "slope_work": 44,
+      "safety": 97,
+      "fuel_efficiency": 49
+    },
+    "overall": 56,
+    "completed_modules": [],
+    "recommended_next_module": "Load handling",
+    "weakest_skill": "swinging"
+  },
+  {
+    "operator_id": "OP1008",
+    "name": "Vignesh Rao",
+    "skill": "novice",
+    "years_experience": 2.0,
+    "skills": {
+      "digging": 50,
+      "swinging": 46,
+      "slope_work": 33,
+      "safety": 61,
+      "fuel_efficiency": 49
+    },
+    "overall": 48,
+    "completed_modules": [],
+    "recommended_next_module": "Slope and bench safety",
+    "weakest_skill": "slope_work"
+  },
+  {
+    "operator_id": "OP1006",
+    "name": "Karthik Iyer",
+    "skill": "novice",
+    "years_experience": 1.5,
+    "skills": {
+      "digging": 50,
+      "swinging": 46,
+      "slope_work": 33,
+      "safety": 59,
+      "fuel_efficiency": 49
+    },
+    "overall": 47,
+    "completed_modules": [],
+    "recommended_next_module": "Slope and bench safety",
+    "weakest_skill": "slope_work"
+  }
+]

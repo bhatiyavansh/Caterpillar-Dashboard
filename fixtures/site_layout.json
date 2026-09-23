@@ -1,0 +1,107 @@
+{
+  "bounds": {
+    "x_max": 400.0,
+    "y_max": 300.0
+  },
+  "origin": {
+    "lat": 13.0827,
+    "lon": 80.2707
+  },
+  "metres_per_deg": {
+    "lat": 111320.0,
+    "lon": 108430.62
+  },
+  "zones": [
+    {
+      "zone_id": "A",
+      "label": "Excavation",
+      "x0": 40,
+      "y0": 180,
+      "x1": 140,
+      "y1": 280
+    },
+    {
+      "zone_id": "B",
+      "label": "Trenching",
+      "x0": 160,
+      "y0": 180,
+      "x1": 260,
+      "y1": 280
+    },
+    {
+      "zone_id": "C",
+      "label": "Grading / Stockpile",
+      "x0": 280,
+      "y0": 180,
+      "x1": 380,
+      "y1": 280
+    }
+  ],
+  "roads": [
+    {
+      "road_id": "HAUL",
+      "label": "Haul road",
+      "points": [
+        [
+          20,
+          100
+        ],
+        [
+          200,
+          100
+        ],
+        [
+          380,
+          100
+        ],
+        [
+          380,
+          170
+        ]
+      ]
+    }
+  ],
+  "points_of_interest": [
+    {
+      "id": "LOADER",
+      "label": "Loader point",
+      "x": 300.0,
+      "y": 150.0
+    },
+    {
+      "id": "DUMP",
+      "label": "Dump area",
+      "x": 40.0,
+      "y": 40.0
+    },
+    {
+      "id": "STOCKPILE",
+      "label": "Stockpile",
+      "x": 340.0,
+      "y": 165.0
+    }
+  ],
+  "v2i_nodes": [
+    {
+      "node_id": "N-FUEL",
+      "node_type": "fuel_bay",
+      "label": "Fuel bay",
+      "x": 200.0,
+      "y": 30.0
+    },
+    {
+      "node_id": "N-GATE",
+      "node_type": "gate",
+      "label": "Site gate",
+      "x": 0.0,
+      "y": 100.0
+    },
+    {
+      "node_id": "N-LOADQ",
+      "node_type": "loader_queue",
+      "label": "Loader queue",
+      "x": 300.0,
+      "y": 150.0
+    }
+  ]
+}

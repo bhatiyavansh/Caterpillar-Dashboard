@@ -1,0 +1,130 @@
+[
+  {
+    "anomaly_id": "AN-0063",
+    "machine_id": "TRK004",
+    "operator_id": "OP1008",
+    "type": "seatbelt_violation",
+    "related": [],
+    "score": 0.76,
+    "detected_by": "isolation_forest",
+    "window": {
+      "start": "2026-08-31T12:00:00Z",
+      "end": "2026-08-31T14:00:00Z"
+    },
+    "evidence": {
+      "idle_min": 53.0,
+      "load_cycles": 17,
+      "seatbelt_off_min": 35.0,
+      "mean_payload_kg": 16164.0,
+      "peak_payload_kg": 32371.0,
+      "mean_hydraulic_temp_c": 75.4,
+      "peak_hydraulic_temp_c": 84.6,
+      "baseline_idle_min": 21.6
+    },
+    "fuel_wasted_l": 4.4,
+    "fuel_cost_inr": 396
+  },
+  {
+    "anomaly_id": "AN-0053",
+    "machine_id": "TRK003",
+    "operator_id": "OP1007",
+    "type": "excessive_idling",
+    "related": [
+      "seatbelt_violation",
+      "low_productivity"
+    ],
+    "score": 0.87,
+    "detected_by": "rules",
+    "window": {
+      "start": "2026-09-21T16:00:00Z",
+      "end": "2026-09-21T18:00:00Z"
+    },
+    "evidence": {
+      "idle_min": 74.0,
+      "load_cycles": 14,
+      "seatbelt_off_min": 77.0,
+      "mean_payload_kg": 10975.0,
+      "peak_payload_kg": 31561.0,
+      "mean_hydraulic_temp_c": 75.2,
+      "peak_hydraulic_temp_c": 87.1,
+      "baseline_idle_min": 17.1
+    },
+    "fuel_wasted_l": 6.2,
+    "fuel_cost_inr": 558
+  },
+  {
+    "anomaly_id": "AN-0027",
+    "machine_id": "TRK002",
+    "operator_id": "OP1006",
+    "type": "low_productivity",
+    "related": [],
+    "score": 0.81,
+    "detected_by": "isolation_forest",
+    "window": {
+      "start": "2026-08-27T12:00:00Z",
+      "end": "2026-08-27T14:00:00Z"
+    },
+    "evidence": {
+      "idle_min": 52.0,
+      "load_cycles": 10,
+      "seatbelt_off_min": 36.0,
+      "mean_payload_kg": 16143.0,
+      "peak_payload_kg": 31530.0,
+      "mean_hydraulic_temp_c": 79.2,
+      "peak_hydraulic_temp_c": 88.3,
+      "baseline_idle_min": 20.3
+    },
+    "fuel_wasted_l": 4.3,
+    "fuel_cost_inr": 387
+  },
+  {
+    "anomaly_id": "AN-0005",
+    "machine_id": "EXC002",
+    "operator_id": "OP1002",
+    "type": "harsh_operation",
+    "related": [],
+    "score": 0.75,
+    "detected_by": "rules",
+    "window": {
+      "start": "2026-08-25T16:00:00Z",
+      "end": "2026-08-25T18:00:00Z"
+    },
+    "evidence": {
+      "idle_min": 5.0,
+      "load_cycles": 356,
+      "seatbelt_off_min": 0.0,
+      "mean_payload_kg": 1695.0,
+      "peak_payload_kg": 2036.0,
+      "mean_hydraulic_temp_c": 81.1,
+      "peak_hydraulic_temp_c": 83.9,
+      "baseline_idle_min": 16.5
+    },
+    "fuel_wasted_l": 0.3,
+    "fuel_cost_inr": 27
+  },
+  {
+    "anomaly_id": "AN-0049",
+    "machine_id": "TRK003",
+    "operator_id": "OP1007",
+    "type": "overload",
+    "related": [],
+    "score": 0.75,
+    "detected_by": "rules",
+    "window": {
+      "start": "2026-09-03T10:00:00Z",
+      "end": "2026-09-03T12:00:00Z"
+    },
+    "evidence": {
+      "idle_min": 5.0,
+      "load_cycles": 51,
+      "seatbelt_off_min": 1.0,
+      "mean_payload_kg": 37645.0,
+      "peak_payload_kg": 51860.0,
+      "mean_hydraulic_temp_c": 84.9,
+      "peak_hydraulic_temp_c": 88.0,
+      "baseline_idle_min": 17.1
+    },
+    "fuel_wasted_l": 0.4,
+    "fuel_cost_inr": 36
+  }
+]

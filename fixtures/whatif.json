@@ -1,0 +1,39 @@
+{
+  "params": {
+    "trucks": 6,
+    "weather": "rain",
+    "add_spotter": true
+  },
+  "current": {
+    "throughput_m3": 1109,
+    "graded_m2": 12854,
+    "truck_loads": 70,
+    "tasks_completed": 11,
+    "fuel_l": 1816,
+    "idle_pct": 1.8,
+    "risk": 25,
+    "near_misses": 0,
+    "active_machines": 9
+  },
+  "scenario": {
+    "throughput_m3": 987,
+    "graded_m2": 10796,
+    "truck_loads": 52,
+    "tasks_completed": 8,
+    "fuel_l": 1813,
+    "idle_pct": 1.7,
+    "risk": 86,
+    "near_misses": 0,
+    "active_machines": 9,
+    "note": "2 extra truck(s) requested beyond the 4 on site - not simulated"
+  },
+  "delta": {
+    "throughput_m3": "-11%",
+    "truck_loads": "-26%",
+    "tasks_completed": "-3",
+    "fuel_l": "-0%",
+    "idle_pct": "-0.1 pts",
+    "risk": "+61",
+    "near_misses": "+0"
+  }
+}
