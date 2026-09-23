@@ -129,7 +129,7 @@ Ingest payloads never carry envelope fields. The hub strips any it receives.
 ### 2.5 Client / producer → hub messages [DECIDED]
 
 - **Resync = reconnect** with `/ws/live?since_rseq=N&epoch=E`.
-  - If the epoch matches and N is still in the ring (10,000 reliable messages), the hub replays every reliable message with `rseq > N`, then sends a fresh `snapshot`.
+  - If the epoch matches and N is still in the ring (10,000 reliable messages), the hub replays every reliable message with `rseq > N` (re-stamped `seq`, original `rseq`), then sends a fresh `snapshot`. The replay gets extra outbox headroom, so it can never trip the slow-consumer limit.
   - Otherwise it sends a `snapshot` with `events_truncated=true`, and the client fetches the gap from `GET /api/events?since=`.
 - **`/ws/ingest` sources:**
   - C's sim sends **no handshake**. A first frame of `machine_state`/`worker_state`/`event` identifies it as `kind:"sim"`. The hub never writes to it.

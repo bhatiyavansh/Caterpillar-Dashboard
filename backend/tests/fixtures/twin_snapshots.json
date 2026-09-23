@@ -1,0 +1,1515 @@
+{
+ "captured_from": "src/lib/twin SimulationEngine (Person A)",
+ "frames": [
+  {
+   "label": "idle start",
+   "frame": {
+    "type": "twin_snapshot",
+    "snapshot": {
+     "tick": 120,
+     "primary": {
+      "machineId": "EXC001",
+      "x": -5,
+      "y": 0,
+      "z": -20,
+      "speed": 0,
+      "heading": 0,
+      "engineRpm": 800,
+      "fuel": 66.99520000000018,
+      "boomAngle": 0.3839724354387525,
+      "stickAngle": -0.17453292519943295,
+      "bucketAngle": 0.17453292519943295,
+      "swingAngle": 0,
+      "pitch": 0,
+      "roll": 0,
+      "payload": 0,
+      "hydraulicTemperature": 60.97951182274847,
+      "nearestPerson": 12.416444949447433,
+      "tipOverMargin": 2.1154166666666665,
+      "activity": "idle"
+     },
+     "machines": [
+      {
+       "machineId": "EXC001",
+       "x": -5,
+       "y": 0,
+       "z": -20,
+       "speed": 0,
+       "heading": 0,
+       "engineRpm": 800,
+       "fuel": 66.99520000000018,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": 0,
+       "roll": 0,
+       "payload": 0,
+       "hydraulicTemperature": 60.97951182274847,
+       "nearestPerson": 12.416444949447433,
+       "tipOverMargin": 2.1154166666666665,
+       "activity": "idle"
+      },
+      {
+       "machineId": "DZR001",
+       "x": 28.231861928638605,
+       "y": 0,
+       "z": 8,
+       "speed": 1.4934268960362254,
+       "heading": 4.71238898038469,
+       "engineRpm": 1262.724036244234,
+       "fuel": 70.43403103486696,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": 0.010180323563629452,
+       "roll": 0.008213847648837955,
+       "payload": 0,
+       "hydraulicTemperature": 61.49742852725094,
+       "nearestPerson": 33.23445917440854,
+       "tipOverMargin": 2.0361460368931046,
+       "activity": "traveling"
+      },
+      {
+       "machineId": "LDR001",
+       "x": -51.543836235542926,
+       "y": 0.9067777803203978,
+       "z": 39.36849129337115,
+       "speed": 4.163848407946816,
+       "heading": 5.961434752782944,
+       "engineRpm": 1526.8689191035571,
+       "fuel": 65.35801639419708,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": -0.44002758960969235,
+       "roll": -0.1875866329337062,
+       "payload": 0,
+       "hydraulicTemperature": 62.34970615958176,
+       "nearestPerson": 4.145475243476962,
+       "tipOverMargin": 0.5929379888252858,
+       "activity": "traveling"
+      },
+      {
+       "machineId": "TRK001",
+       "x": 39.33833957560783,
+       "y": 0,
+       "z": 44.471144403241865,
+       "speed": 3.5836997812386144,
+       "heading": 6.0978373571838915,
+       "engineRpm": 1209.1562738046866,
+       "fuel": 62.52347241959472,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": -0.013690125510030512,
+       "roll": 0.01110213340126559,
+       "payload": 0,
+       "hydraulicTemperature": 61.24715690889069,
+       "nearestPerson": 7.856393951454233,
+       "tipOverMargin": 1.9822641888691939,
+       "activity": "traveling"
+      }
+     ],
+     "workers": [
+      {
+       "id": "WRK001",
+       "x": -27.763932022500057,
+       "z": -45.11803398874997,
+       "state": "walking",
+       "heading": 1.1071487177940904,
+       "phase": 11.999999999999973
+      },
+      {
+       "id": "WRK002",
+       "x": 19.11803398874997,
+       "z": -48.23606797749994,
+       "state": "walking",
+       "heading": 0.4636476090008061,
+       "phase": 13.047197551196568
+      },
+      {
+       "id": "WRK003",
+       "x": -11.559532349540206,
+       "z": -30.542326144546763,
+       "state": "walking",
+       "heading": 1.3521273809209633,
+       "phase": 14.094395102393161
+      },
+      {
+       "id": "WRK004",
+       "x": 32.297862575045144,
+       "z": 40.98479824644755,
+       "state": "walking",
+       "heading": 1.9756881130800064,
+       "phase": 15.141592653589754
+      },
+      {
+       "id": "WRK005",
+       "x": -52.40380986910196,
+       "z": 35.31319718025634,
+       "state": "walking",
+       "heading": -1.2924966677898047,
+       "phase": 16.18879020478635
+      },
+      {
+       "id": "WRK006",
+       "x": 68.47487373415368,
+       "z": 26.3535533905933,
+       "state": "walking",
+       "heading": 1.7126933813990675,
+       "phase": 17.23598775598297
+      }
+     ],
+     "proximity": {
+      "level": "safe",
+      "nearest": 12.416444949447433,
+      "nearestWorkerId": "WRK003",
+      "readings": []
+     },
+     "risks": [],
+     "alerts": [],
+     "events": [
+      {
+       "id": "1790153100619-6wn3x",
+       "time": "14:15:00",
+       "text": "EXC001 telemetry link established",
+       "severity": "info"
+      },
+      {
+       "id": "1790153100580-qfzma",
+       "time": "14:15:00",
+       "text": "Digital twin session started",
+       "severity": "info"
+      }
+     ],
+     "tasks": [
+      {
+       "id": "t1",
+       "name": "ZONE B EXCAVATION",
+       "zone": "zone-b",
+       "advancedBy": "digging",
+       "progress": 38,
+       "status": "active"
+      },
+      {
+       "id": "t2",
+       "name": "TRAVEL TO STOCKPILE",
+       "zone": "stockpile",
+       "advancedBy": "traveling",
+       "progress": 0,
+       "status": "pending"
+      },
+      {
+       "id": "t3",
+       "name": "STOCKPILE LOADING",
+       "zone": "stockpile",
+       "advancedBy": "loading",
+       "progress": 0,
+       "status": "pending"
+      },
+      {
+       "id": "t4",
+       "name": "RETURN TO ZONE B",
+       "zone": "zone-b",
+       "advancedBy": "traveling",
+       "progress": 0,
+       "status": "pending"
+      }
+     ],
+     "activeTask": {
+      "id": "t1",
+      "name": "ZONE B EXCAVATION",
+      "zone": "zone-b",
+      "advancedBy": "digging",
+      "progress": 38,
+      "status": "active"
+     },
+     "siteSafety": "safe",
+     "weather": "clear",
+     "paused": false,
+     "source": "keyboard",
+     "emergencyStopped": false,
+     "engineWarning": false,
+     "fps": 60.00000000000001,
+     "clock": "14:15:00"
+    }
+   }
+  },
+  {
+   "label": "worker approach (proximity alert)",
+   "frame": {
+    "type": "twin_snapshot",
+    "snapshot": {
+     "tick": 720,
+     "primary": {
+      "machineId": "EXC001",
+      "x": -5,
+      "y": 0,
+      "z": -20,
+      "speed": 0,
+      "heading": 0,
+      "engineRpm": 800,
+      "fuel": 66.97120000000109,
+      "boomAngle": 0.3839724354387525,
+      "stickAngle": -0.17453292519943295,
+      "bucketAngle": 0.17453292519943295,
+      "swingAngle": 0,
+      "pitch": 0,
+      "roll": 0,
+      "payload": 0,
+      "hydraulicTemperature": 58.08997346092285,
+      "nearestPerson": 4.999999999999999,
+      "tipOverMargin": 2.1154166666666665,
+      "activity": "idle"
+     },
+     "machines": [
+      {
+       "machineId": "EXC001",
+       "x": -5,
+       "y": 0,
+       "z": -20,
+       "speed": 0,
+       "heading": 0,
+       "engineRpm": 800,
+       "fuel": 66.97120000000109,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": 0,
+       "roll": 0,
+       "payload": 0,
+       "hydraulicTemperature": 58.08997346092285,
+       "nearestPerson": 4.999999999999999,
+       "tipOverMargin": 2.1154166666666665,
+       "activity": "idle"
+      },
+      {
+       "machineId": "DZR001",
+       "x": 12.17703792301739,
+       "y": 0,
+       "z": 8,
+       "speed": 1.6199555224841808,
+       "heading": 4.71238898038469,
+       "engineRpm": 1359.1009469825897,
+       "fuel": 70.3878898874762,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": -0.0034905075029542454,
+       "roll": -0.0014945898728141419,
+       "payload": 0,
+       "hydraulicTemperature": 62.91333054198195,
+       "nearestPerson": 27.848974597398147,
+       "tipOverMargin": 2.0607676512017044,
+       "activity": "traveling"
+      },
+      {
+       "machineId": "LDR001",
+       "x": -56.823348019700866,
+       "y": 0,
+       "z": 8.7770982396902,
+       "speed": 1.8194531230060675,
+       "heading": 0.8150535954015683,
+       "engineRpm": 1129.5411521796473,
+       "fuel": 65.30834000217712,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": -0.024478422638680632,
+       "roll": 0.02738922099282172,
+       "payload": 0,
+       "hydraulicTemperature": 62.40500061957997,
+       "nearestPerson": 24.31044667354774,
+       "tipOverMargin": 1.9561250574008036,
+       "activity": "traveling"
+      },
+      {
+       "machineId": "TRK001",
+       "x": 18.252858168847737,
+       "y": 0,
+       "z": 6.843554484603558,
+       "speed": 4.712193380580291,
+       "heading": 4.869885301675379,
+       "engineRpm": 1444.3327581594071,
+       "fuel": 62.473104168346325,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": -0.010826104836796585,
+       "roll": -0.03394194385358343,
+       "payload": 0,
+       "hydraulicTemperature": 63.57451549122269,
+       "nearestPerson": 30.596599306480716,
+       "tipOverMargin": 1.9279820236319507,
+       "activity": "traveling"
+      }
+     ],
+     "workers": [
+      {
+       "id": "WRK001",
+       "x": -19.073312629199897,
+       "z": -49.46334368540005,
+       "state": "working",
+       "heading": 1.107148717794089,
+       "phase": 63.333333333333655
+      },
+      {
+       "id": "WRK002",
+       "x": 23.46334368540005,
+       "z": -56.9266873708001,
+       "state": "working",
+       "heading": 0.4636476090008061,
+       "phase": 64.3138642178636
+      },
+      {
+       "id": "WRK003",
+       "x": -2.4060189984671485,
+       "z": -15.725510256921112,
+       "state": "walking",
+       "heading": -0.5454422271521848,
+       "phase": 74.09439510239326
+      },
+      {
+       "id": "WRK004",
+       "x": 42.897025963978344,
+       "z": 45.527296841704974,
+       "state": "working",
+       "heading": 1.9756881130800041,
+       "phase": 72.20825932025663
+      },
+      {
+       "id": "WRK005",
+       "x": -62.846171262830985,
+       "z": 32.329665353476756,
+       "state": "working",
+       "heading": -1.292496667789871,
+       "phase": 71.12212353811996
+      },
+      {
+       "id": "WRK006",
+       "x": 78.8120606076066,
+       "z": 27.83029437251522,
+       "state": "walking",
+       "heading": 1.7126933813990681,
+       "phase": 77.23598775598288
+      }
+     ],
+     "proximity": {
+      "level": "critical",
+      "nearest": 4.999999999999999,
+      "nearestWorkerId": "WRK003",
+      "readings": [
+       {
+        "workerId": "WRK003",
+        "distance": 4.999999999999999,
+        "level": "critical"
+       }
+      ]
+     },
+     "risks": [
+      {
+       "id": "DZR001-TRK001",
+       "a": "DZR001",
+       "b": "TRK001",
+       "separation": 2.634635088989804,
+       "timeToClosest": 2,
+       "point": [
+        8.941121628642694,
+        1.2,
+        6.682688512537079
+       ]
+      }
+     ],
+     "alerts": [
+      {
+       "id": "proximity:EXC001",
+       "kind": "proximity",
+       "severity": "critical",
+       "title": "PROXIMITY HAZARD",
+       "message": "WORKER DETECTED",
+       "machineId": "EXC001",
+       "detail": {
+        "Worker": "WRK003",
+        "Distance": "5.0 m"
+       },
+       "recommendation": "STOP MACHINE — WORKER IN SWING RADIUS",
+       "createdAt": 1790153100644
+      }
+     ],
+     "events": [
+      {
+       "id": "1790153100658-3lo48",
+       "time": "14:15:00",
+       "text": "Predicted conflict DZR001 → TRK001",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100655-ouiae",
+       "time": "14:15:00",
+       "text": "Critical proximity alert — WRK003 at 6.0 m",
+       "severity": "critical"
+      },
+      {
+       "id": "1790153100644-6qkbn",
+       "time": "14:15:00",
+       "text": "Proximity warning",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100644-rxarm",
+       "time": "14:15:00",
+       "text": "WRK003 detected 10.0 m from EXC001",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100635-enle2",
+       "time": "14:15:00",
+       "text": "WRK003 entering EXC001 safety zone",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100619-6wn3x",
+       "time": "14:15:00",
+       "text": "EXC001 telemetry link established",
+       "severity": "info"
+      },
+      {
+       "id": "1790153100580-qfzma",
+       "time": "14:15:00",
+       "text": "Digital twin session started",
+       "severity": "info"
+      }
+     ],
+     "tasks": [
+      {
+       "id": "t1",
+       "name": "ZONE B EXCAVATION",
+       "zone": "zone-b",
+       "advancedBy": "digging",
+       "progress": 38,
+       "status": "active"
+      },
+      {
+       "id": "t2",
+       "name": "TRAVEL TO STOCKPILE",
+       "zone": "stockpile",
+       "advancedBy": "traveling",
+       "progress": 0,
+       "status": "pending"
+      },
+      {
+       "id": "t3",
+       "name": "STOCKPILE LOADING",
+       "zone": "stockpile",
+       "advancedBy": "loading",
+       "progress": 0,
+       "status": "pending"
+      },
+      {
+       "id": "t4",
+       "name": "RETURN TO ZONE B",
+       "zone": "zone-b",
+       "advancedBy": "traveling",
+       "progress": 0,
+       "status": "pending"
+      }
+     ],
+     "activeTask": {
+      "id": "t1",
+      "name": "ZONE B EXCAVATION",
+      "zone": "zone-b",
+      "advancedBy": "digging",
+      "progress": 38,
+      "status": "active"
+     },
+     "siteSafety": "critical",
+     "weather": "clear",
+     "paused": false,
+     "source": "keyboard",
+     "emergencyStopped": false,
+     "engineWarning": false,
+     "fps": 60.00000000000001,
+     "clock": "14:15:00"
+    }
+   }
+  },
+  {
+   "label": "tip-over injected",
+   "frame": {
+    "type": "twin_snapshot",
+    "snapshot": {
+     "tick": 780,
+     "primary": {
+      "machineId": "EXC001",
+      "x": -5,
+      "y": 0,
+      "z": -20,
+      "speed": 0,
+      "heading": 0,
+      "engineRpm": 938.8589632678497,
+      "fuel": 66.96840903397117,
+      "boomAngle": 0.3839724354387525,
+      "stickAngle": -0.17453292519943295,
+      "bucketAngle": 0.17453292519943295,
+      "swingAngle": 0,
+      "pitch": 0,
+      "roll": 0,
+      "payload": 2400,
+      "hydraulicTemperature": 59.83527468799079,
+      "nearestPerson": 4.999999999999999,
+      "tipOverMargin": 1.7154166666666666,
+      "activity": "idle"
+     },
+     "machines": [
+      {
+       "machineId": "EXC001",
+       "x": -5,
+       "y": 0,
+       "z": -20,
+       "speed": 0,
+       "heading": 0,
+       "engineRpm": 938.8589632678497,
+       "fuel": 66.96840903397117,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": 0,
+       "roll": 0,
+       "payload": 2400,
+       "hydraulicTemperature": 59.83527468799079,
+       "nearestPerson": 4.999999999999999,
+       "tipOverMargin": 1.7154166666666666,
+       "activity": "idle"
+      },
+      {
+       "machineId": "DZR001",
+       "x": 10.564505544698925,
+       "y": 0,
+       "z": 8,
+       "speed": 1.6191217762296395,
+       "heading": 4.71238898038469,
+       "engineRpm": 1359.4546274531765,
+       "fuel": 70.3832519375918,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": 0.005107947830052234,
+       "roll": 0.0027028047347759923,
+       "payload": 0,
+       "hydraulicTemperature": 62.92771100521268,
+       "nearestPerson": 27.03949599892983,
+       "tipOverMargin": 2.054813267496883,
+       "activity": "traveling"
+      },
+      {
+       "machineId": "LDR001",
+       "x": -54.9943684294334,
+       "y": 0,
+       "z": 7.6742546584322,
+       "speed": 2.4798147920710574,
+       "heading": 1.1898303231934422,
+       "engineRpm": 1238.3634454380685,
+       "fuel": 65.30442001063447,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": 0.010768868286691215,
+       "roll": 0.05009116965432182,
+       "payload": 0,
+       "hydraulicTemperature": 62.217672499339386,
+       "nearestPerson": 25.875472638695275,
+       "tipOverMargin": 1.8947836612932583,
+       "activity": "traveling"
+      },
+      {
+       "machineId": "TRK001",
+       "x": 13.40417101148484,
+       "y": 0,
+       "z": 6.330245904628053,
+       "speed": 5.019028876955701,
+       "heading": 4.7772761598712785,
+       "engineRpm": 1491.6972184099536,
+       "fuel": 62.46802657283974,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": -0.029277283823769658,
+       "roll": -0.03161088646897184,
+       "payload": 0,
+       "hydraulicTemperature": 63.73208918883937,
+       "nearestPerson": 27.137031672762213,
+       "tipOverMargin": 1.9054877888158324,
+       "activity": "traveling"
+      }
+     ],
+     "workers": [
+      {
+       "id": "WRK001",
+       "x": -19.073312629199897,
+       "z": -49.46334368540005,
+       "state": "idle",
+       "heading": 1.107148717794089,
+       "phase": 65.33333333333354
+      },
+      {
+       "id": "WRK002",
+       "x": 23.46334368540005,
+       "z": -56.9266873708001,
+       "state": "working",
+       "heading": 0.4636476090008061,
+       "phase": 66.31386421786348
+      },
+      {
+       "id": "WRK003",
+       "x": -2.4060189984671485,
+       "z": -15.725510256921112,
+       "state": "walking",
+       "heading": -0.5454422271521848,
+       "phase": 80.09439510239292
+      },
+      {
+       "id": "WRK004",
+       "x": 42.897025963978344,
+       "z": 45.527296841704974,
+       "state": "working",
+       "heading": 1.9756881130800041,
+       "phase": 74.20825932025652
+      },
+      {
+       "id": "WRK005",
+       "x": -62.846171262830985,
+       "z": 32.329665353476756,
+       "state": "working",
+       "heading": -1.292496667789871,
+       "phase": 73.12212353811985
+      },
+      {
+       "id": "WRK006",
+       "x": 78.8120606076066,
+       "z": 27.83029437251522,
+       "state": "walking",
+       "heading": 1.7126933813990681,
+       "phase": 83.23598775598253
+      }
+     ],
+     "proximity": {
+      "level": "critical",
+      "nearest": 4.999999999999999,
+      "nearestWorkerId": "WRK003",
+      "readings": [
+       {
+        "workerId": "WRK003",
+        "distance": 4.999999999999999,
+        "level": "critical"
+       }
+      ]
+     },
+     "risks": [
+      {
+       "id": "DZR001-TRK001",
+       "a": "DZR001",
+       "b": "TRK001",
+       "separation": 2.0695302600150813,
+       "timeToClosest": 1,
+       "point": [
+        8.670544060284215,
+        1.2,
+        7.002401879971565
+       ]
+      }
+     ],
+     "alerts": [
+      {
+       "id": "proximity:EXC001",
+       "kind": "proximity",
+       "severity": "critical",
+       "title": "PROXIMITY HAZARD",
+       "message": "WORKER DETECTED",
+       "machineId": "EXC001",
+       "detail": {
+        "Worker": "WRK003",
+        "Distance": "5.0 m"
+       },
+       "recommendation": "STOP MACHINE — WORKER IN SWING RADIUS",
+       "createdAt": 1790153100644
+      }
+     ],
+     "events": [
+      {
+       "id": "1790153100669-eavqd",
+       "time": "14:15:00",
+       "text": "Stability event injected — machine on adverse grade",
+       "severity": "critical"
+      },
+      {
+       "id": "1790153100658-3lo48",
+       "time": "14:15:00",
+       "text": "Predicted conflict DZR001 → TRK001",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100655-ouiae",
+       "time": "14:15:00",
+       "text": "Critical proximity alert — WRK003 at 6.0 m",
+       "severity": "critical"
+      },
+      {
+       "id": "1790153100644-6qkbn",
+       "time": "14:15:00",
+       "text": "Proximity warning",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100644-rxarm",
+       "time": "14:15:00",
+       "text": "WRK003 detected 10.0 m from EXC001",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100635-enle2",
+       "time": "14:15:00",
+       "text": "WRK003 entering EXC001 safety zone",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100619-6wn3x",
+       "time": "14:15:00",
+       "text": "EXC001 telemetry link established",
+       "severity": "info"
+      },
+      {
+       "id": "1790153100580-qfzma",
+       "time": "14:15:00",
+       "text": "Digital twin session started",
+       "severity": "info"
+      }
+     ],
+     "tasks": [
+      {
+       "id": "t1",
+       "name": "ZONE B EXCAVATION",
+       "zone": "zone-b",
+       "advancedBy": "digging",
+       "progress": 38,
+       "status": "active"
+      },
+      {
+       "id": "t2",
+       "name": "TRAVEL TO STOCKPILE",
+       "zone": "stockpile",
+       "advancedBy": "traveling",
+       "progress": 0,
+       "status": "pending"
+      },
+      {
+       "id": "t3",
+       "name": "STOCKPILE LOADING",
+       "zone": "stockpile",
+       "advancedBy": "loading",
+       "progress": 0,
+       "status": "pending"
+      },
+      {
+       "id": "t4",
+       "name": "RETURN TO ZONE B",
+       "zone": "zone-b",
+       "advancedBy": "traveling",
+       "progress": 0,
+       "status": "pending"
+      }
+     ],
+     "activeTask": {
+      "id": "t1",
+      "name": "ZONE B EXCAVATION",
+      "zone": "zone-b",
+      "advancedBy": "digging",
+      "progress": 38,
+      "status": "active"
+     },
+     "siteSafety": "critical",
+     "weather": "clear",
+     "paused": false,
+     "source": "keyboard",
+     "emergencyStopped": false,
+     "engineWarning": false,
+     "fps": 60.00000000000001,
+     "clock": "14:15:00"
+    }
+   }
+  },
+  {
+   "label": "rain",
+   "frame": {
+    "type": "twin_snapshot",
+    "snapshot": {
+     "tick": 810,
+     "primary": {
+      "machineId": "EXC001",
+      "x": -5,
+      "y": 0,
+      "z": -20,
+      "speed": 0,
+      "heading": 0,
+      "engineRpm": 946.9637132831293,
+      "fuel": 66.96692123461008,
+      "boomAngle": 0.3839724354387525,
+      "stickAngle": -0.17453292519943295,
+      "bucketAngle": 0.17453292519943295,
+      "swingAngle": 0,
+      "pitch": 0,
+      "roll": 0,
+      "payload": 2400,
+      "hydraulicTemperature": 59.54063422187387,
+      "nearestPerson": 4.999999999999999,
+      "tipOverMargin": 1.7154166666666666,
+      "activity": "idle"
+     },
+     "machines": [
+      {
+       "machineId": "EXC001",
+       "x": -5,
+       "y": 0,
+       "z": -20,
+       "speed": 0,
+       "heading": 0,
+       "engineRpm": 946.9637132831293,
+       "fuel": 66.96692123461008,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": 0,
+       "roll": 0,
+       "payload": 2400,
+       "hydraulicTemperature": 59.54063422187387,
+       "nearestPerson": 4.999999999999999,
+       "tipOverMargin": 1.7154166666666666,
+       "activity": "idle"
+      },
+      {
+       "machineId": "DZR001",
+       "x": 9.75989273924199,
+       "y": 0,
+       "z": 8,
+       "speed": 1.6059265219953254,
+       "heading": 4.71238898038469,
+       "engineRpm": 1358.9155903933604,
+       "fuel": 70.38093162235157,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": -0.008938315080431785,
+       "roll": -0.004552833447877126,
+       "payload": 0,
+       "hydraulicTemperature": 61.968152255105956,
+       "nearestPerson": 26.66288141519963,
+       "tipOverMargin": 2.042342681963578,
+       "activity": "traveling"
+      },
+      {
+       "machineId": "LDR001",
+       "x": -53.748051718077534,
+       "y": 0,
+       "z": 7.2563230455725565,
+       "speed": 2.768493454945876,
+       "heading": 1.2942586791768829,
+       "engineRpm": 1298.4278802150116,
+       "fuel": 65.30228029178123,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": -0.008136745227960977,
+       "roll": 0.0299289780647441,
+       "payload": 0,
+       "hydraulicTemperature": 61.3128644340651,
+       "nearestPerson": 26.672987716788743,
+       "tipOverMargin": 1.948061374989137,
+       "activity": "traveling"
+      },
+      {
+       "machineId": "TRK001",
+       "x": 10.868989273810687,
+       "y": 0,
+       "z": 6.1995792771666585,
+       "speed": 5.125947374481934,
+       "heading": 4.752373994369886,
+       "engineRpm": 1509.8539856606124,
+       "fuel": 62.46542350690804,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": 0.01450413060785777,
+       "roll": -0.003872731863307416,
+       "payload": 0,
+       "hydraulicTemperature": 62.867773410745954,
+       "nearestPerson": 25.630750978206045,
+       "tipOverMargin": 1.990146195063268,
+       "activity": "traveling"
+      }
+     ],
+     "workers": [
+      {
+       "id": "WRK001",
+       "x": -19.073312629199897,
+       "z": -49.46334368540005,
+       "state": "idle",
+       "heading": 1.107148717794089,
+       "phase": 66.33333333333348
+      },
+      {
+       "id": "WRK002",
+       "x": 23.46334368540005,
+       "z": -56.9266873708001,
+       "state": "working",
+       "heading": 0.4636476090008061,
+       "phase": 67.31386421786343
+      },
+      {
+       "id": "WRK003",
+       "x": -2.4060189984671485,
+       "z": -15.725510256921112,
+       "state": "walking",
+       "heading": -0.5454422271521848,
+       "phase": 83.09439510239275
+      },
+      {
+       "id": "WRK004",
+       "x": 42.897025963978344,
+       "z": 45.527296841704974,
+       "state": "working",
+       "heading": 1.9756881130800041,
+       "phase": 75.20825932025646
+      },
+      {
+       "id": "WRK005",
+       "x": -62.846171262830985,
+       "z": 32.329665353476756,
+       "state": "working",
+       "heading": -1.292496667789871,
+       "phase": 74.1221235381198
+      },
+      {
+       "id": "WRK006",
+       "x": 78.8120606076066,
+       "z": 27.83029437251522,
+       "state": "walking",
+       "heading": 1.7126933813990681,
+       "phase": 86.23598775598236
+      }
+     ],
+     "proximity": {
+      "level": "critical",
+      "nearest": 4.999999999999999,
+      "nearestWorkerId": "WRK003",
+      "readings": [
+       {
+        "workerId": "WRK003",
+        "distance": 4.999999999999999,
+        "level": "critical"
+       }
+      ]
+     },
+     "risks": [
+      {
+       "id": "DZR001-TRK001",
+       "a": "DZR001",
+       "b": "TRK001",
+       "separation": 2.010461513799769,
+       "timeToClosest": 0.5,
+       "point": [
+        8.632496817370662,
+        1.2,
+        7.048563021963121
+       ]
+      }
+     ],
+     "alerts": [
+      {
+       "id": "proximity:EXC001",
+       "kind": "proximity",
+       "severity": "critical",
+       "title": "PROXIMITY HAZARD",
+       "message": "WORKER DETECTED",
+       "machineId": "EXC001",
+       "detail": {
+        "Worker": "WRK003",
+        "Distance": "5.0 m"
+       },
+       "recommendation": "STOP MACHINE — WORKER IN SWING RADIUS",
+       "createdAt": 1790153100644
+      },
+      {
+       "id": "weather:site",
+       "kind": "weather",
+       "severity": "warning",
+       "title": "RAIN DETECTED",
+       "message": "REDUCED TRACTION AND VISIBILITY",
+       "machineId": "SITE",
+       "detail": {
+        "Grip": "82%",
+        "Visibility": "REDUCED"
+       },
+       "recommendation": "REDUCE SPEED ON GRADES",
+       "createdAt": 1790153100673
+      }
+     ],
+     "events": [
+      {
+       "id": "1790153100673-91cn8",
+       "time": "14:15:00",
+       "text": "Weather changed to RAIN",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100669-eavqd",
+       "time": "14:15:00",
+       "text": "Stability event injected — machine on adverse grade",
+       "severity": "critical"
+      },
+      {
+       "id": "1790153100658-3lo48",
+       "time": "14:15:00",
+       "text": "Predicted conflict DZR001 → TRK001",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100655-ouiae",
+       "time": "14:15:00",
+       "text": "Critical proximity alert — WRK003 at 6.0 m",
+       "severity": "critical"
+      },
+      {
+       "id": "1790153100644-6qkbn",
+       "time": "14:15:00",
+       "text": "Proximity warning",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100644-rxarm",
+       "time": "14:15:00",
+       "text": "WRK003 detected 10.0 m from EXC001",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100635-enle2",
+       "time": "14:15:00",
+       "text": "WRK003 entering EXC001 safety zone",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100619-6wn3x",
+       "time": "14:15:00",
+       "text": "EXC001 telemetry link established",
+       "severity": "info"
+      },
+      {
+       "id": "1790153100580-qfzma",
+       "time": "14:15:00",
+       "text": "Digital twin session started",
+       "severity": "info"
+      }
+     ],
+     "tasks": [
+      {
+       "id": "t1",
+       "name": "ZONE B EXCAVATION",
+       "zone": "zone-b",
+       "advancedBy": "digging",
+       "progress": 38,
+       "status": "active"
+      },
+      {
+       "id": "t2",
+       "name": "TRAVEL TO STOCKPILE",
+       "zone": "stockpile",
+       "advancedBy": "traveling",
+       "progress": 0,
+       "status": "pending"
+      },
+      {
+       "id": "t3",
+       "name": "STOCKPILE LOADING",
+       "zone": "stockpile",
+       "advancedBy": "loading",
+       "progress": 0,
+       "status": "pending"
+      },
+      {
+       "id": "t4",
+       "name": "RETURN TO ZONE B",
+       "zone": "zone-b",
+       "advancedBy": "traveling",
+       "progress": 0,
+       "status": "pending"
+      }
+     ],
+     "activeTask": {
+      "id": "t1",
+      "name": "ZONE B EXCAVATION",
+      "zone": "zone-b",
+      "advancedBy": "digging",
+      "progress": 38,
+      "status": "active"
+     },
+     "siteSafety": "critical",
+     "weather": "rain",
+     "paused": false,
+     "source": "keyboard",
+     "emergencyStopped": false,
+     "engineWarning": false,
+     "fps": 60.00000000000001,
+     "clock": "14:15:00"
+    }
+   }
+  },
+  {
+   "label": "collision risk",
+   "frame": {
+    "type": "twin_snapshot",
+    "snapshot": {
+     "tick": 870,
+     "primary": {
+      "machineId": "EXC001",
+      "x": -5,
+      "y": 0,
+      "z": -20,
+      "speed": 0,
+      "heading": 0,
+      "engineRpm": 949.7744841210533,
+      "fuel": 66.96392546585713,
+      "boomAngle": 0.3839724354387525,
+      "stickAngle": -0.17453292519943295,
+      "bucketAngle": 0.17453292519943295,
+      "swingAngle": 0,
+      "pitch": 0,
+      "roll": 0,
+      "payload": 2400,
+      "hydraulicTemperature": 59.08566658676758,
+      "nearestPerson": 4.999999999999999,
+      "tipOverMargin": 1.7154166666666666,
+      "activity": "idle"
+     },
+     "machines": [
+      {
+       "machineId": "EXC001",
+       "x": -5,
+       "y": 0,
+       "z": -20,
+       "speed": 0,
+       "heading": 0,
+       "engineRpm": 949.7744841210533,
+       "fuel": 66.96392546585713,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": 0,
+       "roll": 0,
+       "payload": 2400,
+       "hydraulicTemperature": 59.08566658676758,
+       "nearestPerson": 4.999999999999999,
+       "tipOverMargin": 1.7154166666666666,
+       "activity": "idle"
+      },
+      {
+       "machineId": "DZR001",
+       "x": 9.72881255056823,
+       "y": 0,
+       "z": 7.94103986402614,
+       "speed": 2.537305344623414,
+       "heading": 5.798062936300006,
+       "engineRpm": 1634.1373468443517,
+       "fuel": 70.37559933339718,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": 0.006240022019913134,
+       "roll": 0.005190798011570043,
+       "payload": 0,
+       "hydraulicTemperature": 61.22654210920679,
+       "nearestPerson": 26.596235285295037,
+       "tipOverMargin": 2.023278467876948,
+       "activity": "traveling"
+      },
+      {
+       "machineId": "LDR001",
+       "x": -50.839336819419266,
+       "y": 0,
+       "z": 6.6739049757035325,
+       "speed": 3.1378048782765733,
+       "heading": 1.43375498551036,
+       "engineRpm": 1388.3469855506048,
+       "fuel": 65.29768767472461,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": -0.030164541399536768,
+       "roll": 0.006606383561190686,
+       "payload": 0,
+       "hydraulicTemperature": 60.09288733516932,
+       "nearestPerson": 28.32635016928966,
+       "tipOverMargin": 1.9422974382373406,
+       "activity": "traveling"
+      },
+      {
+       "machineId": "TRK001",
+       "x": 5.675860260814247,
+       "y": 0,
+       "z": 6.092494826913919,
+       "speed": 5.255167910146389,
+       "heading": 4.717128060864238,
+       "engineRpm": 1533.2841373217225,
+       "fuel": 62.4601305932013,
+       "boomAngle": 0.3839724354387525,
+       "stickAngle": -0.17453292519943295,
+       "bucketAngle": 0.17453292519943295,
+       "swingAngle": 0,
+       "pitch": 0.003679030360477712,
+       "roll": -0.005092510947168082,
+       "payload": 0,
+       "hydraulicTemperature": 61.57725776120053,
+       "nearestPerson": 23.26675994202575,
+       "tipOverMargin": 2.0164715746207715,
+       "activity": "traveling"
+      }
+     ],
+     "workers": [
+      {
+       "id": "WRK001",
+       "x": -19.13474355157058,
+       "z": -50.29440967930253,
+       "state": "walking",
+       "heading": -0.07378403637273306,
+       "phase": 70.93333333333322
+      },
+      {
+       "id": "WRK002",
+       "x": 23.46334368540005,
+       "z": -56.9266873708001,
+       "state": "working",
+       "heading": 0.4636476090008061,
+       "phase": 69.31386421786331
+      },
+      {
+       "id": "WRK003",
+       "x": -2.4060189984671485,
+       "z": -15.725510256921112,
+       "state": "walking",
+       "heading": -0.5454422271521848,
+       "phase": 89.09439510239241
+      },
+      {
+       "id": "WRK004",
+       "x": 42.897025963978344,
+       "z": 45.527296841704974,
+       "state": "working",
+       "heading": 1.9756881130800041,
+       "phase": 77.20825932025635
+      },
+      {
+       "id": "WRK005",
+       "x": -62.846171262830985,
+       "z": 32.329665353476756,
+       "state": "idle",
+       "heading": -1.292496667789871,
+       "phase": 76.12212353811968
+      },
+      {
+       "id": "WRK006",
+       "x": 78.8120606076066,
+       "z": 27.83029437251522,
+       "state": "walking",
+       "heading": 1.7126933813990681,
+       "phase": 92.23598775598202
+      }
+     ],
+     "proximity": {
+      "level": "critical",
+      "nearest": 4.999999999999999,
+      "nearestWorkerId": "WRK003",
+      "readings": [
+       {
+        "workerId": "WRK003",
+        "distance": 4.999999999999999,
+        "level": "critical"
+       }
+      ]
+     },
+     "risks": [
+      {
+       "id": "DZR001-TRK001",
+       "a": "DZR001",
+       "b": "TRK001",
+       "separation": 4.454608963450584,
+       "timeToClosest": 0,
+       "point": [
+        7.702336405691239,
+        1.2,
+        7.016767345470029
+       ]
+      }
+     ],
+     "alerts": [
+      {
+       "id": "proximity:EXC001",
+       "kind": "proximity",
+       "severity": "critical",
+       "title": "PROXIMITY HAZARD",
+       "message": "WORKER DETECTED",
+       "machineId": "EXC001",
+       "detail": {
+        "Worker": "WRK003",
+        "Distance": "5.0 m"
+       },
+       "recommendation": "STOP MACHINE — WORKER IN SWING RADIUS",
+       "createdAt": 1790153100644
+      },
+      {
+       "id": "weather:site",
+       "kind": "weather",
+       "severity": "warning",
+       "title": "RAIN DETECTED",
+       "message": "REDUCED TRACTION AND VISIBILITY",
+       "machineId": "SITE",
+       "detail": {
+        "Grip": "82%",
+        "Visibility": "REDUCED"
+       },
+       "recommendation": "REDUCE SPEED ON GRADES",
+       "createdAt": 1790153100673
+      }
+     ],
+     "events": [
+      {
+       "id": "1790153100676-xye7d",
+       "time": "14:15:00",
+       "text": "DZR001 on intercept course with EXC001",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100673-91cn8",
+       "time": "14:15:00",
+       "text": "Weather changed to RAIN",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100669-eavqd",
+       "time": "14:15:00",
+       "text": "Stability event injected — machine on adverse grade",
+       "severity": "critical"
+      },
+      {
+       "id": "1790153100658-3lo48",
+       "time": "14:15:00",
+       "text": "Predicted conflict DZR001 → TRK001",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100655-ouiae",
+       "time": "14:15:00",
+       "text": "Critical proximity alert — WRK003 at 6.0 m",
+       "severity": "critical"
+      },
+      {
+       "id": "1790153100644-6qkbn",
+       "time": "14:15:00",
+       "text": "Proximity warning",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100644-rxarm",
+       "time": "14:15:00",
+       "text": "WRK003 detected 10.0 m from EXC001",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100635-enle2",
+       "time": "14:15:00",
+       "text": "WRK003 entering EXC001 safety zone",
+       "severity": "warning"
+      },
+      {
+       "id": "1790153100619-6wn3x",
+       "time": "14:15:00",
+       "text": "EXC001 telemetry link established",
+       "severity": "info"
+      },
+      {
+       "id": "1790153100580-qfzma",
+       "time": "14:15:00",
+       "text": "Digital twin session started",
+       "severity": "info"
+      }
+     ],
+     "tasks": [
+      {
+       "id": "t1",
+       "name": "ZONE B EXCAVATION",
+       "zone": "zone-b",
+       "advancedBy": "digging",
+       "progress": 38,
+       "status": "active"
+      },
+      {
+       "id": "t2",
+       "name": "TRAVEL TO STOCKPILE",
+       "zone": "stockpile",
+       "advancedBy": "traveling",
+       "progress": 0,
+       "status": "pending"
+      },
+      {
+       "id": "t3",
+       "name": "STOCKPILE LOADING",
+       "zone": "stockpile",
+       "advancedBy": "loading",
+       "progress": 0,
+       "status": "pending"
+      },
+      {
+       "id": "t4",
+       "name": "RETURN TO ZONE B",
+       "zone": "zone-b",
+       "advancedBy": "traveling",
+       "progress": 0,
+       "status": "pending"
+      }
+     ],
+     "activeTask": {
+      "id": "t1",
+      "name": "ZONE B EXCAVATION",
+      "zone": "zone-b",
+      "advancedBy": "digging",
+      "progress": 38,
+      "status": "active"
+     },
+     "siteSafety": "critical",
+     "weather": "rain",
+     "paused": false,
+     "source": "keyboard",
+     "emergencyStopped": false,
+     "engineWarning": false,
+     "fps": 60.00000000000001,
+     "clock": "14:15:00"
+    }
+   }
+  }
+ ]
+}

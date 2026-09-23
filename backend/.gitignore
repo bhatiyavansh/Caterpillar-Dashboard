@@ -7,3 +7,5 @@ data/*.db
 cache/
 # root .gitignore ignores .env*; keep the template tracked
 !.env.example
+data/cv_snapshots/
+data/*.db-*

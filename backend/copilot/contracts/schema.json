@@ -1,0 +1,1617 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CAT Copilot hub contracts",
+  "version": "1.0.0",
+  "$defs": {
+    "AssistantRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "surface": {
+          "enum": [
+            "cab",
+            "command",
+            "owner",
+            "training",
+            "ar"
+          ],
+          "title": "Surface",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "machine_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Machine Id"
+        },
+        "operator_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Operator Id"
+        },
+        "conversation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversation Id"
+        }
+      },
+      "required": [
+        "surface",
+        "message"
+      ],
+      "title": "AssistantRequest",
+      "type": "object"
+    },
+    "Citation": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "manual",
+            "protocol"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "doc_id": {
+          "title": "Doc Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "page": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page"
+        },
+        "step": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step"
+        },
+        "quote": {
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "doc_id",
+        "title",
+        "quote"
+      ],
+      "title": "Citation",
+      "type": "object"
+    },
+    "Control": {
+      "additionalProperties": false,
+      "description": "Hub -> source, only to sources whose source_hello set accepts_control.",
+      "properties": {
+        "type": {
+          "const": "control",
+          "default": "control",
+          "title": "Type",
+          "type": "string"
+        },
+        "command_id": {
+          "title": "Command Id",
+          "type": "string"
+        },
+        "command": {
+          "title": "Command",
+          "type": "string"
+        },
+        "args": {
+          "additionalProperties": true,
+          "title": "Args",
+          "type": "object"
+        },
+        "issued_by": {
+          "default": "director",
+          "title": "Issued By",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command_id",
+        "command"
+      ],
+      "title": "Control",
+      "type": "object"
+    },
+    "ControlAck": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "control_ack",
+          "default": "control_ack",
+          "title": "Type",
+          "type": "string"
+        },
+        "command_id": {
+          "title": "Command Id",
+          "type": "string"
+        },
+        "ok": {
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        }
+      },
+      "required": [
+        "command_id",
+        "ok"
+      ],
+      "title": "ControlAck",
+      "type": "object"
+    },
+    "Heartbeat": {
+      "additionalProperties": false,
+      "properties": {
+        "seq": {
+          "description": "Hub-global; strictly increasing per connection; may skip.",
+          "title": "Seq",
+          "type": "integer"
+        },
+        "epoch": {
+          "description": "Hub run id. A change means: drop state, wait for snapshot.",
+          "title": "Epoch",
+          "type": "string"
+        },
+        "hub_ts": {
+          "description": "ISO-8601 UTC, millisecond precision, when the hub published.",
+          "title": "Hub Ts",
+          "type": "string"
+        },
+        "type": {
+          "const": "heartbeat",
+          "default": "heartbeat",
+          "title": "Type",
+          "type": "string"
+        },
+        "last_seq": {
+          "title": "Last Seq",
+          "type": "integer"
+        },
+        "last_rseq": {
+          "title": "Last Rseq",
+          "type": "integer"
+        },
+        "clients": {
+          "title": "Clients",
+          "type": "integer"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/SourceInfo"
+          },
+          "title": "Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "seq",
+        "epoch",
+        "hub_ts",
+        "last_seq",
+        "last_rseq",
+        "clients"
+      ],
+      "title": "Heartbeat",
+      "type": "object"
+    },
+    "Hello": {
+      "additionalProperties": false,
+      "properties": {
+        "seq": {
+          "description": "Hub-global; strictly increasing per connection; may skip.",
+          "title": "Seq",
+          "type": "integer"
+        },
+        "epoch": {
+          "description": "Hub run id. A change means: drop state, wait for snapshot.",
+          "title": "Epoch",
+          "type": "string"
+        },
+        "hub_ts": {
+          "description": "ISO-8601 UTC, millisecond precision, when the hub published.",
+          "title": "Hub Ts",
+          "type": "string"
+        },
+        "type": {
+          "const": "hello",
+          "default": "hello",
+          "title": "Type",
+          "type": "string"
+        },
+        "server": {
+          "default": "copilot-hub",
+          "title": "Server",
+          "type": "string"
+        },
+        "contract_version": {
+          "default": "1.0.0",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "resumed": {
+          "description": "True when since_rseq was honoured and missed events follow.",
+          "title": "Resumed",
+          "type": "boolean"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/SourceInfo"
+          },
+          "title": "Sources",
+          "type": "array"
+        },
+        "features": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Features",
+          "type": "object"
+        }
+      },
+      "required": [
+        "seq",
+        "epoch",
+        "hub_ts",
+        "resumed"
+      ],
+      "title": "Hello",
+      "type": "object"
+    },
+    "LiveEvent": {
+      "additionalProperties": false,
+      "description": "C's event + envelope + hub annotations (all optional, only present when set).",
+      "properties": {
+        "seq": {
+          "description": "Hub-global; strictly increasing per connection; may skip.",
+          "title": "Seq",
+          "type": "integer"
+        },
+        "epoch": {
+          "description": "Hub run id. A change means: drop state, wait for snapshot.",
+          "title": "Epoch",
+          "type": "string"
+        },
+        "hub_ts": {
+          "description": "ISO-8601 UTC, millisecond precision, when the hub published.",
+          "title": "Hub Ts",
+          "type": "string"
+        },
+        "rseq": {
+          "description": "Contiguous per epoch over reliable messages; a gap means loss.",
+          "title": "Rseq",
+          "type": "integer"
+        },
+        "type": {
+          "const": "event",
+          "default": "event",
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "string"
+        },
+        "event": {
+          "title": "Event",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "machine_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Machine Id"
+        },
+        "source": {
+          "enum": [
+            "simulator",
+            "scenario",
+            "webcam",
+            "rules",
+            "ml",
+            "v2v",
+            "v2i"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "data": {
+          "additionalProperties": true,
+          "title": "Data",
+          "type": "object"
+        },
+        "source_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Which ingest source produced it.",
+          "title": "Source Id"
+        },
+        "stale": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "True when ts is >30 s older than hub receipt.",
+          "title": "Stale"
+        }
+      },
+      "required": [
+        "seq",
+        "epoch",
+        "hub_ts",
+        "rseq",
+        "id",
+        "ts",
+        "event",
+        "severity",
+        "source",
+        "message"
+      ],
+      "title": "LiveEvent",
+      "type": "object"
+    },
+    "LiveMachineState": {
+      "additionalProperties": false,
+      "description": "C's machine_state + envelope.",
+      "properties": {
+        "seq": {
+          "description": "Hub-global; strictly increasing per connection; may skip.",
+          "title": "Seq",
+          "type": "integer"
+        },
+        "epoch": {
+          "description": "Hub run id. A change means: drop state, wait for snapshot.",
+          "title": "Epoch",
+          "type": "string"
+        },
+        "hub_ts": {
+          "description": "ISO-8601 UTC, millisecond precision, when the hub published.",
+          "title": "Hub Ts",
+          "type": "string"
+        },
+        "type": {
+          "const": "machine_state",
+          "default": "machine_state",
+          "title": "Type",
+          "type": "string"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "string"
+        },
+        "machine_id": {
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "machine_type": {
+          "enum": [
+            "excavator",
+            "wheel_loader",
+            "dozer",
+            "truck",
+            "grader"
+          ],
+          "title": "Machine Type",
+          "type": "string"
+        },
+        "operator_id": {
+          "title": "Operator Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "working",
+            "idle",
+            "travelling",
+            "off"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "pos": {
+          "$ref": "#/$defs/Pos"
+        },
+        "heading_deg": {
+          "title": "Heading Deg",
+          "type": "number"
+        },
+        "speed_mps": {
+          "title": "Speed Mps",
+          "type": "number"
+        },
+        "intent": {
+          "enum": [
+            "dig",
+            "swing_left",
+            "swing_right",
+            "dump",
+            "travel_forward",
+            "reverse",
+            "idle",
+            "push",
+            "grade"
+          ],
+          "title": "Intent",
+          "type": "string"
+        },
+        "engine_on": {
+          "title": "Engine On",
+          "type": "boolean"
+        },
+        "engine_hours": {
+          "title": "Engine Hours",
+          "type": "number"
+        },
+        "fuel_level_pct": {
+          "title": "Fuel Level Pct",
+          "type": "number"
+        },
+        "fuel_used_l": {
+          "title": "Fuel Used L",
+          "type": "number"
+        },
+        "load_cycles": {
+          "title": "Load Cycles",
+          "type": "integer"
+        },
+        "idle_min": {
+          "title": "Idle Min",
+          "type": "number"
+        },
+        "seatbelt": {
+          "enum": [
+            "fastened",
+            "unfastened"
+          ],
+          "title": "Seatbelt",
+          "type": "string"
+        },
+        "boom_angle_deg": {
+          "title": "Boom Angle Deg",
+          "type": "number"
+        },
+        "stick_angle_deg": {
+          "title": "Stick Angle Deg",
+          "type": "number"
+        },
+        "swing_angle_deg": {
+          "title": "Swing Angle Deg",
+          "type": "number"
+        },
+        "payload_kg": {
+          "title": "Payload Kg",
+          "type": "number"
+        },
+        "hydraulic_temp_c": {
+          "title": "Hydraulic Temp C",
+          "type": "number"
+        },
+        "coolant_temp_c": {
+          "title": "Coolant Temp C",
+          "type": "number"
+        },
+        "pitch_deg": {
+          "title": "Pitch Deg",
+          "type": "number"
+        },
+        "roll_deg": {
+          "title": "Roll Deg",
+          "type": "number"
+        },
+        "tip_over_margin": {
+          "title": "Tip Over Margin",
+          "type": "number"
+        },
+        "bubble": {
+          "enum": [
+            "green",
+            "amber",
+            "red"
+          ],
+          "title": "Bubble",
+          "type": "string"
+        },
+        "nearest_person_m": {
+          "title": "Nearest Person M",
+          "type": "number"
+        },
+        "fatigue_score": {
+          "title": "Fatigue Score",
+          "type": "number"
+        },
+        "fault_codes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Fault Codes",
+          "type": "array"
+        },
+        "zone": {
+          "title": "Zone",
+          "type": "string"
+        },
+        "task_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Task Id"
+        },
+        "task_progress": {
+          "default": 0.0,
+          "title": "Task Progress",
+          "type": "number"
+        },
+        "task_eta_min": {
+          "default": 0.0,
+          "title": "Task Eta Min",
+          "type": "number"
+        }
+      },
+      "required": [
+        "seq",
+        "epoch",
+        "hub_ts",
+        "ts",
+        "machine_id",
+        "model",
+        "machine_type",
+        "operator_id",
+        "status",
+        "pos",
+        "heading_deg",
+        "speed_mps",
+        "intent",
+        "engine_on",
+        "engine_hours",
+        "fuel_level_pct",
+        "fuel_used_l",
+        "load_cycles",
+        "idle_min",
+        "seatbelt",
+        "boom_angle_deg",
+        "stick_angle_deg",
+        "swing_angle_deg",
+        "payload_kg",
+        "hydraulic_temp_c",
+        "coolant_temp_c",
+        "pitch_deg",
+        "roll_deg",
+        "tip_over_margin",
+        "bubble",
+        "nearest_person_m",
+        "fatigue_score",
+        "zone"
+      ],
+      "title": "LiveMachineState",
+      "type": "object"
+    },
+    "LiveWorkerState": {
+      "additionalProperties": false,
+      "description": "C's worker_state + envelope.",
+      "properties": {
+        "seq": {
+          "description": "Hub-global; strictly increasing per connection; may skip.",
+          "title": "Seq",
+          "type": "integer"
+        },
+        "epoch": {
+          "description": "Hub run id. A change means: drop state, wait for snapshot.",
+          "title": "Epoch",
+          "type": "string"
+        },
+        "hub_ts": {
+          "description": "ISO-8601 UTC, millisecond precision, when the hub published.",
+          "title": "Hub Ts",
+          "type": "string"
+        },
+        "type": {
+          "const": "worker_state",
+          "default": "worker_state",
+          "title": "Type",
+          "type": "string"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "string"
+        },
+        "worker_id": {
+          "title": "Worker Id",
+          "type": "string"
+        },
+        "pos": {
+          "$ref": "#/$defs/Pos"
+        },
+        "zone": {
+          "title": "Zone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "epoch",
+        "hub_ts",
+        "ts",
+        "worker_id",
+        "pos",
+        "zone"
+      ],
+      "title": "LiveWorkerState",
+      "type": "object"
+    },
+    "MachineState": {
+      "additionalProperties": false,
+      "description": "One per machine per second.  Contract section 5.1.",
+      "properties": {
+        "type": {
+          "const": "machine_state",
+          "default": "machine_state",
+          "title": "Type",
+          "type": "string"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "string"
+        },
+        "machine_id": {
+          "title": "Machine Id",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "machine_type": {
+          "enum": [
+            "excavator",
+            "wheel_loader",
+            "dozer",
+            "truck",
+            "grader"
+          ],
+          "title": "Machine Type",
+          "type": "string"
+        },
+        "operator_id": {
+          "title": "Operator Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "working",
+            "idle",
+            "travelling",
+            "off"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "pos": {
+          "$ref": "#/$defs/Pos"
+        },
+        "heading_deg": {
+          "title": "Heading Deg",
+          "type": "number"
+        },
+        "speed_mps": {
+          "title": "Speed Mps",
+          "type": "number"
+        },
+        "intent": {
+          "enum": [
+            "dig",
+            "swing_left",
+            "swing_right",
+            "dump",
+            "travel_forward",
+            "reverse",
+            "idle",
+            "push",
+            "grade"
+          ],
+          "title": "Intent",
+          "type": "string"
+        },
+        "engine_on": {
+          "title": "Engine On",
+          "type": "boolean"
+        },
+        "engine_hours": {
+          "title": "Engine Hours",
+          "type": "number"
+        },
+        "fuel_level_pct": {
+          "title": "Fuel Level Pct",
+          "type": "number"
+        },
+        "fuel_used_l": {
+          "title": "Fuel Used L",
+          "type": "number"
+        },
+        "load_cycles": {
+          "title": "Load Cycles",
+          "type": "integer"
+        },
+        "idle_min": {
+          "title": "Idle Min",
+          "type": "number"
+        },
+        "seatbelt": {
+          "enum": [
+            "fastened",
+            "unfastened"
+          ],
+          "title": "Seatbelt",
+          "type": "string"
+        },
+        "boom_angle_deg": {
+          "title": "Boom Angle Deg",
+          "type": "number"
+        },
+        "stick_angle_deg": {
+          "title": "Stick Angle Deg",
+          "type": "number"
+        },
+        "swing_angle_deg": {
+          "title": "Swing Angle Deg",
+          "type": "number"
+        },
+        "payload_kg": {
+          "title": "Payload Kg",
+          "type": "number"
+        },
+        "hydraulic_temp_c": {
+          "title": "Hydraulic Temp C",
+          "type": "number"
+        },
+        "coolant_temp_c": {
+          "title": "Coolant Temp C",
+          "type": "number"
+        },
+        "pitch_deg": {
+          "title": "Pitch Deg",
+          "type": "number"
+        },
+        "roll_deg": {
+          "title": "Roll Deg",
+          "type": "number"
+        },
+        "tip_over_margin": {
+          "title": "Tip Over Margin",
+          "type": "number"
+        },
+        "bubble": {
+          "enum": [
+            "green",
+            "amber",
+            "red"
+          ],
+          "title": "Bubble",
+          "type": "string"
+        },
+        "nearest_person_m": {
+          "title": "Nearest Person M",
+          "type": "number"
+        },
+        "fatigue_score": {
+          "title": "Fatigue Score",
+          "type": "number"
+        },
+        "fault_codes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Fault Codes",
+          "type": "array"
+        },
+        "zone": {
+          "title": "Zone",
+          "type": "string"
+        },
+        "task_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Task Id"
+        },
+        "task_progress": {
+          "default": 0.0,
+          "title": "Task Progress",
+          "type": "number"
+        },
+        "task_eta_min": {
+          "default": 0.0,
+          "title": "Task Eta Min",
+          "type": "number"
+        }
+      },
+      "required": [
+        "ts",
+        "machine_id",
+        "model",
+        "machine_type",
+        "operator_id",
+        "status",
+        "pos",
+        "heading_deg",
+        "speed_mps",
+        "intent",
+        "engine_on",
+        "engine_hours",
+        "fuel_level_pct",
+        "fuel_used_l",
+        "load_cycles",
+        "idle_min",
+        "seatbelt",
+        "boom_angle_deg",
+        "stick_angle_deg",
+        "swing_angle_deg",
+        "payload_kg",
+        "hydraulic_temp_c",
+        "coolant_temp_c",
+        "pitch_deg",
+        "roll_deg",
+        "tip_over_margin",
+        "bubble",
+        "nearest_person_m",
+        "fatigue_score",
+        "zone"
+      ],
+      "title": "MachineState",
+      "type": "object"
+    },
+    "Pos": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "lat": {
+          "title": "Lat",
+          "type": "number"
+        },
+        "lon": {
+          "title": "Lon",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "lat",
+        "lon"
+      ],
+      "title": "Pos",
+      "type": "object"
+    },
+    "Snapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "seq": {
+          "description": "Hub-global; strictly increasing per connection; may skip.",
+          "title": "Seq",
+          "type": "integer"
+        },
+        "epoch": {
+          "description": "Hub run id. A change means: drop state, wait for snapshot.",
+          "title": "Epoch",
+          "type": "string"
+        },
+        "hub_ts": {
+          "description": "ISO-8601 UTC, millisecond precision, when the hub published.",
+          "title": "Hub Ts",
+          "type": "string"
+        },
+        "type": {
+          "const": "snapshot",
+          "default": "snapshot",
+          "title": "Type",
+          "type": "string"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "string"
+        },
+        "rseq_at": {
+          "description": "The snapshot is consistent with all reliable messages <= rseq_at.",
+          "title": "Rseq At",
+          "type": "integer"
+        },
+        "machines": {
+          "items": {
+            "$ref": "#/$defs/MachineState"
+          },
+          "title": "Machines",
+          "type": "array"
+        },
+        "workers": {
+          "items": {
+            "$ref": "#/$defs/WorkerState"
+          },
+          "title": "Workers",
+          "type": "array"
+        },
+        "active_alerts": {
+          "items": {
+            "$ref": "#/$defs/LiveEvent"
+          },
+          "title": "Active Alerts",
+          "type": "array"
+        },
+        "environment": {
+          "additionalProperties": true,
+          "title": "Environment",
+          "type": "object"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/SourceInfo"
+          },
+          "title": "Sources",
+          "type": "array"
+        },
+        "events_truncated": {
+          "default": false,
+          "description": "since_rseq could not be honoured; fetch GET /api/events.",
+          "title": "Events Truncated",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "seq",
+        "epoch",
+        "hub_ts",
+        "ts",
+        "rseq_at"
+      ],
+      "title": "Snapshot",
+      "type": "object"
+    },
+    "SourceHello": {
+      "additionalProperties": false,
+      "description": "Optional first frame on /ws/ingest. C's simulator sends none (it is a `sim`).",
+      "properties": {
+        "type": {
+          "const": "source_hello",
+          "default": "source_hello",
+          "title": "Type",
+          "type": "string"
+        },
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "sim",
+            "twin",
+            "webcam",
+            "replay",
+            "fake"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "format": {
+          "default": "contract",
+          "enum": [
+            "contract",
+            "twin_snapshot"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "accepts_control": {
+          "default": false,
+          "title": "Accepts Control",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source_id",
+        "kind"
+      ],
+      "title": "SourceHello",
+      "type": "object"
+    },
+    "SourceInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "sim",
+            "twin",
+            "webcam",
+            "replay",
+            "fake"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "provenance": {
+          "enum": [
+            "live",
+            "fake",
+            "replay",
+            "twin"
+          ],
+          "title": "Provenance",
+          "type": "string"
+        },
+        "connected": {
+          "title": "Connected",
+          "type": "boolean"
+        },
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "since": {
+          "title": "Since",
+          "type": "string"
+        },
+        "last_seen": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Seen"
+        },
+        "messages": {
+          "default": 0,
+          "title": "Messages",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "source_id",
+        "kind",
+        "provenance",
+        "connected",
+        "active",
+        "since"
+      ],
+      "title": "SourceInfo",
+      "type": "object"
+    },
+    "SseConfirmRequired": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "title": "Action Id",
+          "type": "string"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        },
+        "args": {
+          "additionalProperties": true,
+          "title": "Args",
+          "type": "object"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "expires_at": {
+          "title": "Expires At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_id",
+        "tool",
+        "summary",
+        "expires_at"
+      ],
+      "title": "SseConfirmRequired",
+      "type": "object"
+    },
+    "SseDone": {
+      "additionalProperties": false,
+      "properties": {},
+      "title": "SseDone",
+      "type": "object"
+    },
+    "SseError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "fallback_used": {
+          "title": "Fallback Used",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "fallback_used"
+      ],
+      "title": "SseError",
+      "type": "object"
+    },
+    "SseFinal": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "speak_text": {
+          "title": "Speak Text",
+          "type": "string"
+        },
+        "citations": {
+          "items": {
+            "$ref": "#/$defs/Citation"
+          },
+          "title": "Citations",
+          "type": "array"
+        },
+        "actions": {
+          "items": {
+            "$ref": "#/$defs/SseConfirmRequired"
+          },
+          "title": "Actions",
+          "type": "array"
+        },
+        "grounded": {
+          "title": "Grounded",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text",
+        "speak_text",
+        "grounded"
+      ],
+      "title": "SseFinal",
+      "type": "object"
+    },
+    "SseMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "turn_id": {
+          "title": "Turn Id",
+          "type": "string"
+        },
+        "surface": {
+          "enum": [
+            "cab",
+            "command",
+            "owner",
+            "training",
+            "ar"
+          ],
+          "title": "Surface",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "live",
+            "cache",
+            "fallback"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        }
+      },
+      "required": [
+        "turn_id",
+        "surface",
+        "mode"
+      ],
+      "title": "SseMeta",
+      "type": "object"
+    },
+    "SseSpecialist": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "routed_by": {
+          "enum": [
+            "rules",
+            "llm",
+            "fallback"
+          ],
+          "title": "Routed By",
+          "type": "string"
+        },
+        "confidence": {
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "routed_by",
+        "confidence"
+      ],
+      "title": "SseSpecialist",
+      "type": "object"
+    },
+    "SseStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "thinking",
+            "calling_tool",
+            "answering"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "title": "SseStatus",
+      "type": "object"
+    },
+    "SseToken": {
+      "additionalProperties": false,
+      "properties": {
+        "delta": {
+          "title": "Delta",
+          "type": "string"
+        }
+      },
+      "required": [
+        "delta"
+      ],
+      "title": "SseToken",
+      "type": "object"
+    },
+    "SseToolCall": {
+      "additionalProperties": false,
+      "properties": {
+        "call_id": {
+          "title": "Call Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "args": {
+          "additionalProperties": true,
+          "title": "Args",
+          "type": "object"
+        }
+      },
+      "required": [
+        "call_id",
+        "name"
+      ],
+      "title": "SseToolCall",
+      "type": "object"
+    },
+    "SseToolResult": {
+      "additionalProperties": false,
+      "properties": {
+        "call_id": {
+          "title": "Call Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "ok": {
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "provenance": {
+          "title": "Provenance",
+          "type": "string"
+        },
+        "latency_ms": {
+          "title": "Latency Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "call_id",
+        "name",
+        "ok",
+        "summary",
+        "provenance",
+        "latency_ms"
+      ],
+      "title": "SseToolResult",
+      "type": "object"
+    },
+    "Utterance": {
+      "additionalProperties": false,
+      "properties": {
+        "seq": {
+          "description": "Hub-global; strictly increasing per connection; may skip.",
+          "title": "Seq",
+          "type": "integer"
+        },
+        "epoch": {
+          "description": "Hub run id. A change means: drop state, wait for snapshot.",
+          "title": "Epoch",
+          "type": "string"
+        },
+        "hub_ts": {
+          "description": "ISO-8601 UTC, millisecond precision, when the hub published.",
+          "title": "Hub Ts",
+          "type": "string"
+        },
+        "rseq": {
+          "description": "Contiguous per epoch over reliable messages; a gap means loss.",
+          "title": "Rseq",
+          "type": "integer"
+        },
+        "type": {
+          "const": "utterance",
+          "default": "utterance",
+          "title": "Type",
+          "type": "string"
+        },
+        "utterance_id": {
+          "title": "Utterance Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "priority": {
+          "enum": [
+            "safety",
+            "normal",
+            "chatter"
+          ],
+          "title": "Priority",
+          "type": "string"
+        },
+        "surfaces": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Surfaces",
+          "type": "array"
+        },
+        "machine_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Machine Id"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "deterministic": {
+          "title": "Deterministic",
+          "type": "boolean"
+        },
+        "audio_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Audio Url"
+        }
+      },
+      "required": [
+        "seq",
+        "epoch",
+        "hub_ts",
+        "rseq",
+        "utterance_id",
+        "text",
+        "priority",
+        "surfaces",
+        "reason",
+        "deterministic"
+      ],
+      "title": "Utterance",
+      "type": "object"
+    },
+    "WorkerState": {
+      "additionalProperties": false,
+      "description": "One per ground worker per second.  Contract section 7.4.",
+      "properties": {
+        "type": {
+          "const": "worker_state",
+          "default": "worker_state",
+          "title": "Type",
+          "type": "string"
+        },
+        "ts": {
+          "title": "Ts",
+          "type": "string"
+        },
+        "worker_id": {
+          "title": "Worker Id",
+          "type": "string"
+        },
+        "pos": {
+          "$ref": "#/$defs/Pos"
+        },
+        "zone": {
+          "title": "Zone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ts",
+        "worker_id",
+        "pos",
+        "zone"
+      ],
+      "title": "WorkerState",
+      "type": "object"
+    }
+  }
+}
