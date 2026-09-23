@@ -242,6 +242,30 @@ async def search_manual(ctx: ToolContext, a: ManualIn) -> ToolResult:
     return await rag.tool_search(a.query)
 
 
+class ProtocolIn(_In):
+    event: str | None = Field(None, description="Event kind, e.g. proximity_alert")
+    protocol_id: str | None = Field(None, description="Protocol id, e.g. PRT-PROXIMITY")
+    component: str | None = Field(None, description="For maintenance_due: the component, e.g. hydraulic_pump")
+
+
+async def get_protocol(ctx: ToolContext, a: ProtocolIn) -> ToolResult:
+    lib = ctx.extras.get("protocols")
+    if lib is None:
+        raise ToolError("protocol library not loaded", "stub")
+    if a.protocol_id:
+        p = lib.by_id.get(a.protocol_id)
+    elif a.event:
+        p = lib.for_event({"event": a.event, "data": {"component": a.component} if a.component else {}})
+    else:
+        raise ToolError("give an event or a protocol_id")
+    if p is None:
+        return ToolResult(True, {"found": False, "available": sorted(lib.by_id)}, "protocol_library",
+                          "no protocol for that")
+    return ToolResult(True, {"found": True, "protocol": p.ref(),
+                             "note": "Quote the steps exactly as written; do not paraphrase or add steps."},
+                      "protocol_library", f"protocol {p.id}")
+
+
 # --------------------------------------------------------------------------- confirm tools
 
 
@@ -397,6 +421,9 @@ def build_tools() -> list[Tool]:
              frozenset({"safety", "maintenance", "reporting", "coordination", "general", "training"})),
         Tool("search_manual", "Search the machine manuals and fault codes; returns passages with page citations.",
              ManualIn, search_manual, ALL, frozenset({"maintenance", "safety", "training", "general"})),
+        Tool("get_protocol", "The site protocol for a safety event or protocol id: steps to follow (verbatim), "
+             "escalation, and the regulation it cites.", ProtocolIn, get_protocol, ALL,
+             frozenset({"safety", "training", "general", "maintenance"})),
         Tool("create_incident", "File an incident report for a machine. Needs confirmation.", IncidentIn,
              incident_execute, CAB_CMD, frozenset({"safety", "reporting", "general"}), True, incident_prepare,
              timeout_s=10.0),
@@ -413,4 +440,6 @@ def build_tools() -> list[Tool]:
 
 
 def build_registry() -> ToolRegistry:
-    return ToolRegistry(build_tools())
+    from copilot.agent.tools.vision import build_vision_tools
+
+    return ToolRegistry(build_tools() + build_vision_tools())

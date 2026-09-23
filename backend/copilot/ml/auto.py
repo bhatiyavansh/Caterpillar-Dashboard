@@ -86,3 +86,6 @@ class AutoML:
 
     async def training_profiles(self):
         return await self._dispatch("training_profiles")
+
+    async def owner_summary(self, days=7):
+        return await self._dispatch("owner_summary", days)

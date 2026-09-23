@@ -12,6 +12,8 @@ dependencies = [
     "httpx>=0.27",
     "aiosqlite>=0.20",
     "anthropic>=0.70",
+    "rank-bm25>=0.2.2",
+    "fastembed>=0.8.1",
 ]
 
 [dependency-groups]

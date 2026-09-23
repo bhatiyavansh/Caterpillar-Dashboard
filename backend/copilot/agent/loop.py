@@ -59,6 +59,7 @@ class _Turn:
     req: AssistantRequest
     results: list[tuple[str, ToolResult]] = field(default_factory=list)
     actions: list[dict[str, Any]] = field(default_factory=list)
+    citations: list[dict[str, Any]] = field(default_factory=list)
     log: dict[str, Any] = field(default_factory=dict)
 
 
@@ -80,6 +81,25 @@ def rule_calls(message: str, machine_id: str | None, surface: str) -> list[tuple
     if not calls and ids:
         calls += [("get_machine_status", {"machine_id": i}) for i in ids[:3]]
     return calls
+
+
+def citations_from(name: str, res: ToolResult) -> list[dict[str, Any]]:
+    """Manual passages and protocols a tool returned become citations (shown by the UI, spoken never)."""
+    if not res.ok or not isinstance(res.data, dict):
+        return []
+    if name == "search_manual":
+        return [{"kind": "manual", "doc_id": h["doc_id"], "title": h["title"], "page": h.get("page"),
+                 "section": h.get("section"), "citation": h["citation"], "quote": h["quote"][:400]}
+                for h in res.data.get("hits", [])[:3]]
+    if name == "get_protocol" and res.data.get("found"):
+        p = res.data["protocol"]
+        out = [{"kind": "protocol", "doc_id": p["id"], "title": p["title"], "step": i + 1, "quote": step,
+                "citation": p["source"]} for i, step in enumerate(p["steps"])]
+        if p.get("regulation"):
+            out.append({"kind": "manual", "doc_id": p["id"], "title": p["regulation"]["citation"],
+                        "quote": p["regulation"]["quote"], "citation": p["regulation"]["citation"]})
+        return out
+    return []
 
 
 def speak(text: str, surface: str) -> str:
@@ -147,7 +167,7 @@ class Agent:
         elif llm_grounded is False:
             grounded = True  # delivered text is the deterministic, data-only answer
         yield "status", {"state": "answering"}
-        final = {"text": final_text, "speak_text": speak(final_text, req.surface), "citations": [],
+        final = {"text": final_text, "speak_text": speak(final_text, req.surface), "citations": t.citations,
                  "actions": t.actions, "grounded": grounded}
         yield "final", final
         yield "done", {}
@@ -251,6 +271,10 @@ class Agent:
             t.results.append((name, res))
             yield "tool_result", {"call_id": call_id, "name": name, "ok": res.ok, "summary": res.summary,
                                   "provenance": res.provenance, "latency_ms": ms}
+            for cit in citations_from(name, res):
+                if cit not in t.citations:
+                    t.citations.append(cit)
+                    yield "citation", cit
             if res.pending_action:
                 a = res.pending_action
                 payload = {"action_id": a["action_id"], "tool": a["tool"], "args": a["args"],

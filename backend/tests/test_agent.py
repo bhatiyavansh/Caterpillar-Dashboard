@@ -101,7 +101,9 @@ def _effects(srv):
 
 @pytest.mark.parametrize(("tool", "args", "effect"), CONFIRM_TOOLS)
 async def test_confirm_tool_does_nothing_until_confirmed_then_once(agent_srv, tool, args, effect):
-    agent_srv.llm.script = [FakeStep(tool_calls=[(tool, args)]), FakeStep(text="Please confirm.")]
+    # third step: the report drafter's LLM call on confirm (incidents/work orders) -> labelled template path
+    agent_srv.llm.script = [FakeStep(tool_calls=[(tool, args)]), FakeStep(text="Please confirm."),
+                            FakeStep(error="unavailable")]
     ev = await ask(agent_srv, "do it", surface="command")
     req = next(p for n, p in ev if n == "confirm_required")
     assert final(ev)["actions"][0]["action_id"] == req["action_id"]

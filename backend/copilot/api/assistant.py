@@ -81,9 +81,15 @@ async def estimate(request: Request) -> dict[str, Any]:
 
 
 @router.get("/api/anomalies")
-async def anomalies(request: Request, machine_id: str | None = None, since_hours: int = 24) -> dict[str, Any]:
+async def anomalies(request: Request, machine_id: str | None = None, since_hours: int = 24,
+                    explain: bool = False) -> dict[str, Any]:
     body = {"since_hours": since_hours, **({"machine_id": machine_id} if machine_id else {})}
-    return await _tool(request, "get_anomalies", AnomaliesIn, body)
+    out = await _tool(request, "get_anomalies", AnomaliesIn, body)
+    if explain:
+        reports = request.app.state.reports
+        for a in out["data"]["anomalies"]:
+            a["explanation"] = await reports.explain_anomaly(a)
+    return out
 
 
 @router.post("/api/whatif")

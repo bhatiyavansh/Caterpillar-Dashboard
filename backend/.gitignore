@@ -10,3 +10,4 @@ cache/
 data/cv_snapshots/
 data/*.db-*
 logs/
+data/models/

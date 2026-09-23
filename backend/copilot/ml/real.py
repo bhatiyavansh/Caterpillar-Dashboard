@@ -15,7 +15,7 @@ from typing import Any
 from copilot.ml.port import MLUnavailable
 
 TIMEOUT_S = {  # per call; slow history reads keep computing in the background and fill the cache
-    "estimate": 2.0, "anomalies": 4.0, "maintenance": 2.0, "risk": 1.0, "kpis": 3.0, "profiles": 3.0}
+    "owner": 5.0, "estimate": 2.0, "anomalies": 4.0, "maintenance": 2.0, "risk": 1.0, "kpis": 3.0, "profiles": 3.0}
 
 
 class RealML:
@@ -101,3 +101,8 @@ class RealML:
         from intelligence import training_profiles
 
         return {"profiles": await self._call("profiles", training_profiles, ttl=300), "provenance": "history"}
+
+    async def owner_summary(self, days: int) -> dict[str, Any]:
+        from intelligence import owner_summary
+
+        return {**await self._call("owner", owner_summary, days, ttl=600), "provenance": "history"}

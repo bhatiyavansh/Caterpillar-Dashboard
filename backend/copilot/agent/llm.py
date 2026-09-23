@@ -165,6 +165,31 @@ class AnthropicLLM:
         )
 
 
+    async def describe_image(self, *, model: str, image: bytes, media_type: str, prompt: str, timeout_s: float) -> str:
+        """Advisory vision call (describe_scene). Never on the safety path."""
+        if self._client is None:
+            raise LLMError("no_key", "no credentials")
+        import base64
+
+        import anthropic
+
+        try:
+            async with asyncio.timeout(timeout_s):
+                msg = await self._client.messages.create(
+                    model=model, max_tokens=300,
+                    messages=[{"role": "user", "content": [
+                        {"type": "image", "source": {"type": "base64", "media_type": media_type,
+                                                     "data": base64.standard_b64encode(image).decode()}},
+                        {"type": "text", "text": prompt}]}])
+        except TimeoutError as exc:
+            raise LLMError("total_timeout", "vision call timed out") from exc
+        except anthropic.APIError as exc:
+            raise LLMError("api_error", str(exc)) from exc
+        if msg.stop_reason == "refusal":
+            raise LLMError("refusal")
+        return "".join(b.text for b in msg.content if b.type == "text")
+
+
 # --------------------------------------------------------------------------- test double
 
 
@@ -186,10 +211,20 @@ class FakeLLM:
     name = "fake"
 
     def __init__(self, script: list[FakeStep] | Callable[..., FakeStep] | None = None, available: bool = True):
+        self._n = 0
         self.script = script if script is not None else []
         self._available = available
         self.calls: list[dict[str, Any]] = []
-        self._n = 0
+        self.image_description: str | None = None  # describe_image result (None -> LLMError)
+
+    @property
+    def script(self):
+        return self._script
+
+    @script.setter
+    def script(self, value) -> None:
+        self._script = value
+        self._n = 0  # a new script starts from its first step
 
     @property
     def available(self) -> bool:
@@ -227,3 +262,8 @@ class FakeLLM:
             content.append({"type": "text", "text": step.text})
         content += [{"type": "tool_use", "id": c.id, "name": c.name, "input": c.input} for c in calls]
         return LLMTurn(step.text, calls, content, "tool_use" if calls else "end_turn", model, {})
+
+    async def describe_image(self, *, model, image, media_type, prompt, timeout_s):
+        if self.image_description is None:
+            raise LLMError("unavailable", "FakeLLM has no image_description set")
+        return self.image_description

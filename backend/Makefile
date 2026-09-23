@@ -31,3 +31,9 @@ check: contracts-check lint test web-check
 
 live-smoke:     ## one real LLM question per surface (network; needs ANTHROPIC_API_KEY)
 	uv run pytest -o addopts="" -m live -s tests/test_live_llm.py
+
+index:          ## build the manual RAG index (downloads the small embedding model once)
+	uv run python scripts/build_index.py
+
+rag-eval:       ## demo questions must hit@5 = 100%
+	uv run python scripts/rag_eval.py

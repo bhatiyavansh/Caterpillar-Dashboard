@@ -158,3 +158,39 @@ Other endpoints: `GET /api/actions?surface=`, `POST /api/actions/{id}/confirm|ca
 Nothing required. `run_what_if` results (`current/scenario/delta`) are available via REST for a before/after overlay if you want it.
 
 **CONTRACT_CHANGES needing sign-off:** 1.1.0 (D, C).
+
+---
+
+## Phase C — knowledge, reports, CV (branch `p2/knowledge`)
+
+Gate: `make test` 79 passed · `make index` (81 chunks, local `BAAI/bge-small-en-v1.5`; runtime never downloads) · `make rag-eval` **hit@5 = 18/18** · every safety event maps to exactly one protocol; steps byte-identical to the files; OSHA quotes verified verbatim against the eCFR text at load time (hub refuses to start otherwise) · verified live: C's `seatbelt_unfastened` and hydraulic `maintenance_due` events arrive with `protocol` attached.
+
+**Corpus (what the assistant can cite):** 29 CFR 1926.21, .600–.602, .650–.652 (eCFR, public domain, cited by section — no pages) + `Demo site manual` (team-authored from the simulator's actual thresholds, cited by page; HYD-118, seatbelt escalation, tip-over gauge, bubble, V2V, fatigue). osha.gov PDFs were not retrievable (403), so no OSHA booklets.
+**Protocols:** `backend/data/protocols/*.md` — seatbelt, proximity, fatigue, tip-over, V2V, hydraulic overheat (`maintenance_due` + `component: hydraulic_pump`), incident reporting. Steps are "Demo site SOP"; regulation quotes are verbatim 29 CFR text.
+
+### → Person D (product UI)
+- **Every safety event now carries `protocol`** (contract 1.2.0): `{id, title, severity, steps[], escalation[], source, regulation?{citation, quote}}`. Render the steps **exactly as sent** under the alert:
+```tsx
+{alert.protocol && (<ol>{alert.protocol.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>)}
+{alert.protocol?.regulation && <small>{alert.protocol.regulation.citation}</small>}
+```
+- Assistant answers now include `final.citations[]` (`kind: "manual" | "protocol"`, `citation`, `page?`, `section?`, `quote`) — show them as footnotes; never speak them.
+- REST: `GET /api/protocols`, `/api/protocols/{id}`, `GET /api/rag/search?q=`, `GET/POST /api/incidents` (POST files immediately — it *is* the explicit human action), `GET /api/incidents/{id}` (includes `draft`, `draft_source`, `facts`, `protocol`, `snapshot_url`), `GET/POST /api/work-orders`, `GET /api/reports/weekly` (owner portal: `prose`, `prose_source`, `data`, `kpis`, cached 24 h), `GET /api/anomalies?explain=true` (each anomaly gets a cached `explanation`).
+- **Webcam snapshot:** when a detector fires, send a JPEG frame ≤150 KB with the event:
+```ts
+const snapshot = canvas.toDataURL("image/jpeg", 0.6);   // keep it small
+fetch(`${apiBase()}/api/events`, { method: "POST", headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ ...e, snapshot }) });
+```
+  Incidents filed from that event carry the snapshot and the matched protocol.
+
+### → Person C
+- Your events are enriched in the hub only (added `protocol` key); your payload fields are untouched.
+- Protocol thresholds quoted in the demo manual come from your code (`HYDRAULIC_ALERT_C` 95/90 °C, escalation +0/+5/+10 s, tip-over 1.5/1.2, bubble radii, fatigue 0.75) — if you change them, tell me so the manual stays true.
+- `owner_summary(7)` powers the weekly report (5 s timeout, cached 10 min).
+
+### → Person A
+- Events carry `protocol` too; if the twin shows alert cards, the same snippet as D applies.
+
+**CONTRACT_CHANGES needing sign-off:** 1.2.0 (D, A).
+**Limitations:** describe_scene (vision, advisory) is behind `CV_DESCRIBE=1` and untested against the real model (no API key). Report drafts use the fast model; without a key every draft is the labelled template (`draft_source: "template (llm unavailable)"`).

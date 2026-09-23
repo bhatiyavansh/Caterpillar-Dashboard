@@ -69,7 +69,7 @@ class _serve:
 
     async def __aenter__(self):
         port = free_port()
-        app = create_app(self.settings, llm=self.llm, ml=self.ml or FakeML())
+        app = create_app(self.settings, llm=self.llm, ml=self.ml or FakeML(), embedder_factory=None)
         cfg = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning", lifespan="on")
         self.server = uvicorn.Server(cfg)
         self.task = asyncio.create_task(self.server.serve())
@@ -126,7 +126,9 @@ def event(eid: str, kind: str = "proximity_alert", mid: str = "EXC001", **kw) ->
 
 
 def start_hub_process(port: int, db: Path, **env) -> subprocess.Popen:
-    e = {**os.environ, "COPILOT_DB_PATH": str(db), **{k: str(v) for k, v in env.items()}}
+    e = {**os.environ, "COPILOT_DB_PATH": str(db), "COPILOT_RAG_EMBEDDINGS": "0",
+         "COPILOT_LOG_DIR": str(db.parent / "logs"), "COPILOT_CACHE_DIR": str(db.parent / "cache"),
+         **{k: str(v) for k, v in env.items()}}
     p = subprocess.Popen(
         [sys.executable, "-m", "copilot", "--host", "127.0.0.1", "--port", str(port)],
         cwd=BACKEND_DIR, env=e, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -184,6 +186,11 @@ class FakeML:
 
     async def training_profiles(self):
         return {"profiles": [], "provenance": "fake"}
+
+    async def owner_summary(self, days=7):
+        return {"days": days, "fuel_l": 12234.3, "fuel_spend_inr": 1101087, "idle_cost_inr": 91000,
+                "idle_cost_share_pct": 8.3, "utilization_pct": 71.2, "co2_kg": 32786, "daily": [],
+                "top_anomalies": [], "provenance": "fake"}
 
 
 class FakeSimHTTP:

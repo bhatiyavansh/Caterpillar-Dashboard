@@ -65,6 +65,8 @@ class Citation(_Strict):
     page: int | None = None
     step: int | None = None
     quote: str
+    section: str | None = None  # 1.2.0: regulation section/paragraph, e.g. "1926.651(e)"
+    citation: str | None = None  # 1.2.0: full human-readable citation
 
 
 class SseConfirmRequired(_Strict):

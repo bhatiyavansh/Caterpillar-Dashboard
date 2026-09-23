@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "CAT Copilot hub contracts",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "$defs": {
     "AssistantRequest": {
       "additionalProperties": false,
@@ -113,6 +113,30 @@
         "quote": {
           "title": "Quote",
           "type": "string"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
+        "citation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Citation"
         }
       },
       "required": [
@@ -282,7 +306,7 @@
           "type": "string"
         },
         "contract_version": {
-          "default": "1.1.0",
+          "default": "1.2.0",
           "title": "Contract Version",
           "type": "string"
         },
@@ -427,6 +451,18 @@
           "default": null,
           "description": "True when ts is >30 s older than hub receipt.",
           "title": "Stale"
+        },
+        "protocol": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProtocolRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "1.2.0: matching site protocol, steps verbatim."
         }
       },
       "required": [
@@ -996,6 +1032,83 @@
         "lon"
       ],
       "title": "Pos",
+      "type": "object"
+    },
+    "ProtocolRef": {
+      "additionalProperties": false,
+      "description": "Attached deterministically by the hub to events that have a site protocol (steps verbatim).",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "severity": {
+          "title": "Severity",
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Steps",
+          "type": "array"
+        },
+        "escalation": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Escalation",
+          "type": "array"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "regulation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RegulationRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "severity",
+        "steps",
+        "escalation",
+        "source"
+      ],
+      "title": "ProtocolRef",
+      "type": "object"
+    },
+    "RegulationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "citation": {
+          "title": "Citation",
+          "type": "string"
+        },
+        "quote": {
+          "description": "Verbatim from the public regulation text.",
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "citation",
+        "quote"
+      ],
+      "title": "RegulationRef",
       "type": "object"
     },
     "Snapshot": {

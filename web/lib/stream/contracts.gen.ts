@@ -3,7 +3,7 @@
 // envelope + hub messages from backend/copilot/contracts. Changes are additive only.
 /* eslint-disable */
 
-export const CONTRACT_VERSION = "1.1.0";
+export const CONTRACT_VERSION = "1.2.0";
 export const EVENT_CATALOGUE = ["seatbelt_unfastened", "seatbelt_fastened", "proximity_alert", "fatigue_alert", "tip_over_warning", "v2v_collision_risk", "v2i_suggestion", "anomaly_detected", "maintenance_due", "weather_change", "task_reordered", "working_risk_changed", "source_changed", "low_fuel", "engine_fault", "emergency_stop", "action_pending", "action_confirmed", "action_cancelled", "action_failed", "incident_created", "work_order_created", "training_booked"] as const;
 export const HUB_EVENT_KINDS = ["source_changed", "low_fuel", "engine_fault", "emergency_stop", "action_pending", "action_confirmed", "action_cancelled", "action_failed", "incident_created", "work_order_created", "training_booked"] as const;
 export const SEVERITIES = ["info", "low", "medium", "high", "critical"] as const;
@@ -25,6 +25,8 @@ export interface Citation {
   page?: number | null;
   step?: number | null;
   quote: string;
+  section?: string | null;
+  citation?: string | null;
 }
 
 /** Hub -> source, only to sources whose source_hello set accepts_control. */
@@ -96,6 +98,8 @@ export interface LiveEvent {
   source_id?: string | null;
   /** True when ts is >30 s older than hub receipt. */
   stale?: boolean | null;
+  /** 1.2.0: matching site protocol, steps verbatim. */
+  protocol?: ProtocolRef | null;
 }
 
 /** C's machine_state + envelope. */
@@ -202,6 +206,23 @@ export interface Pos {
   y: number;
   lat: number;
   lon: number;
+}
+
+/** Attached deterministically by the hub to events that have a site protocol (steps verbatim). */
+export interface ProtocolRef {
+  id: string;
+  title: string;
+  severity: string;
+  steps: string[];
+  escalation: string[];
+  source: string;
+  regulation?: RegulationRef | null;
+}
+
+export interface RegulationRef {
+  citation: string;
+  /** Verbatim from the public regulation text. */
+  quote: string;
 }
 
 export interface Snapshot {

@@ -20,6 +20,7 @@ class Settings:
     port: int = 8000
     db_path: Path = BACKEND_DIR / "data" / "copilot.db"
     snapshot_dir: Path = BACKEND_DIR / "data" / "cv_snapshots"
+    data_dir: Path = BACKEND_DIR / "data"
     sim_url: str = "http://localhost:8100"
     sim_timeout_s: float = 2.0
 
@@ -45,6 +46,7 @@ class Settings:
     llm_first_token_s: float = 5.0
     llm_total_s: float = 20.0
     ml_mode: str = "auto"  # auto | real | stub
+    rag_embeddings: bool = True  # load the local embedding model (never downloads at runtime)
     cors_origins: tuple[str, ...] = field(
         default=("http://localhost:3000", "http://127.0.0.1:3000")
     )
@@ -70,6 +72,7 @@ def load_settings(**overrides) -> Settings:
         llm_model=os.environ.get("LLM_MODEL", "claude-opus-5"),
         llm_fast_model=os.environ.get("LLM_FAST_MODEL", "claude-haiku-4-5"),
         ml_mode=os.environ.get("ML_MODE", "auto"),
+        rag_embeddings=_env("RAG_EMBEDDINGS", "1") == "1",
         cors_origins=tuple(
             o.strip()
             for o in _env("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")

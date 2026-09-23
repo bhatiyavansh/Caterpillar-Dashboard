@@ -17,7 +17,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 from simulator.schemas import EVENT_CATALOGUE, Event, MachineState, Severity, WorkerState
 
-CONTRACT_VERSION = "1.1.0"
+CONTRACT_VERSION = "1.2.0"
 
 #: Event kinds the hub itself (or a non-C source) may emit, on top of C's catalogue.
 HUB_EVENT_KINDS: tuple[str, ...] = (
@@ -68,11 +68,29 @@ class LiveWorkerState(WorkerState, Envelope):
     """C's worker_state + envelope."""
 
 
+class RegulationRef(_Strict):
+    citation: str
+    quote: str = Field(description="Verbatim from the public regulation text.")
+
+
+class ProtocolRef(_Strict):
+    """Attached deterministically by the hub to events that have a site protocol (steps verbatim)."""
+
+    id: str
+    title: str
+    severity: str
+    steps: list[str]
+    escalation: list[str]
+    source: str
+    regulation: RegulationRef | None = None
+
+
 class LiveEvent(Event, ReliableEnvelope):
     """C's event + envelope + hub annotations (all optional, only present when set)."""
 
     source_id: str | None = Field(default=None, description="Which ingest source produced it.")
     stale: bool | None = Field(default=None, description="True when ts is >30 s older than hub receipt.")
+    protocol: ProtocolRef | None = Field(default=None, description="1.2.0: matching site protocol, steps verbatim.")
 
 
 # --------------------------------------------------------------------------- hub messages

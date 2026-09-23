@@ -53,3 +53,6 @@ class StubML:
 
     async def training_profiles(self) -> dict[str, Any]:
         raise MLUnavailable("training profiles need Person C's history data")
+
+    async def owner_summary(self, days: int) -> dict[str, Any]:
+        raise MLUnavailable("owner summary needs Person C's history data")

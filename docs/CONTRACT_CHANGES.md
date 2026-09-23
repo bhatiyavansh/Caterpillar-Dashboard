@@ -27,3 +27,10 @@ Sign-off column: who has to confirm. ✅ means confirmed, ⏳ means pending.
 |---|---|---|
 | Hub event kinds `action_pending`, `action_confirmed`, `action_cancelled`, `action_failed` (`data`: `action_id`, `tool`, `surface`) | UI can show and clear confirm cards on every screen; confirmed actions are visible site-wide | D ⏳ |
 | Hub event kinds `incident_created` (`data.incident_id`), `work_order_created` (`data.work_order_id`), `training_booked` (`data.booking_id`, `slot_id`) | README §10 lists `incident_created`; the others follow the same pattern | D ⏳ C ⏳ |
+
+## 1.2.0 (2026-09-23, Phase C): protocols and citations
+
+| Addition | Why | Sign-off |
+|---|---|---|
+| `LiveEvent.protocol?` (`ProtocolRef {id, title, severity, steps[], escalation[], source, regulation?{citation, quote}}`) | Every safety event carries its site protocol, attached deterministically by the hub. Steps are verbatim. | D ⏳ A ⏳ |
+| `Citation.section?`, `Citation.citation?` | Regulation citations (29 CFR sections have no pages) | D ⏳ |
