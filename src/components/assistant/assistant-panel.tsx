@@ -158,10 +158,48 @@ export interface AssistantPanelProps {
 }
 
 /**
+ * Static placeholder shown until the client has mounted.
+ *
+ * `useVoice`'s capability checks (`sttSupported`, mic engine, ...) branch on
+ * `typeof window`, which is undefined during SSR but already defined by the
+ * time the client runs its first render for hydration — so calling the real
+ * hook before mount produces a different `disabled`/`aria-label`/`title` on
+ * the mic button between the server and client passes. Same fix the twin
+ * already uses for its own browser-only state: never call the real hook
+ * until an effect confirms we are past hydration.
+ */
+function AssistantPanelSkeleton({ className }: { className?: string }) {
+  return (
+    <section
+      className={cn("flex min-h-0 flex-col overflow-hidden rounded border border-white/10 bg-ink-850", className)}
+      aria-label="Site assistant"
+    >
+      <div className="flex shrink-0 items-center gap-2.5 border-b border-white/10 px-3 py-2">
+        <div className="size-7 shrink-0 rounded-full border-2 border-white/15 bg-ink-900" aria-hidden />
+        <span className="text-xs font-bold text-zinc-100">Site assistant</span>
+      </div>
+      <div className="flex flex-1 items-center justify-center">
+        <span className="text-xs text-muted">Loading…</span>
+      </div>
+    </section>
+  );
+}
+
+/**
  * The full conversational surface: avatar, history, streaming draft, pending
  * confirmations, suggestions, and a combined text/voice input row.
  */
-export function AssistantPanel({ surface, machineId, operatorId, alert, className }: AssistantPanelProps) {
+export function AssistantPanel(props: AssistantPanelProps) {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberate SSR/hydration gate, not derived render state
+    setMounted(true);
+  }, []);
+  if (!mounted) return <AssistantPanelSkeleton className={props.className} />;
+  return <AssistantPanelLive {...props} />;
+}
+
+function AssistantPanelLive({ surface, machineId, operatorId, alert, className }: AssistantPanelProps) {
   const voice = useVoice({ surface, machineId, operatorId, alert });
   const [input, setInput] = React.useState("");
   const logRef = React.useRef<HTMLDivElement>(null);
