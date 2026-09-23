@@ -46,6 +46,9 @@ export function CameraController() {
   const engine = useTwinStore((s) => s.engine);
   const mode = useTwinStore((s) => s.cameraMode);
   const resetNonce = useTwinStore((s) => s.cameraResetNonce);
+  // Follow whatever machine is selected, not always EXC001 — otherwise an
+  // incident replay on another machine happens off-screen.
+  const subjectId = useTwinStore((s) => s.selectedMachine);
 
   const { camera } = useThree();
   const controls = useThree((s) => s.controls) as unknown as Controls | null;
@@ -71,7 +74,7 @@ export function CameraController() {
     outPosition: THREE.Vector3,
     outTarget: THREE.Vector3,
   ): void => {
-    const p = engine.primary;
+    const p = engine.telemetryOf(subjectId);
 
     switch (mode) {
       case "top": {
@@ -127,7 +130,7 @@ export function CameraController() {
     transition.current = 0;
     fromPosition.current.copy(camera.position);
     fromTarget.current.copy(controls ? controls.target : lastTarget.current);
-  }, [mode, resetNonce, camera, controls]);
+  }, [mode, resetNonce, subjectId, camera, controls]);
 
   // Mode-appropriate orbit limits.
   useEffect(() => {

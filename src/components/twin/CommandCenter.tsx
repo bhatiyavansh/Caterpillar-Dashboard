@@ -13,6 +13,7 @@ import type { CameraMode, TelemetrySource } from "@/types/twin";
 import { MACHINES } from "@/lib/twin/simulation";
 import { activeKeys } from "@/lib/twin/controls";
 import { useTwinStore } from "@/store/twinStore";
+import { useElementSize } from "@/hooks/twin/useElementSize";
 
 import { SafetyStatus } from "./SafetyStatus";
 import { TelemetryPanel } from "./TelemetryPanel";
@@ -44,7 +45,7 @@ function Brand() {
 
 /* ----------------------------- live badge ----------------------------- */
 
-function LiveBadge() {
+function LiveBadge({ compact }: { compact?: boolean }) {
   const clock = useTwinStore((s) => s.snapshot.clock);
   const fps = useTwinStore((s) => s.snapshot.fps);
   const paused = useTwinStore((s) => s.snapshot.paused);
@@ -63,9 +64,16 @@ function LiveBadge() {
             {paused ? "PAUSED" : "LIVE"}
           </span>
         </div>
-        <div className="mt-1 text-[10px] uppercase tracking-wider text-zinc-500">
-          ● {source === "keyboard" ? "connected" : "iot stream"}
-        </div>
+        {compact ? null : (
+          <div className="mt-1 text-[10px] uppercase tracking-wider text-zinc-500">
+            ●{" "}
+            {source === "keyboard"
+              ? "connected"
+              : source === "mock_iot"
+                ? "iot stream"
+                : "live feed"}
+          </div>
+        )}
       </div>
 
       <div className="h-7 w-px bg-white/10" />
@@ -84,22 +92,23 @@ function LiveBadge() {
 
 /* --------------------------- camera controls --------------------------- */
 
-const CAMERA_MODES: { mode: CameraMode; label: string }[] = [
-  { mode: "follow", label: "Follow machine" },
-  { mode: "site", label: "Site overview" },
-  { mode: "top", label: "Top down" },
-  { mode: "driver", label: "Driver view" },
+const CAMERA_MODES: { mode: CameraMode; label: string; short: string }[] = [
+  { mode: "follow", label: "Follow machine", short: "Follow" },
+  { mode: "site", label: "Site overview", short: "Site" },
+  { mode: "top", label: "Top down", short: "Top" },
+  { mode: "driver", label: "Driver view", short: "Cab" },
 ];
 
 /** Horizontal camera bar — sits above the key hints so the columns stay short. */
-function CameraBar() {
+function CameraBar({ compact }: { compact?: boolean }) {
   const mode = useTwinStore((s) => s.cameraMode);
   const setMode = useTwinStore((s) => s.setCameraMode);
   const resetCamera = useTwinStore((s) => s.resetCamera);
+  const toggleDirector = useTwinStore((s) => s.toggleDirector);
 
   return (
-    <div className="panel pointer-events-auto flex items-center gap-1.5 px-2 py-1.5">
-      <span className="label-xs mr-1 hidden lg:block">Camera</span>
+    <div className="panel pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-1.5 px-2 py-1.5">
+      {compact ? null : <span className="label-xs mr-1">Camera</span>}
       {CAMERA_MODES.map((c) => (
         <button
           key={c.mode}
@@ -112,16 +121,28 @@ function CameraBar() {
               : "border-white/12 text-zinc-300 hover:border-white/35 hover:bg-white/5"
           }`}
         >
-          {c.label}
+          {compact ? c.short : c.label}
         </button>
       ))}
-      <button
-        type="button"
-        onClick={resetCamera}
-        className="rounded border border-white/12 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 transition hover:border-white/35 hover:bg-white/5"
-      >
-        Reset
-      </button>
+      {compact ? (
+        // SceneLayers (which normally hosts this) is hidden when compact, so the
+        // director stays reachable without knowing the Ctrl+D shortcut.
+        <button
+          type="button"
+          onClick={toggleDirector}
+          className="rounded border border-white/12 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 transition hover:border-cat-500/60 hover:text-cat-500"
+        >
+          Director
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={resetCamera}
+          className="rounded border border-white/12 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 transition hover:border-white/35 hover:bg-white/5"
+        >
+          Reset
+        </button>
+      )}
     </div>
   );
 }
@@ -161,6 +182,30 @@ function Toggle({
   );
 }
 
+/** Live-link state. Only meaningful while the websocket source is selected. */
+function LinkBadge() {
+  const source = useTwinStore((s) => s.snapshot.source);
+  const status = useTwinStore((s) => s.snapshot.linkStatus);
+  const count = useTwinStore((s) => s.snapshot.liveMachines);
+
+  if (source !== "websocket") return null;
+
+  const look = {
+    idle: { dot: "bg-zinc-500", text: "text-zinc-500", label: "--" },
+    connecting: { dot: "bg-status-warn animate-pulse", text: "text-status-warn", label: "…" },
+    live: { dot: "bg-status-ok animate-pulse", text: "text-status-ok", label: `${count}` },
+    reconnecting: { dot: "bg-status-warn animate-pulse", text: "text-status-warn", label: "RETRY" },
+    unavailable: { dot: "bg-status-crit", text: "text-status-crit", label: "OFF" },
+  }[status];
+
+  return (
+    <span className={`flex items-center gap-1 text-[9px] ${look.text}`}>
+      <span className={`inline-block size-1.5 rounded-full ${look.dot}`} />
+      {look.label}
+    </span>
+  );
+}
+
 function SceneLayers() {
   const showBubble = useTwinStore((s) => s.showBubble);
   const showPaths = useTwinStore((s) => s.showPaths);
@@ -170,9 +215,10 @@ function SceneLayers() {
   const setSource = useTwinStore((s) => s.setSource);
   const toggleDirector = useTwinStore((s) => s.toggleDirector);
 
-  const sources: { id: TelemetrySource; label: string }[] = [
-    { id: "keyboard", label: "Keyboard" },
-    { id: "mock_iot", label: "Mock IoT" },
+  const sources: { id: TelemetrySource; label: string; hint: string }[] = [
+    { id: "keyboard", label: "Keyboard", hint: "You drive EXC001" },
+    { id: "mock_iot", label: "Mock IoT", hint: "Scripted dig cycle" },
+    { id: "websocket", label: "Live feed", hint: "Simulator on :8100" },
   ];
 
   return (
@@ -184,20 +230,22 @@ function SceneLayers() {
       <div className="label-xs mb-1.5 mt-2.5 border-t border-white/10 pt-2.5">
         Simulation source
       </div>
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid gap-1.5">
         {sources.map((s) => (
           <button
             key={s.id}
             type="button"
             onClick={() => setSource(s.id)}
             aria-pressed={source === s.id}
-            className={`rounded border px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition ${
+            title={s.hint}
+            className={`flex items-center justify-between gap-2 rounded border px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition ${
               source === s.id
                 ? "border-cat-500/70 bg-cat-500/15 text-cat-500"
                 : "border-white/12 text-zinc-300 hover:border-white/35 hover:bg-white/5"
             }`}
           >
-            {s.label}
+            <span>{s.label}</span>
+            {s.id === "websocket" ? <LinkBadge /> : null}
           </button>
         ))}
       </div>
@@ -215,7 +263,7 @@ function SceneLayers() {
 
 /* --------------------------- machine + task ---------------------------- */
 
-function MachineCard() {
+function MachineCard({ compact }: { compact?: boolean }) {
   const selectedId = useTwinStore((s) => s.selectedMachine);
   const select = useTwinStore((s) => s.selectMachine);
   const telemetry = useTwinStore((s) =>
@@ -227,7 +275,7 @@ function MachineCard() {
   const stopped = telemetry.activity === "emergency_stop";
 
   return (
-    <div className="panel-raised pointer-events-auto w-62 p-3">
+    <div className={`panel-raised pointer-events-auto w-full ${compact ? "p-2" : "p-3"}`}>
       <div className="flex items-center gap-2.5">
         <span className="hazard-stripe block h-9 w-1.5 rounded-sm" aria-hidden />
         <div className="min-w-0">
@@ -335,14 +383,20 @@ const HINTS: { keys: string[]; codes: string[]; label: string }[] = [
   { keys: ["R"], codes: [], label: "Reset" },
 ];
 
-function KeyHints() {
+function KeyHints({ compact }: { compact?: boolean }) {
   // Re-reads on the HUD tick, which is responsive enough to feel live.
   useTwinStore((s) => s.snapshot.tick);
   const pressed = activeKeys();
+  // Modifier-only rows have nothing to highlight; drop them when space is tight.
+  const shown = compact ? HINTS.filter((h) => h.codes.length > 0) : HINTS;
 
   return (
-    <div className="panel pointer-events-auto flex items-center gap-3 px-3 py-2">
-      {HINTS.map((hint) => {
+    <div
+      className={`panel pointer-events-auto flex max-w-full flex-wrap items-center justify-center ${
+        compact ? "gap-2 px-2 py-1.5" : "gap-3 px-3 py-2"
+      }`}
+    >
+      {shown.map((hint) => {
         const active = hint.codes.some((c) => pressed.has(c));
         return (
           <div key={hint.label} className="flex items-center gap-1.5">
@@ -360,9 +414,11 @@ function KeyHints() {
                 </kbd>
               ))}
             </div>
-            <span className="text-[10px] uppercase tracking-wider text-zinc-500">
-              {hint.label}
-            </span>
+            {compact ? null : (
+              <span className="text-[10px] uppercase tracking-wider text-zinc-500">
+                {hint.label}
+              </span>
+            )}
           </div>
         );
       })}
@@ -407,45 +463,82 @@ function StartHint() {
  * stack ran straight through the camera controls at 720p. As columns, the
  * flexible middle panels shrink and scroll instead of overlapping.
  */
-export function CommandCenter() {
+export function CommandCenter({ dense = false }: { dense?: boolean }) {
+  // Measured inside the zoom, so `density` reflects the space children get.
+  const { ref, density } = useElementSize<HTMLDivElement>();
+
+  const compact = density === "compact";
+  const full = density === "full";
+
   return (
-    <div className="pointer-events-none absolute inset-0 z-10 flex select-none gap-3 p-4">
-      {/* machine tags project onto this layer from inside the Canvas */}
-      <MachineLabels />
+    <div
+      className="pointer-events-none absolute inset-0 z-10 select-none"
+      // Inside the in-cab frame the stage is CSS-scaled down, so the HUD is
+      // zoomed back up to stay legible. Kept modest — the density tiers below
+      // do the real fitting work.
+      style={dense ? { zoom: 1.5 } : undefined}
+    >
+      <div
+        ref={ref}
+        className={`flex h-full w-full ${compact ? "gap-2 p-2" : "gap-3 p-4"}`}
+      >
+        {/* machine tags project onto this layer from inside the Canvas */}
+        <MachineLabels />
 
-      {/* ---------------- left ---------------- */}
-      <div className="relative z-10 flex w-62 shrink-0 flex-col gap-3">
-        <Brand />
-        <div className="min-h-0 flex-1 overflow-hidden">
-          <EventFeed />
+        {/* ---------------- left ---------------- */}
+        <div
+          className={`relative z-10 flex shrink-0 flex-col ${
+            compact ? "w-44 gap-2" : "w-62 gap-3"
+          }`}
+        >
+          {compact ? null : <Brand />}
+          {full ? (
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <EventFeed />
+            </div>
+          ) : null}
+          <div className={`mt-auto flex flex-col ${compact ? "gap-2" : "gap-3"}`}>
+            {compact ? null : <TaskCard />}
+            <MachineCard compact={compact} />
+          </div>
         </div>
-        <TaskCard />
-        <MachineCard />
-      </div>
 
-      {/* ---------------- centre ---------------- */}
-      <div className="relative z-10 flex min-w-0 flex-1 flex-col items-center gap-3">
-        <SafetyStatus />
-        <AlertOverlay />
-        <div className="mt-auto flex flex-col items-center gap-2">
-          <StartHint />
-          <CameraBar />
-          <KeyHints />
+        {/* ---------------- centre ---------------- */}
+        <div
+          className={`relative z-10 flex min-w-0 flex-1 flex-col items-center ${
+            compact ? "gap-2" : "gap-3"
+          }`}
+        >
+          <SafetyStatus compact={compact} />
+          <AlertOverlay compact={compact} />
+          <div className="mt-auto flex w-full max-w-full flex-col items-center gap-2">
+            <StartHint />
+            <CameraBar compact={compact} />
+            <KeyHints compact={compact} />
+          </div>
         </div>
-      </div>
 
-      {/* ---------------- right ---------------- */}
-      <div className="relative z-10 flex w-67 shrink-0 flex-col items-end gap-3">
-        <LiveBadge />
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          <TelemetryPanel />
+        {/* ---------------- right ---------------- */}
+        <div
+          className={`relative z-10 flex shrink-0 flex-col items-end ${
+            compact ? "w-56 gap-2" : "w-67 gap-3"
+          }`}
+        >
+          <LiveBadge compact={compact} />
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <TelemetryPanel compact={compact} />
+          </div>
+          {full ? <SceneLayers /> : null}
         </div>
-        <SceneLayers />
-      </div>
 
-      {/* director drawer floats over the right column */}
-      <div className="absolute right-4 top-4 z-30">
-        <DirectorPanel />
+        {/* Director drawer is bounded by the stage, never the browser window. */}
+        <div
+          className={`pointer-events-none absolute right-0 z-30 flex ${
+            compact ? "inset-y-2 pr-2" : "inset-y-4 pr-4"
+          }`}
+        >
+          <DirectorPanel compact={compact} />
+        </div>
       </div>
     </div>
   );

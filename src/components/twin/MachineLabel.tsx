@@ -31,8 +31,8 @@ const slots = new Map<string, LabelSlot>(
 /** Tag heights roughly match each machine's silhouette. */
 const HEIGHTS: Record<string, number> = {
   EXC001: 5.4,
-  DZR001: 4.4,
-  LDR001: 4.8,
+  DOZ001: 4.4,
+  WHL001: 4.8,
   TRK001: 5.0,
 };
 

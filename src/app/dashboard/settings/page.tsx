@@ -17,6 +17,12 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/navigation/dashboard-shell";
 import { Button, Select } from "@/components/ui/primitives";
 import { Switch } from "@/components/ui/overlays";
+import {
+  isAlertSoundMuted,
+  playAlertSound,
+  setAlertSoundMuted,
+  subscribeAlertSound,
+} from "@/lib/alert-sound";
 import { DEVICE_SIZES, type DeviceSizeKey, useMachineStore } from "@/store/machine-store";
 
 function Section({
@@ -74,6 +80,18 @@ export default function SettingsPage() {
 
   const toggle = (key: keyof typeof toggles) => (v: boolean) => setToggles((t) => ({ ...t, [key]: v }));
 
+  // The preference lives in localStorage, so the server pass assumes sound on.
+  const soundOn = React.useSyncExternalStore(
+    subscribeAlertSound,
+    () => !isAlertSoundMuted(),
+    () => true,
+  );
+  const setSound = (on: boolean) => {
+    setAlertSoundMuted(!on);
+    // Turning it on plays one tone, so the choice is confirmed by ear.
+    if (on) playAlertSound("warning");
+  };
+
   return (
     <div className="pb-10">
       <PageHeader
@@ -118,6 +136,11 @@ export default function SettingsPage() {
         </Section>
 
         <Section icon={Bell} title="Notifications" description="What reaches the operator and the supervisor.">
+          <Row
+            label="Audible alerts"
+            hint="Play a tone whenever a new alert appears on any screen"
+            control={<Switch checked={soundOn} onCheckedChange={setSound} />}
+          />
           <Row
             label="Critical alerts push to cab"
             control={<Switch checked={toggles.criticalPush} onCheckedChange={toggle("criticalPush")} />}

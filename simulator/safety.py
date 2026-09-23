@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from .config import (
     EVENT_DEBOUNCE_S,
     SEATBELT_ESCALATE_S,
+    SEATBELT_TRAVEL_SPEED_MPS,
     TIP_OVER_AMBER,
     TIP_OVER_RED,
 )
@@ -78,6 +79,32 @@ class EventBus:
             del self.history[:-500]
         return evt
 
+    #: Severities that must never be pushed out of the feed by routine chatter.
+    PRIORITY_SEVERITIES = ("critical", "high")
+
+    def recent(self, limit: int = 30, window: int = 300) -> list[dict]:
+        """The last `limit` events, with safety alerts protected from eviction.
+
+        A plain tail slice let one anomaly-scoring pass — which emits for every
+        flagged machine at once — clear every safety event out of the feed
+        within a few minutes. Reserving up to half the slots for recent
+        high-severity events keeps the ones that matter visible, while the rest
+        still shows the latest routine traffic.
+        """
+        if len(self.history) <= limit:
+            return list(self.history)
+
+        tail = self.history[-window:]
+        priority = [e for e in tail if e["severity"] in self.PRIORITY_SEVERITIES]
+        routine = [e for e in tail if e["severity"] not in self.PRIORITY_SEVERITIES]
+
+        keep_priority = priority[-(limit // 2):]
+        keep_routine = routine[-(limit - len(keep_priority)):]
+
+        merged = keep_priority + keep_routine
+        merged.sort(key=lambda e: e["id"])
+        return merged[-limit:]
+
     def drain(self) -> list[dict]:
         out = self.pending
         self.pending = []
@@ -114,17 +141,37 @@ def check_seatbelt(machine, bus: EventBus, sim_time_s: float, state: dict) -> No
 
     elapsed = sim_time_s - since
     level = min(3, int(elapsed // SEATBELT_ESCALATE_S) + 1)
-    if level > state.get("level", 0):
-        state["level"] = level
-        wording = {
-            1: "Seatbelt unfastened - warning chime",
-            2: "Seatbelt still unfastened - voice warning",
-            3: "Seatbelt unfastened - travel locked",
-        }[level]
+
+    # An unfastened belt on a parked machine is a compliance issue; on a moving
+    # one it is what ROPS exists for. Severity follows the machine, not a timer.
+    moving = abs(getattr(machine, "speed_mps", 0.0)) > SEATBELT_TRAVEL_SPEED_MPS
+    was_moving = state.get("moving", False)
+    state["moving"] = moving
+
+    escalated = level > state.get("level", 0)
+    # Starting to move mid-violation is itself the alert worth raising.
+    began_travelling = moving and not was_moving
+
+    if escalated or began_travelling:
+        state["level"] = max(level, state.get("level", 0))
+        if moving:
+            wording = "Seatbelt unfastened while travelling"
+        else:
+            wording = {
+                1: "Seatbelt unfastened - warning chime",
+                2: "Seatbelt still unfastened - voice warning",
+                3: "Seatbelt unfastened - travel locked",
+            }[level]
         bus.emit(
-            "seatbelt_unfastened", "high",
+            "seatbelt_unfastened",
+            "critical" if moving else "high",
             f"{wording} ({machine.machine_id})",
-            machine.machine_id, "rules", {"escalation_level": level},
+            machine.machine_id, "rules",
+            {
+                "escalation_level": level,
+                "moving": moving,
+                "speed_mps": round(float(getattr(machine, "speed_mps", 0.0)), 2),
+            },
             sim_time_s, force=True,
         )
 

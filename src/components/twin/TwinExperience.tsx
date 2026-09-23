@@ -3,15 +3,18 @@
 /**
  * Page shell for the digital twin.
  *
- * The scene is client-only: it is mounted behind a `mounted` gate so the
- * simulation clock and randomised fleet state can never produce a server/client
- * hydration mismatch, and WebGL is never asked for during SSR.
+ * `TwinStage` fills whatever box it is given, so it works both full-screen at
+ * /twin and inside the in-cab device frame on /simulation. The scene is
+ * client-only, mounted behind a `mounted` gate so the simulation clock and
+ * randomised fleet state can never produce a hydration mismatch, and WebGL is
+ * never asked for during SSR.
  */
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useVehicleControls } from "@/hooks/twin/useVehicleControls";
+import { useLiveLink } from "@/hooks/twin/useLiveLink";
 import { CommandCenter } from "./CommandCenter";
 
 const SimulationScene = dynamic(
@@ -35,15 +38,32 @@ function BootScreen() {
   );
 }
 
-export function TwinExperience() {
+export interface TwinStageProps {
+  /**
+   * Whether this stage owns the keyboard. False when the twin is mounted but
+   * another view (the in-cab HMI) is in front of it.
+   */
+  active?: boolean;
+  /**
+   * Trims the overlay to the essentials and enlarges it. Used inside the in-cab
+   * frame, where the whole stage is CSS-scaled down and a full-size HUD would
+   * render at unreadable point sizes.
+   */
+  dense?: boolean;
+}
+
+/** Fills its positioned parent. */
+export function TwinStage({ active = true, dense = false }: TwinStageProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   // Keyboard lives here, outside the Canvas — never inside a 3D component.
-  useVehicleControls(mounted);
+  useVehicleControls(mounted && active);
+  // Attach to the simulator if one is running; otherwise stay self-contained.
+  useLiveLink(mounted && active);
 
   return (
-    <main className="fixed inset-0 overflow-hidden bg-ink-950">
+    <div className="absolute inset-0 overflow-hidden bg-ink-950">
       {/* faint instrument grid behind the scene */}
       <div
         aria-hidden
@@ -57,18 +77,27 @@ export function TwinExperience() {
 
       {mounted ? (
         <>
-          <div className="absolute inset-0 z-[1]">
+          <div className="absolute inset-0 z-1">
             <SimulationScene />
           </div>
-          <CommandCenter />
+          <CommandCenter dense={dense} />
         </>
       ) : (
         <BootScreen />
       )}
+    </div>
+  );
+}
+
+/** Full-screen route at /twin. */
+export function TwinExperience() {
+  return (
+    <main className="fixed inset-0 overflow-hidden bg-ink-950">
+      <TwinStage />
 
       <Link
         href="/dashboard"
-        className="absolute bottom-4 left-1/2 z-20 hidden -translate-x-1/2 translate-y-10 text-[10px] uppercase tracking-[0.18em] text-zinc-600 transition hover:text-cat-500 2xl:block"
+        className="pointer-events-auto absolute left-4 top-4 z-40 hidden text-[10px] uppercase tracking-[0.18em] text-zinc-600 transition hover:text-cat-500"
       >
         ← Back to dashboard
       </Link>

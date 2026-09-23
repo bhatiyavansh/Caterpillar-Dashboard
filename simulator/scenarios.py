@@ -184,7 +184,7 @@ class ScenarioEngine:
         worker.pin_to(
             m.x + math.sin(rad) * distance_m,
             m.y + math.cos(rad) * distance_m,
-            w.tick_no, duration_s,
+            w.sim_time_s + duration_s,
         )
         return self._emit(
             "worker_behind", "proximity_alert", "critical",

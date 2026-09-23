@@ -25,6 +25,7 @@ import { WorkerCrew } from "./Worker";
 import { SafetyBubble } from "./SafetyBubble";
 import { PredictedPaths } from "./PredictedPath";
 import { LabelProjector } from "./MachineLabel";
+import { IncidentMarkers } from "./IncidentMarkers";
 import { CameraController } from "./CameraController";
 import { SiteLighting, Weather } from "./Weather";
 
@@ -38,8 +39,8 @@ function Fleet() {
   return (
     <group>
       <Excavator telemetry={engine.telemetryOf("EXC001")} safety={safety} />
-      <Bulldozer telemetry={engine.telemetryOf("DZR001")} />
-      <Loader telemetry={engine.telemetryOf("LDR001")} />
+      <Bulldozer telemetry={engine.telemetryOf("DOZ001")} />
+      <Loader telemetry={engine.telemetryOf("WHL001")} />
       <Truck telemetry={engine.telemetryOf("TRK001")} />
     </group>
   );
@@ -70,6 +71,10 @@ export function SimulationScene() {
         alpha: false,
       }}
       camera={{ position: [-8, 28, 34], fov: 52, near: 0.5, far: 2400 }}
+      // The in-cab frame CSS-scales the whole stage, and getBoundingClientRect
+      // reports the post-transform size — which would feed a shrunken viewport
+      // back into an unscaled box. offsetWidth/Height ignore transforms.
+      resize={{ offsetSize: true }}
       onCreated={({ gl, scene }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
         gl.toneMappingExposure = 1.05;
@@ -87,6 +92,7 @@ export function SimulationScene() {
         <Fleet />
         <WorkerCrew />
         <SafetyLayer />
+        <IncidentMarkers />
         <LabelProjector />
         <Preload all />
       </Suspense>

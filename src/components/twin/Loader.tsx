@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * LDR001 — CAT 966M style wheel loader.
+ * WHL001 — CAT 966M style wheel loader.
  *
  * The bucket lifts and tips with the reported payload, so a loaded machine
  * visibly carries its bucket high on the way to the truck.

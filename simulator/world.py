@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 
 from .config import (
     AMBIENT_TEMP_C,
+    ANOMALY_DEBOUNCE_S,
     FLEET,
     HERO_MACHINE,
     OPERATORS,
@@ -37,6 +38,9 @@ class World:
         self.rng = random.Random(seed)
         self.seed = seed
         self.tick_no = 0
+        # Tick-rate independent scheduling for the per-second bookkeeping.
+        self._since_sample_s = 0.0
+        self._since_anomaly_s = 0.0
         self.sim_time_s = 0.0
         self.started_at = datetime.now(timezone.utc)
 
@@ -115,7 +119,7 @@ class World:
         self._update_ground(dt)
 
         for w in self.workers:
-            w.tick(self.tick_no, dt, self.machines)
+            w.tick(self.sim_time_s, dt, self.machines)
 
         for m in self.machines:
             self._maybe_break(m, dt)
@@ -129,13 +133,22 @@ class World:
 
         check_v2v(self.machines, self.bus, self.sim_time_s, self._v2v_last)
         check_v2i(self.machines, self.bus, self.sim_time_s, self)
+        self._since_anomaly_s += dt
         self._score_anomalies()
+
+        # The anomaly window is a minute of one-second samples whatever the
+        # tick rate, so it is fed on simulated time rather than every tick.
+        self._since_sample_s += dt
+        sample_now = self._since_sample_s >= 1.0
+        if sample_now:
+            self._since_sample_s = 0.0
 
         messages: list[dict] = []
         for m in self.machines:
             st = m.state(ts)
             self.last_states[m.machine_id] = st
-            self._windows[m.machine_id].append(st)
+            if sample_now:
+                self._windows[m.machine_id].append(st)
             messages.append(st)
         for w in self.workers:
             st = w.state(ts)
@@ -217,8 +230,9 @@ class World:
                 self.scenario_hooks.remove(hook)
 
     def _score_anomalies(self) -> None:
-        if self.tick_no % ANOMALY_WINDOW_S != 0:
+        if self._since_anomaly_s < ANOMALY_WINDOW_S:
             return
+        self._since_anomaly_s = 0.0
         try:
             from intelligence.anomaly import score_live_window
         except Exception:
@@ -243,6 +257,7 @@ class World:
                     "window_min": ANOMALY_WINDOW_S // 60 or 1,
                 },
                 self.sim_time_s,
+                debounce_s=ANOMALY_DEBOUNCE_S,
             )
 
     # -- introspection -----------------------------------------------------
@@ -262,7 +277,7 @@ class World:
             "machines": list(self.last_states.values()),
             "workers": list(self.last_worker_states.values()),
             "tasks": self.tasks.all_tasks(),
-            "recent_events": self.bus.history[-30:],
+            "recent_events": self.bus.recent(30),
             "active_scenarios": list(self.active_scenarios.keys()),
             "site_layout": SITE_LAYOUT,
         }

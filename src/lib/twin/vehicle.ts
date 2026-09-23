@@ -240,8 +240,10 @@ export class VehicleModel {
     this.bobPhase += dt * (1.6 + speed * 3.2);
     const bob = Math.sin(this.bobPhase) * 0.011 * Math.min(speed, 2.2);
 
-    t.pitch = att.pitch + this.dynPitch + bob;
-    t.roll = att.roll + this.dynRoll + bob * 0.5;
+    // The director's injected grade feeds the real attitude, so the tip-over
+    // margin degrades through the normal path instead of being faked.
+    t.pitch = att.pitch + this.dynPitch + bob + ctx.attitudeBias.pitch;
+    t.roll = att.roll + this.dynRoll + bob * 0.5 + ctx.attitudeBias.roll;
   }
 
   private integrateArm(input: VehicleInput, dt: number): void {

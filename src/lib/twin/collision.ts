@@ -13,7 +13,17 @@ import { terrainHeight } from "./terrain";
 /** Seconds of look-ahead. */
 export const HORIZON = 5;
 /** Metres. Two machines closer than this at the same moment is a conflict. */
-export const CONFLICT_RADIUS = 11;
+export const CONFLICT_RADIUS = 9;
+
+/**
+ * Metres the pair must actually close by before it counts.
+ *
+ * Without this, a machine parked beside a haul road raised a permanent
+ * "collision risk" every time another machine drove past at normal separation,
+ * which pinned the site safety indicator to CRITICAL and made it meaningless.
+ * A real conflict means the gap is shrinking.
+ */
+export const MIN_CLOSING = 1.5;
 /** Below this speed a machine is parked and cannot cause a conflict. */
 export const MOVING_THRESHOLD = 0.35;
 
@@ -74,6 +84,8 @@ export function detectCollisionRisks(
         continue;
       }
 
+      const currentSeparation = Math.hypot(a.x - b.x, a.z - b.z);
+
       let minSeparation = Infinity;
       let minTime = 0;
       let point: [number, number, number] = [0, 0, 0];
@@ -93,7 +105,9 @@ export function detectCollisionRisks(
         }
       }
 
-      if (minSeparation < CONFLICT_RADIUS) {
+      // Both conditions matter: they end up close, AND they are converging.
+      const closing = currentSeparation - minSeparation;
+      if (minSeparation < CONFLICT_RADIUS && closing >= MIN_CLOSING) {
         risks.push({
           id: `${a.machineId}-${b.machineId}`,
           a: a.machineId,

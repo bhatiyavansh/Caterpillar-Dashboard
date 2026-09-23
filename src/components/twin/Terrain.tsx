@@ -16,8 +16,8 @@ import { terrainHeight } from "@/lib/twin/terrain";
 import { useTwinStore } from "@/store/twinStore";
 import { PALETTE } from "./materials";
 
-/** 150x150 quads across 260m — roughly 1.7m resolution. */
-const SEGMENTS = 150;
+/** 200x200 quads across 360m — roughly 1.8m resolution. */
+const SEGMENTS = 200;
 
 export function Terrain() {
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);

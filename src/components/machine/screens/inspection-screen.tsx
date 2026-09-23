@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { Check, CircleAlert, RotateCcw, SkipForward } from "lucide-react";
 import { toast } from "sonner";
+import { playAlertSound } from "@/lib/alert-sound";
 import { inspectionSteps } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { useMachineStore } from "@/store/machine-store";
@@ -126,6 +127,7 @@ export function InspectionScreen({ navigate }: { navigate: (s: MachineScreen) =>
               onClick={() => {
                 record(step!.id, "issue");
                 toast.error(`Issue logged for ${step!.title.toLowerCase()}`);
+                playAlertSound("warning");
               }}
             >
               Issue found

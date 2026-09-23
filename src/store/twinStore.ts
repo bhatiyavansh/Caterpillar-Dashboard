@@ -75,7 +75,13 @@ export interface TwinState {
   toggleEmergencyStop: () => void;
   setWeather: (mode: WeatherMode) => void;
   setPaused: (paused: boolean) => void;
-  setSource: (source: TelemetrySource) => void;
+  /**
+   * `auto` marks a switch made by the live-link probe rather than the operator.
+   * An operator choice locks the source so the probe never overrides it.
+   */
+  setSource: (source: TelemetrySource, opts?: { auto?: boolean }) => void;
+  /** True once the operator has picked a source by hand. */
+  sourceLocked: boolean;
 
   /* --- director hazards --- */
   forceWorkerApproach: () => void;
@@ -84,6 +90,12 @@ export interface TwinState {
   forceHydraulicSpike: () => void;
   forceLowFuel: () => void;
   forceEngineWarning: () => void;
+
+  /* --- recorded incident replay --- */
+  startReplay: (incidentId: string) => void;
+  stopReplay: () => void;
+  showIncidents: boolean;
+  setShowIncidents: (v: boolean) => void;
 }
 
 export const useTwinStore = create<TwinState>()((set, get) => {
@@ -189,8 +201,11 @@ export const useTwinStore = create<TwinState>()((set, get) => {
       get().refresh();
     },
 
-    setSource: (source) => {
+    sourceLocked: false,
+
+    setSource: (source, opts) => {
       get().engine.setSource(source);
+      if (!opts?.auto) set({ sourceLocked: true });
       get().refresh();
     },
 
@@ -216,6 +231,27 @@ export const useTwinStore = create<TwinState>()((set, get) => {
     },
     forceEngineWarning: () => {
       get().engine.forceEngineWarning();
+      get().refresh();
+    },
+
+    showIncidents: false,
+    setShowIncidents: (showIncidents) => set({ showIncidents }),
+
+    startReplay: (incidentId) => {
+      const engine = get().engine;
+      engine.startReplay(incidentId);
+      // Follow whichever machine the track is being shown through.
+      const shownOn = engine.selectedForReplay;
+      set({
+        selectedMachine: shownOn ?? get().selectedMachine,
+        cameraMode: "follow",
+        cameraResetNonce: get().cameraResetNonce + 1,
+      });
+      get().refresh();
+    },
+
+    stopReplay: () => {
+      get().engine.stopReplay();
       get().refresh();
     },
   };

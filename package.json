@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "data:build": "node scripts/build-dataset.mjs",
+    "sim": "uv run python -m simulator --mode standalone --rate 60 --intensity 4",
+    "sim:hub": "uv run python -m simulator --mode hub --hub ws://localhost:8000/ws/ingest",
+    "ml:train": "uv run python -m intelligence.train",
+    "data:gen": "uv run python data-gen/generate.py --days 30 --seed 42",
+    "sim:calm": "uv run python -m simulator --mode standalone --rate 60 --intensity 1"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

@@ -65,6 +65,10 @@ export interface MachineDescriptor {
   kind: MachineKind;
   /** True for the machine the operator drives. */
   controllable: boolean;
+  /** Assigned operator, keyed into the dataset's operator table. */
+  operatorId?: string;
+  /** Lifetime hours at commissioning, from the fleet records. */
+  engineHours?: number;
 }
 
 export type WorkerState = "walking" | "working" | "idle";
@@ -136,7 +140,15 @@ export type WeatherMode = "clear" | "rain" | "fog" | "heat";
 
 export type CameraMode = "follow" | "top" | "site" | "driver";
 
-export type TelemetrySource = "keyboard" | "mock_iot";
+export type TelemetrySource = "keyboard" | "mock_iot" | "websocket";
+
+/** Connection state of a streaming telemetry source. */
+export type LinkStatus =
+  | "idle"
+  | "connecting"
+  | "live"
+  | "reconnecting"
+  | "unavailable";
 
 export type TaskStatus = "pending" | "active" | "complete";
 

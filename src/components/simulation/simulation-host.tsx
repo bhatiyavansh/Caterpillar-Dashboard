@@ -8,6 +8,10 @@ import { MachineApp, type MachineScreen } from "@/components/machine/machine-app
 import { DEVICE_SIZES, type DeviceSizeKey, useMachineStore } from "@/store/machine-store";
 import { SimulationControls } from "./simulation-controls";
 import { SimulationFrame } from "./simulation-frame";
+import { TwinStage } from "@/components/twin/TwinExperience";
+
+/** What the in-cab display is showing. */
+type StageView = "twin" | "incab";
 
 /** The simulated machine display, in a full-screen overlay over the dashboard. */
 export function SimulationStage({ onExit }: { onExit?: () => void }) {
@@ -16,6 +20,7 @@ export function SimulationStage({ onExit }: { onExit?: () => void }) {
   const controlsOpen = useMachineStore((s) => s.controlsOpen);
   const toggleControls = useMachineStore((s) => s.toggleControls);
   const [screen, setScreen] = React.useState<MachineScreen>("home");
+  const [view, setView] = React.useState<StageView>("twin");
 
   return (
     <div className="flex h-full w-full flex-col bg-[#0a0b0d]">
@@ -27,6 +32,30 @@ export function SimulationStage({ onExit }: { onExit?: () => void }) {
         <span className="hidden text-xs text-muted sm:block">
           CAT 320 · CAT-320-014 · in-cab display emulator
         </span>
+
+        {/* what the display is showing */}
+        <div className="ml-4 flex items-center gap-1 rounded border border-white/10 bg-ink-950 p-0.5">
+          {(
+            [
+              ["twin", "Site twin"],
+              ["incab", "In-cab HMI"],
+            ] as [StageView, string][]
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setView(key)}
+              aria-pressed={view === key}
+              className={`rounded px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition ${
+                view === key
+                  ? "bg-cat-500/15 text-cat-500"
+                  : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         <div className="ml-auto flex items-center gap-2">
           <label htmlFor="device-size" className="hidden text-xs text-muted sm:block">
@@ -60,7 +89,28 @@ export function SimulationStage({ onExit }: { onExit?: () => void }) {
       <div className="flex min-h-0 flex-1">
         <div className="min-w-0 flex-1 p-4">
           <SimulationFrame deviceSize={deviceSize}>
-            <MachineApp screen={screen} onNavigate={setScreen} />
+            {/*
+              Both views stay mounted so switching does not tear down the WebGL
+              context or restart the simulation; only the front one is visible
+              and only it owns the keyboard.
+            */}
+            <div className="relative h-full w-full">
+              <div
+                className="absolute inset-0"
+                style={{ visibility: view === "twin" ? "visible" : "hidden" }}
+                aria-hidden={view !== "twin"}
+              >
+                <TwinStage active={view === "twin"} dense />
+              </div>
+
+              <div
+                className="absolute inset-0 overflow-y-auto"
+                style={{ visibility: view === "incab" ? "visible" : "hidden" }}
+                aria-hidden={view !== "incab"}
+              >
+                <MachineApp screen={screen} onNavigate={setScreen} />
+              </div>
+            </div>
           </SimulationFrame>
         </div>
         <AnimatePresence>{controlsOpen ? <SimulationControls /> : null}</AnimatePresence>

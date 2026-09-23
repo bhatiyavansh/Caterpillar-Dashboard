@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { WeatherMode } from "@/types/twin";
 import { useTwinStore } from "@/store/twinStore";
+import { replays } from "@/lib/data/dataset";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -63,11 +64,15 @@ const WEATHER: { mode: WeatherMode; label: string }[] = [
   { mode: "heat", label: "Heat" },
 ];
 
-export function DirectorPanel() {
+export function DirectorPanel({ compact }: { compact?: boolean }) {
   const open = useTwinStore((s) => s.directorOpen);
   const toggle = useTwinStore((s) => s.toggleDirector);
 
   const weather = useTwinStore((s) => s.snapshot.weather);
+  const replay = useTwinStore((s) => s.snapshot.replay);
+  const link = useTwinStore((s) => s.snapshot.linkStatus);
+  const linkDetail = useTwinStore((s) => s.snapshot.linkDetail);
+  const showIncidents = useTwinStore((s) => s.showIncidents);
   const paused = useTwinStore((s) => s.snapshot.paused);
   const source = useTwinStore((s) => s.snapshot.source);
 
@@ -92,14 +97,18 @@ export function DirectorPanel() {
           exit={{ opacity: 0, x: 40 }}
           transition={{ type: "spring", stiffness: 380, damping: 34 }}
           aria-label="Simulation director"
-          className="panel-raised pointer-events-auto w-[272px] overflow-hidden"
+          className={`panel-raised pointer-events-auto flex max-h-full flex-col overflow-hidden ${
+            compact ? "w-56" : "w-68"
+          }`}
         >
-          <header className="flex items-center justify-between bg-cat-500/10 px-3 py-2">
+          <header className="flex shrink-0 items-center justify-between bg-cat-500/10 px-3 py-2">
             <div>
               <div className="text-[11px] font-bold tracking-[0.18em] text-cat-500">
-                SIMULATION DIRECTOR
+                {compact ? "DIRECTOR" : "SIMULATION DIRECTOR"}
               </div>
-              <div className="text-[10px] text-zinc-500">Ctrl + D to toggle</div>
+              {compact ? null : (
+                <div className="text-[10px] text-zinc-500">Ctrl + D to toggle</div>
+              )}
             </div>
             <button
               type="button"
@@ -110,7 +119,7 @@ export function DirectorPanel() {
             </button>
           </header>
 
-          <div className="max-h-[70vh] overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             <Section title="Vehicle">
               <Action label="Reset vehicle" onClick={store.resetMachine} tone="accent" wide />
             </Section>
@@ -147,6 +156,52 @@ export function DirectorPanel() {
               <Action label="Engine fault" onClick={store.forceEngineWarning} tone="warn" />
             </Section>
 
+            <Section title="Recorded incidents">
+              {replay ? (
+                <>
+                  <div className="col-span-2 rounded border border-status-crit/40 bg-status-crit/10 px-2 py-1.5">
+                    <div className="flex items-baseline justify-between">
+                      <span className="font-mono text-[11px] font-bold text-status-crit">
+                        {replay.incidentId}
+                      </span>
+                      <span className="text-[9px] uppercase tracking-wider text-zinc-400">
+                        {replay.type} · {replay.severity}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-[9px] uppercase tracking-wider text-zinc-500">
+                      {replay.machineId}
+                      {replay.shownOn === replay.machineId
+                        ? ""
+                        : ` → shown on ${replay.shownOn}`}
+                    </div>
+                    <div className="mt-1.5 h-0.5 w-full overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-status-crit"
+                        style={{ width: `${replay.progress * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <Action label="Stop replay" onClick={store.stopReplay} tone="accent" wide />
+                </>
+              ) : (
+                replays.tracks.map((t) => (
+                  <Action
+                    key={t.incidentId}
+                    label={`${t.incidentId} ${t.type}`}
+                    onClick={() => store.startReplay(t.incidentId)}
+                    tone={t.severity === "critical" ? "crit" : "warn"}
+                    wide
+                  />
+                ))
+              )}
+              <Action
+                label={showIncidents ? "Hide 150 incidents" : "Show 150 incidents"}
+                onClick={() => store.setShowIncidents(!showIncidents)}
+                active={showIncidents}
+                wide
+              />
+            </Section>
+
             <Section title="Environment">
               {WEATHER.map((w) => (
                 <Action
@@ -172,6 +227,19 @@ export function DirectorPanel() {
                 active={source === "mock_iot"}
                 tone="accent"
               />
+              <Action
+                label={link === "live" ? "Live feed · connected" : "Live simulator feed"}
+                onClick={() => store.setSource("websocket")}
+                active={source === "websocket"}
+                tone={link === "unavailable" ? "crit" : "accent"}
+                wide
+              />
+              {source === "websocket" && link !== "live" ? (
+                <p className="col-span-2 text-[10px] leading-snug text-zinc-500">
+                  {linkDetail || "Waiting for the simulator"} — start it with{" "}
+                  <code className="text-zinc-400">uv run python -m simulator</code>
+                </p>
+              ) : null}
             </Section>
 
             <Section title="Simulation">

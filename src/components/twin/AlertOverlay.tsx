@@ -9,8 +9,9 @@
 import { AnimatePresence, motion } from "motion/react";
 import type { Alert } from "@/types/twin";
 import { useTwinStore } from "@/store/twinStore";
+import { useAlertSound } from "@/lib/hooks/use-alert-sound";
 
-function PrimaryAlert({ alert }: { alert: Alert }) {
+function PrimaryAlert({ alert, compact }: { alert: Alert; compact?: boolean }) {
   const critical = alert.severity === "critical";
 
   return (
@@ -21,7 +22,7 @@ function PrimaryAlert({ alert }: { alert: Alert }) {
       exit={{ opacity: 0, y: -10, scale: 0.98 }}
       transition={{ type: "spring", stiffness: 420, damping: 32 }}
       role="alert"
-      className={`pointer-events-auto w-[330px] overflow-hidden rounded border bg-ink-950/92 backdrop-blur-md ${
+      className={`pointer-events-auto w-full overflow-hidden rounded border bg-ink-950/92 backdrop-blur-md ${
         critical
           ? "border-status-crit/70 shadow-[0_0_44px_-8px_rgba(255,59,48,0.75)]"
           : "border-status-warn/60 shadow-[0_0_36px_-10px_rgba(255,176,32,0.6)]"
@@ -54,7 +55,7 @@ function PrimaryAlert({ alert }: { alert: Alert }) {
         <p className="text-xs font-bold tracking-[0.12em] text-zinc-100">{alert.message}</p>
 
         <dl className="mt-2.5 space-y-1">
-          {Object.entries(alert.detail).map(([key, value]) => (
+          {Object.entries(alert.detail).slice(0, compact ? 2 : 4).map(([key, value]) => (
             <div key={key} className="flex items-baseline justify-between gap-3">
               <dt className="text-[11px] text-zinc-500">{key}</dt>
               <dd className="font-mono text-sm font-bold tabular-nums text-zinc-100">{value}</dd>
@@ -77,19 +78,20 @@ function PrimaryAlert({ alert }: { alert: Alert }) {
   );
 }
 
-export function AlertOverlay() {
+export function AlertOverlay({ compact }: { compact?: boolean }) {
   const alerts = useTwinStore((s) => s.snapshot.alerts);
+  useAlertSound(alerts, "twin");
   const primary = alerts[0];
   const rest = alerts.slice(1, 4);
 
   return (
-    <div className="flex w-[330px] flex-col items-end gap-2">
+    <div className={`flex flex-col items-end gap-2 ${compact ? "w-60" : "w-[330px]"}`}>
       <AnimatePresence mode="popLayout">
-        {primary ? <PrimaryAlert key={primary.id} alert={primary} /> : null}
+        {primary ? <PrimaryAlert key={primary.id} alert={primary} compact={compact} /> : null}
       </AnimatePresence>
 
       <AnimatePresence initial={false}>
-        {rest.map((alert) => (
+        {(compact ? rest.slice(0, 2) : rest).map((alert) => (
           <motion.div
             key={alert.id}
             layout

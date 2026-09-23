@@ -7,7 +7,13 @@
  * Coordinate convention: +X is east, -Z is north, +Y is up. Metres throughout.
  */
 
-export const SITE_SIZE = 260;
+/**
+ * 360 m square. Larger than the twin's own layout needs, because the live
+ * simulator's fleet ranges over x 46-339 / y 118-266 in its own frame, and
+ * live coordinates are translated 1:1 (never scaled — see liveFrame.ts). The
+ * extra ground keeps every machine on the mesh in live mode.
+ */
+export const SITE_SIZE = 360;
 export const SITE_HALF = SITE_SIZE / 2;
 
 export interface SiteZone {
@@ -312,7 +318,7 @@ export interface Waypoint {
 /** Looping routes for the autonomous machines, so the site feels alive. */
 export const MACHINE_ROUTES: Record<string, Waypoint[]> = {
   // Road -> excavation -> road: the dozer pushes spoil around the pit rim.
-  DZR001: [
+  DOZ001: [
     { x: 30, z: 8 },
     { x: -5, z: 8 },
     { x: -5, z: -26 },
@@ -325,7 +331,7 @@ export const MACHINE_ROUTES: Record<string, Waypoint[]> = {
     { x: 46, z: 8, dwell: 1.5 },
   ],
   // Stockpile -> loading zone -> stockpile.
-  LDR001: [
+  WHL001: [
     { x: -50, z: 44, dwell: 3 },
     { x: -58, z: 20 },
     { x: -58, z: 8 },

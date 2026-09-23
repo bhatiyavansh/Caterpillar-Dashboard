@@ -11,6 +11,46 @@ from dataclasses import dataclass, field
 SEED = 42
 TICK_S = 1.0
 
+# Wall-clock ticks per second. The world is dt-correct throughout, so raising
+# this samples the same simulation more finely rather than fast-forwarding it.
+TICK_RATE_HZ = 60.0
+
+# How busy the site is.
+#
+# 1.0 is a well-run site: trained crew stay out of working envelopes and
+# near-misses are genuinely rare. That is realistic, and it is also why a demo
+# can sit and watch nothing happen. Raising this sends more people to work
+# alongside running machines, so the safety system has something to detect.
+SITE_INTENSITY = 1.0
+
+# Ground crew are periodically assigned to spot for a machine — banksman work,
+# grade checks, trench inspection. This is the main source of real proximity
+# events, as opposed to scripted ones.
+WORKER_SPOT_INTERVAL_S = 70.0     # mean gap between assignments, at intensity 1
+WORKER_SPOT_DURATION_S = 22.0
+# Spotting distance is drawn per assignment. The spread matters: a fixed 6 m
+# sits just outside the 5 m red bubble, so nothing ever fired. This range puts
+# some assignments well inside it and others only in amber.
+WORKER_SPOT_DISTANCE_MIN_M = 3.2
+WORKER_SPOT_DISTANCE_MAX_M = 9.0
+
+# Above intensity 1 the site also runs its own hazard director, firing the same
+# scenarios the demo buttons use. This is explicitly a demo aid: a real site
+# does not schedule its near-misses.
+AUTO_HAZARD_BASE_INTERVAL_S = 45.0
+# Weighted by repetition. People-near-machines and vehicle-on-vehicle are the
+# two the safety system exists for, so they dominate the mix; the rest keep the
+# feed varied rather than a single alarm on a loop.
+AUTO_HAZARDS = (
+    "worker_behind", "worker_behind", "worker_behind", "worker_behind",
+    "dozer_reversing", "dozer_reversing", "dozer_reversing", "dozer_reversing",
+    "heavy_lift", "heavy_lift",
+    "unbuckle",
+    "fatigue",
+    "idle_anomaly",
+    "loader_queue",
+)
+
 # --- site frame -----------------------------------------------------------
 SITE_X_MAX = 400.0
 SITE_Y_MAX = 300.0
@@ -32,6 +72,13 @@ BUBBLE_AMBER_BASE_M = 10.0
 TIP_OVER_AMBER = 1.5
 TIP_OVER_RED = 1.2
 EVENT_DEBOUNCE_S = 10.0
+# An "unusual pattern" describes a condition that persists for many minutes.
+# Re-announcing it every scoring pass buried the safety events, so it gets a
+# much longer window than a safety alert.
+ANOMALY_DEBOUNCE_S = 600.0
+# Above this, the machine is travelling rather than idling in place, and an
+# unfastened belt stops being a compliance note and becomes a rollover risk.
+SEATBELT_TRAVEL_SPEED_MPS = 0.5
 SEATBELT_ESCALATE_S = 5.0
 V2V_SCAN_RADIUS_M = 40.0
 V2V_HORIZON_S = 5.0

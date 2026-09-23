@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * DZR001 — CAT D6 style track-type tractor.
+ * DOZ001 — CAT D6 style track-type tractor.
  *
  * Same contract as the excavator: telemetry in, transforms out. Less detail,
  * because only the primary machine needs to hold up at close range.

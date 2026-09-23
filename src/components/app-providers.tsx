@@ -4,11 +4,13 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SensorEngine } from "@/components/simulation/sensor-engine";
 import { SimulationHost } from "@/components/simulation/simulation-host";
+import { AlertSoundWatcher } from "@/components/alerts/alert-sound-watcher";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider delayDuration={200}>
       <SensorEngine />
+      <AlertSoundWatcher />
       {children}
       <SimulationHost />
       <Toaster

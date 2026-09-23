@@ -236,7 +236,13 @@ export function Weather() {
   const { scene } = useThree();
   const look = LOOKS[weather];
 
+  // Created once and then mutated in useFrame — `look.fogColor` is only the
+  // starting value. Re-running these on a weather change would swap the fog
+  // object out from under the scene and lose the in-progress blend, so the
+  // dependency is deliberately omitted.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fog = useMemo(() => new THREE.FogExp2(look.fogColor, 0.0016), []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const target = useMemo(() => new THREE.Color(look.fogColor), []);
 
   useEffect(() => {

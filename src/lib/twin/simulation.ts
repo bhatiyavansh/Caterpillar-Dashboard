@@ -31,15 +31,19 @@ import {
   SITE_HALF,
   WORKER_ROUTES,
   type Waypoint,
+  angleDelta,
   clamp,
   headingTo,
+  lerp,
+  normalizeHeading,
   zoneAt,
 } from "./site";
-import { terrainHeight } from "./terrain";
+import { sampleAttitude, terrainHeight } from "./terrain";
 import {
   DEG,
   MAX_PAYLOAD,
   MockTelemetryProvider,
+  computeTipOverMargin,
   createTelemetry,
   emptyInput,
   tipOverLevel,
@@ -51,7 +55,17 @@ import {
   steerToward,
   type StepContext,
 } from "./vehicle";
+import { WebSocketTelemetryProvider } from "./websocketProvider";
+import type { LinkStatus } from "@/types/twin";
 import { detectCollisionRisks, predictPath } from "./collision";
+import {
+  getHealth,
+  getMachine,
+  getRollup,
+  dataset,
+  replays,
+  type IncidentTrack,
+} from "@/lib/data/dataset";
 import {
   PROXIMITY,
   evaluateProximity,
@@ -63,12 +77,30 @@ import type { PredictedPath } from "@/types/twin";
 
 export const PRIMARY_MACHINE = "EXC001";
 
-export const MACHINES: MachineDescriptor[] = [
-  { id: "EXC001", model: "CAT 320", kind: "excavator", controllable: true },
-  { id: "DZR001", model: "CAT D6", kind: "bulldozer", controllable: false },
-  { id: "LDR001", model: "CAT 966M", kind: "loader", controllable: false },
-  { id: "TRK001", model: "CAT 745", kind: "truck", controllable: false },
+/**
+ * The four machines the twin renders, drawn from the real roster in
+ * `machines.csv`. Models come from the dataset so the HUD can never disagree
+ * with the fleet records; operators are the certified ones from operators.csv.
+ */
+const FLEET: { id: string; kind: MachineDescriptor["kind"]; operatorId: string }[] = [
+  { id: "EXC001", kind: "excavator", operatorId: "OP1002" },
+  { id: "DOZ001", kind: "bulldozer", operatorId: "OP1003" },
+  { id: "WHL001", kind: "loader", operatorId: "OP1007" },
+  { id: "TRK001", kind: "truck", operatorId: "OP1004" },
 ];
+
+export const MACHINES: MachineDescriptor[] = FLEET.map((m) => {
+  const record = getMachine(m.id);
+  return {
+    id: m.id,
+    // "320" -> "CAT 320"; fall back if the dataset ever drops a machine.
+    model: record ? `CAT ${record.model}` : m.id,
+    kind: m.kind,
+    controllable: m.id === "EXC001",
+    operatorId: m.operatorId,
+    engineHours: record?.engineHoursStart ?? 0,
+  };
+});
 
 const WORKER_IDS = Object.keys(WORKER_ROUTES);
 /** The spotter that periodically walks in on EXC001 for the proximity demo. */
@@ -108,8 +140,23 @@ export interface UiSnapshot {
   source: TelemetrySource;
   emergencyStopped: boolean;
   engineWarning: boolean;
+  /** Live-link state; only meaningful when source is "websocket". */
+  linkStatus: LinkStatus;
+  linkDetail: string;
+  /** Machines the live feed is currently driving. */
+  liveMachines: number;
   fps: number;
   clock: string;
+  /** Active incident replay, if any. */
+  replay: {
+    incidentId: string;
+    type: string;
+    severity: string;
+    machineId: string;
+    shownOn: string;
+    progress: number;
+    durationS: number;
+  } | null;
 }
 
 const TASK_TEMPLATE: Omit<SiteTask, "progress" | "status">[] = [
@@ -152,6 +199,13 @@ export class SimulationEngine {
   private tipOverLeft = 0;
   private forcedCollisionLeft = 0;
 
+  /**
+   * Active incident replay. While set, the recorded track drives machine and
+   * worker positions instead of the live physics — the proximity engine then
+   * evaluates real recorded geometry, not a simulation of it.
+   */
+  private replay: { track: IncidentTrack; time: number; machineId: string } | null = null;
+
   /** 0 -> 1 as rain soaks the ground; drives the wet-terrain look. */
   wetness = 0;
   /** 0 -> 1 fog density ramp. */
@@ -174,6 +228,17 @@ export class SimulationEngine {
     collision: false,
   };
 
+  /** Live link, when the source is the simulator on the wire. */
+  private liveProvider: WebSocketTelemetryProvider | null = null;
+  private unsubscribeLive: (() => void) | null = null;
+  /** Latest frame per machine, interpolated toward at render rate. */
+  private liveTargets = new Map<string, MachineTelemetry>();
+  /** Machines that have had at least one live frame applied. */
+  private liveSeen = new Set<string>();
+  private liveWorkerTargets = new Map<string, SiteWorker>();
+  linkStatus: LinkStatus = "idle";
+  linkDetail = "";
+
   private mockProvider: MockTelemetryProvider | null = null;
   private mockModel: VehicleModel | null = null;
   private unsubscribeMock: (() => void) | null = null;
@@ -189,30 +254,35 @@ export class SimulationEngine {
 
   private build(): void {
     // Primary machine.
+    // Start the machine where its own recorded history says it usually sits:
+    // the mean hydraulic temperature from 30 days of telemetry.
+    const excRollup = getRollup(PRIMARY_MACHINE);
     const exc = createTelemetry(PRIMARY_MACHINE, {
       x: EXCAVATOR_HOME.x,
       z: EXCAVATOR_HOME.z,
       heading: EXCAVATOR_HOME.heading,
       fuel: 67,
-      hydraulicTemperature: 64,
+      hydraulicTemperature: excRollup?.avgHydraulicC ?? 64,
     });
     this.register(exc, TUNING.excavator);
 
     // Autonomous fleet, each parked on the first waypoint of its route.
     const fleet: [string, keyof typeof TUNING][] = [
-      ["DZR001", "bulldozer"],
-      ["LDR001", "loader"],
+      ["DOZ001", "bulldozer"],
+      ["WHL001", "loader"],
       ["TRK001", "truck"],
     ];
     for (const [id, kind] of fleet) {
       const route = MACHINE_ROUTES[id];
       const start = route[0];
       const next = route[1] ?? route[0];
+      const rollup = getRollup(id);
       const t = createTelemetry(id, {
         x: start.x,
         z: start.z,
         heading: headingTo(start.x, start.z, next.x, next.z),
         fuel: 40 + Math.random() * 45,
+        hydraulicTemperature: rollup?.avgHydraulicC ?? 70,
         payload: id === "TRK001" ? 12000 : 0,
       });
       this.register(t, TUNING[kind]);
@@ -245,7 +315,22 @@ export class SimulationEngine {
     }));
 
     this.pushEvent("Digital twin session started", "info");
+    this.pushEvent(
+      `Fleet records loaded — ${dataset.meta.telemetryRows.toLocaleString()} telemetry samples`,
+      "info",
+    );
     this.pushEvent(`${PRIMARY_MACHINE} telemetry link established`, "info");
+
+    // Anything the maintenance records already flag is worth saying up front.
+    for (const m of MACHINES) {
+      const health = getHealth(m.id);
+      if (health && health.hydraulicHealth < 60) {
+        this.pushEvent(
+          `${m.id} hydraulic health ${health.hydraulicHealth.toFixed(0)}% — service due`,
+          "warning",
+        );
+      }
+    }
   }
 
   private register(t: MachineTelemetry, tuning: (typeof TUNING)[string]): void {
@@ -320,10 +405,25 @@ export class SimulationEngine {
     this.tick++;
 
     this.stepEnvironment(step);
+
+    if (this.replay) {
+      this.stepReplay(step);
+      this.stepSafety();
+      this.stepTasks(step);
+      return;
+    }
+
+    if (this.source === "websocket") {
+      this.stepLive(step);
+      this.stepSafety();
+      this.stepTasks(step);
+      return;
+    }
+
     this.stepPrimary(step, input);
     this.stepFleet(step);
     this.stepWorkers(step);
-    this.stepSafety(step);
+    this.stepSafety();
     this.stepTasks(step);
   }
 
@@ -384,7 +484,7 @@ export class SimulationEngine {
       if (!route || !state) continue;
 
       // Director override: aim the dozer straight at the excavator.
-      if (this.forcedCollisionLeft > 0 && id === "DZR001") {
+      if (this.forcedCollisionLeft > 0 && id === "DOZ001") {
         const p = this.primary;
         model.step(steerToward(t, p.x, p.z, { cruise: 1, arriveRadius: 3 }), dt, {
           ...this.stepContext(),
@@ -407,7 +507,7 @@ export class SimulationEngine {
         this.onWaypointReached(id, t);
       }
 
-      const cruise = id === "TRK001" ? 0.85 : id === "LDR001" ? 0.78 : 0.62;
+      const cruise = id === "TRK001" ? 0.85 : id === "WHL001" ? 0.78 : 0.62;
       model.step(steerToward(t, target.x, target.z, { cruise }), dt, {
         ...this.stepContext(),
         emergencyStopped: false,
@@ -422,7 +522,7 @@ export class SimulationEngine {
       if (zone?.kind === "stockpile") t.payload = 0;
       else if (zone?.kind === "loading") t.payload = 24000;
     }
-    if (id === "LDR001") {
+    if (id === "WHL001") {
       const zone = zoneAt(t.x, t.z);
       t.payload = zone?.kind === "stockpile" ? 3800 : 0;
     }
@@ -488,16 +588,214 @@ export class SimulationEngine {
     return false;
   }
 
-  private stepSafety(dt: number): void {
-    const p = this.primary;
-    const workers = this.liveWorkers();
+  /**
+   * Advances the recorded track and writes it straight onto telemetry.
+   *
+   * Frames are one second apart, so positions are interpolated to keep motion
+   * smooth at 60fps. Heading is interpolated on the shortest arc so a machine
+   * crossing north does not spin the long way round.
+   */
+  private stepReplay(dt: number): void {
+    const replay = this.replay;
+    if (!replay) return;
 
-    this.proximity = evaluateProximity(p, workers);
-    p.nearestPerson = this.proximity.nearest;
+    const { track } = replay;
+    replay.time += dt;
+    // Loop with a short pause so the moment of the incident can be re-watched.
+    const total = track.durationS + 2;
+    if (replay.time > total) replay.time = 0;
+
+    const clamped = Math.min(replay.time, track.durationS);
+    const index = Math.min(Math.floor(clamped), track.frames.length - 1);
+    const next = Math.min(index + 1, track.frames.length - 1);
+    const alpha = clamped - index;
+
+    const a = track.frames[index];
+    const b = track.frames[next];
+
+    const machine = a.machines[0];
+    const machineB = b.machines[0] ?? machine;
+    if (machine) {
+      const t = this.telemetryOf(replay.machineId);
+      const prevX = t.x;
+      const prevZ = t.z;
+
+      t.x = lerp(machine.x, machineB.x, alpha);
+      t.z = lerp(machine.z, machineB.z, alpha);
+      t.heading = normalizeHeading(
+        machine.heading + angleDelta(machine.heading, machineB.heading) * alpha,
+      );
+
+      const att = sampleAttitude(t.x, t.z, t.heading);
+      t.y = att.y;
+      t.pitch = att.pitch;
+      t.roll = att.roll;
+
+      // Derive speed from the track rather than trusting a recorded field.
+      t.speed = dt > 0 ? Math.hypot(t.x - prevX, t.z - prevZ) / dt : 0;
+      t.engineRpm = damp(t.engineRpm, 800 + Math.min(t.speed / 3, 1) * 900, 3, dt);
+      t.activity = t.speed > 0.5 ? "traveling" : "idle";
+      t.tipOverMargin = computeTipOverMargin(t);
+
+      this.modelOf(replay.machineId).trackTravel += t.speed * dt;
+    }
+
+    // Recorded workers take over the first crew slots; the rest stand down
+    // well clear so they cannot pollute the proximity reading.
+    const recorded = a.workers;
+    this.workers.forEach((runtime, i) => {
+      const w = recorded[i];
+      const wb = b.workers[i];
+      if (w) {
+        runtime.worker.x = lerp(w.x, (wb ?? w).x, alpha);
+        runtime.worker.z = lerp(w.z, (wb ?? w).z, alpha);
+        runtime.worker.state = "walking";
+        runtime.worker.phase += dt * 6;
+      } else {
+        runtime.worker.x = SITE_HALF - 4;
+        runtime.worker.z = SITE_HALF - 4 - i * 3;
+        runtime.worker.state = "idle";
+      }
+    });
+  }
+
+  /**
+   * Eases every machine toward its latest live frame.
+   *
+   * The simulator publishes at 1 Hz. Snapping to each frame would make the
+   * fleet teleport once a second, so positions and joint angles are damped
+   * toward the target and headings take the shortest arc. Values that are
+   * already readings rather than poses — fuel, temperature, payload — are
+   * copied straight across.
+   */
+  private stepLive(dt: number): void {
+    // Position/heading converge fast enough to stay in step with 1 Hz frames
+    // without visible lag; implements move a little more gently.
+    const POSE = 7;
+    const JOINT = 5;
+
+    for (const descriptor of MACHINES) {
+      const target = this.liveTargets.get(descriptor.id);
+      if (!target) continue;
+
+      const t = this.telemetryOf(descriptor.id);
+
+      // First frame for this machine: snap. Easing across the gap between where
+      // the twin had it and where the live site says it is would otherwise look
+      // like a machine sprinting across the site.
+      if (!this.liveSeen.has(descriptor.id)) {
+        this.liveSeen.add(descriptor.id);
+        t.x = target.x;
+        t.z = target.z;
+        t.heading = target.heading;
+        t.swingAngle = target.swingAngle;
+      }
+
+      t.x = damp(t.x, target.x, POSE, dt);
+      t.z = damp(t.z, target.z, POSE, dt);
+      t.heading = normalizeHeading(
+        t.heading + angleDelta(t.heading, target.heading) * (1 - Math.exp(-POSE * dt)),
+      );
+
+      t.boomAngle = damp(t.boomAngle, target.boomAngle, JOINT, dt);
+      t.stickAngle = damp(t.stickAngle, target.stickAngle, JOINT, dt);
+      t.bucketAngle = damp(t.bucketAngle, target.bucketAngle, JOINT, dt);
+      t.swingAngle = t.swingAngle + angleDelta(t.swingAngle, target.swingAngle) * (1 - Math.exp(-JOINT * dt));
+
+      t.engineRpm = damp(t.engineRpm, target.engineRpm, 3, dt);
+      t.hydraulicTemperature = damp(t.hydraulicTemperature, target.hydraulicTemperature, 2, dt);
+      t.payload = damp(t.payload, target.payload, 4, dt);
+
+      // Straight readings.
+      t.fuel = target.fuel;
+      t.tipOverMargin = target.tipOverMargin;
+      t.activity = target.activity;
+
+      // Ride the twin's own terrain rather than trusting a remote height.
+      const att = sampleAttitude(t.x, t.z, t.heading);
+      t.y = att.y;
+      t.pitch = att.pitch;
+      t.roll = att.roll;
+
+      // Speed is a reading, not something to infer. Deriving it from frame-to
+      // -frame motion turned interpolation catch-up into 100 km/h haul trucks.
+      t.speed = target.speed;
+      this.modelOf(descriptor.id).trackTravel += t.speed * dt;
+    }
+
+    // Workers: same easing, so the crew walks rather than blinking.
+    this.workers.forEach((runtime, i) => {
+      const targets = Array.from(this.liveWorkerTargets.values());
+      const target = targets[i];
+      const w = runtime.worker;
+      if (!target) {
+        w.state = "idle";
+        return;
+      }
+      w.x = damp(w.x, target.x, 6, dt);
+      w.z = damp(w.z, target.z, 6, dt);
+      w.heading = target.heading;
+      w.state = target.state;
+      w.phase += dt * (target.state === "walking" ? 6 : 2);
+    });
+  }
+
+  /** The machine slot a track is rendered through. */
+  private replayMachineFor(track: IncidentTrack): string {
+    return MACHINES.some((m) => m.id === track.machineId)
+      ? track.machineId
+      : PRIMARY_MACHINE;
+  }
+
+  startReplay(incidentId: string): void {
+    const track = replays.tracks.find((t) => t.incidentId === incidentId);
+    if (!track) return;
+
+    this.emergencyStopped = false;
+    const machineId = this.replayMachineFor(track);
+    this.replay = { track, time: 0, machineId };
+    this.selectedForReplay = machineId;
+
+    const note =
+      machineId === track.machineId
+        ? ""
+        : ` (shown on ${machineId} — ${track.machineId} is not in this view)`;
+    this.pushEvent(
+      `Replaying ${track.incidentId} · ${track.type} · ${track.severity}${note}`,
+      track.severity === "critical" ? "critical" : "warning",
+    );
+  }
+
+  stopReplay(): void {
+    if (!this.replay) return;
+    const id = this.replay.track.incidentId;
+    this.replay = null;
+    this.selectedForReplay = null;
+    this.pushEvent(`Replay ${id} ended — live simulation resumed`, "info");
+  }
+
+  get replayTrack(): IncidentTrack | null {
+    return this.replay?.track ?? null;
+  }
+
+  get replayProgress(): number {
+    if (!this.replay) return 0;
+    return Math.min(1, this.replay.time / this.replay.track.durationS);
+  }
+
+  /** Machine the active replay is driving, for the HUD to select. */
+  selectedForReplay: string | null = null;
+
+  /** Whichever machine the safety engine should treat as the subject. */
+  get focusMachineId(): string {
+    return this.replay?.machineId ?? PRIMARY_MACHINE;
+  }
+
+  private stepSafety(): void {
+    const workers = this.liveWorkers();
 
     // Every machine reports its own nearest-person figure.
     for (const m of MACHINES) {
-      if (m.controllable) continue;
       const t = this.telemetryOf(m.id);
       let nearest = Infinity;
       for (const w of workers) {
@@ -506,6 +804,12 @@ export class SimulationEngine {
       }
       t.nearestPerson = nearest;
     }
+
+    // The site-level reading tracks the machine in focus: normally EXC001, but
+    // the replayed machine while a recorded incident is playing.
+    const subject = this.telemetryOf(this.focusMachineId);
+    this.proximity = evaluateProximity(subject, workers);
+    subject.nearestPerson = this.proximity.nearest;
 
     // Predicted paths and pairwise conflicts.
     const all = this.allTelemetry();
@@ -575,7 +879,7 @@ export class SimulationEngine {
   }
 
   private reconcileAlerts(): void {
-    const p = this.primary;
+    const p = this.telemetryOf(this.focusMachineId);
 
     // --- Proximity -------------------------------------------------------
     const prox = this.proximity;
@@ -610,7 +914,7 @@ export class SimulationEngine {
       this.setAlert({
         id: "collision:EXC001",
         kind: "collision",
-        severity: risk.separation < 7 ? "critical" : "warning",
+        severity: risk.separation < 5 ? "critical" : "warning",
         title: "COLLISION RISK",
         message: `${PRIMARY_MACHINE} → ${other}`,
         machineId: PRIMARY_MACHINE,
@@ -841,7 +1145,7 @@ export class SimulationEngine {
     if (tip !== "safe") level = worstLevel(level, tip === "critical" ? "critical" : "warning");
 
     if (this.risks.length > 0) {
-      const worst = this.risks[0].separation < 7 ? "critical" : "warning";
+      const worst = this.risks[0].separation < 5 ? "critical" : "warning";
       level = worstLevel(level, worst);
     }
     if (this.emergencyStopped) level = worstLevel(level, "critical");
@@ -874,8 +1178,22 @@ export class SimulationEngine {
       source: this.source,
       emergencyStopped: this.emergencyStopped,
       engineWarning: this.engineWarningLeft > 0,
+      linkStatus: this.linkStatus,
+      linkDetail: this.linkDetail,
+      liveMachines: this.liveTargets.size,
       fps: this.fps,
       clock: new Date().toLocaleTimeString("en-GB", { hour12: false }),
+      replay: this.replay
+        ? {
+            incidentId: this.replay.track.incidentId,
+            type: this.replay.track.type,
+            severity: this.replay.track.severity,
+            machineId: this.replay.track.machineId,
+            shownOn: this.replay.machineId,
+            progress: this.replayProgress,
+            durationS: this.replay.track.durationS,
+          }
+        : null,
     };
   }
 
@@ -919,18 +1237,99 @@ export class SimulationEngine {
     this.pushEvent(paused ? "Simulation paused" : "Simulation resumed", "info");
   }
 
+  /**
+   * Switches the telemetry source. Exactly one is ever active, and each is torn
+   * down before the next starts, so switching is safe at any moment.
+   */
   setSource(source: TelemetrySource): void {
     if (this.source === source) return;
+
+    this.stopMock();
+    this.stopLive();
     this.source = source;
 
     if (source === "mock_iot") {
       this.startMock();
-      this.pushEvent("Telemetry source → MOCK IOT stream", "info");
-    } else {
-      this.stopMock();
-      this.modelOf(PRIMARY_MACHINE).yawRate = 0;
-      this.pushEvent("Telemetry source → KEYBOARD", "info");
+      this.pushEvent("Telemetry source → MOCK IOT generator", "info");
+      return;
     }
+    if (source === "websocket") {
+      this.startLive();
+      this.pushEvent("Telemetry source → LIVE SIMULATOR", "info");
+      return;
+    }
+
+    // Back to the keyboard: hand the physics model the machine where the
+    // previous source left it, so control resumes without a jump.
+    const model = this.modelOf(PRIMARY_MACHINE);
+    model.yawRate = 0;
+    model.armRate = { boom: 0, stick: 0, bucket: 0, swing: 0 };
+    this.pushEvent("Telemetry source → KEYBOARD", "info");
+  }
+
+  private startLive(): void {
+    this.stopLive();
+    const provider = new WebSocketTelemetryProvider({
+      onStatus: (status, detail) => {
+        this.linkStatus = status;
+        this.linkDetail = detail;
+        if (status === "live") this.pushEvent("Live telemetry link established", "info");
+        if (status === "unavailable") {
+          this.pushEvent(`Live link unavailable — ${detail}`, "warning");
+        }
+      },
+      onWorkers: (workers) => {
+        this.liveWorkerTargets.clear();
+        for (const w of workers) this.liveWorkerTargets.set(w.id, w);
+      },
+      onEnvironment: (env) => {
+        // The simulator has a `wind` state the twin has no look for; it reads
+        // as ordinary conditions, so it maps to clear.
+        const map: Record<string, WeatherMode> = {
+          clear: "clear",
+          wind: "clear",
+          rain: "rain",
+          fog: "fog",
+          heat: "heat",
+        };
+        const mode = map[env.weather] ?? "clear";
+        if (mode !== this.weather) {
+          this.setWeather(mode);
+          this.pushEvent(
+            `Site conditions from simulator — ${env.weather}, visibility ${env.visibility_m} m`,
+            mode === "clear" ? "info" : "warning",
+          );
+        }
+      },
+      onEvent: (event) => {
+        // The simulator's own safety events go straight into the twin's feed.
+        const severity: AlertSeverity =
+          event.severity === "critical"
+            ? "critical"
+            : event.severity === "high" || event.severity === "medium"
+              ? "warning"
+              : "info";
+        this.pushEvent(event.message, severity);
+      },
+    });
+
+    this.liveProvider = provider;
+    this.unsubscribeLive = provider.subscribe((frames) => {
+      for (const frame of frames) this.liveTargets.set(frame.machineId, frame);
+    });
+    provider.start();
+  }
+
+  private stopLive(): void {
+    this.liveProvider?.stop();
+    this.unsubscribeLive?.();
+    this.liveProvider = null;
+    this.unsubscribeLive = null;
+    this.liveTargets.clear();
+    this.liveWorkerTargets.clear();
+    this.liveSeen.clear();
+    this.linkStatus = "idle";
+    this.linkDetail = "";
   }
 
   private startMock(): void {
@@ -961,6 +1360,7 @@ export class SimulationEngine {
 
   dispose(): void {
     this.stopMock();
+    this.stopLive();
   }
 
   /* --------------------------------------------------------------------- */
@@ -985,7 +1385,7 @@ export class SimulationEngine {
 
   forceCollisionRisk(): void {
     this.forcedCollisionLeft = 14;
-    const dozer = this.telemetryOf("DZR001");
+    const dozer = this.telemetryOf("DOZ001");
     const p = this.primary;
     // Reposition the dozer onto an intercept so the conflict is immediate.
     const bearing = headingTo(p.x, p.z, dozer.x, dozer.z);
@@ -993,7 +1393,7 @@ export class SimulationEngine {
     dozer.z = p.z - Math.cos(bearing) * 34;
     dozer.heading = headingTo(dozer.x, dozer.z, p.x, p.z);
     dozer.speed = 2.2;
-    this.pushEvent("DZR001 on intercept course with EXC001", "warning");
+    this.pushEvent("DOZ001 on intercept course with EXC001", "warning");
   }
 
   forceTipOver(): void {
@@ -1022,6 +1422,9 @@ export class SimulationEngine {
 
   resetSimulation(): void {
     this.stopMock();
+    this.stopLive();
+    this.replay = null;
+    this.selectedForReplay = null;
     this.telemetry.clear();
     this.models.clear();
     this.routes.clear();

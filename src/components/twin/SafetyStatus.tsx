@@ -39,7 +39,7 @@ const LOOK: Record<
   },
 };
 
-export function SafetyStatus() {
+export function SafetyStatus({ compact }: { compact?: boolean }) {
   const level = useTwinStore((s) => s.snapshot.siteSafety);
   const nearest = useTwinStore((s) => s.snapshot.proximity.nearest);
   const look = LOOK[level];
@@ -56,7 +56,9 @@ export function SafetyStatus() {
           ? { duration: 0.9, repeat: Infinity, ease: "easeInOut" }
           : { duration: 0.2 }
       }
-      className={`pointer-events-auto flex items-center gap-3 rounded border bg-ink-950/85 px-4 py-2 backdrop-blur-md ${look.border} ${look.glow}`}
+      className={`pointer-events-auto flex items-center rounded border bg-ink-950/85 backdrop-blur-md ${
+        compact ? "gap-2 px-2.5 py-1.5" : "gap-3 px-4 py-2"
+      } ${look.border} ${look.glow}`}
     >
       <div className="flex flex-col">
         <span className="label-xs leading-none">Site safety</span>
@@ -69,7 +71,7 @@ export function SafetyStatus() {
       <div className="h-8 w-px bg-white/10" />
 
       <div className="flex flex-col">
-        <span className="label-xs leading-none">Nearest worker</span>
+        <span className="label-xs leading-none">{compact ? "Nearest" : "Nearest worker"}</span>
         <span className="mt-1 font-mono text-sm font-bold tabular-nums text-zinc-100">
           {Number.isFinite(nearest) ? `${nearest.toFixed(1)} m` : "--"}
         </span>

@@ -14,6 +14,7 @@ import { AlertTriangle, Check, CheckCircle2, OctagonAlert } from "lucide-react";
 import type { SiteAlert } from "@/lib/api/contracts";
 import { Button } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
+import { useAlertSound } from "@/lib/hooks/use-alert-sound";
 
 export type RibbonLevel = "normal" | "info" | "warning" | "critical";
 
@@ -77,6 +78,7 @@ export function AlertRibbon({
   className?: string;
 }) {
   const open = alerts.filter((a) => !a.acknowledged);
+  useAlertSound(open, "ribbon");
   const level = levelFor(alerts);
   const lead = open[0] ?? null;
   const style = LEVEL[level];

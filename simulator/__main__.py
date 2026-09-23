@@ -16,7 +16,8 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 
-from .config import SEED
+from . import config
+from .config import SEED, TICK_RATE_HZ
 from .control_api import SimulatorService, create_app
 from .emitter import Emitter, HubClient
 
@@ -33,28 +34,35 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--host", default="0.0.0.0")
     p.add_argument("--port", type=int, default=8100)
     p.add_argument("--seed", type=int, default=SEED)
-    p.add_argument("--rate", type=float, default=1.0,
-                   help="ticks per second of wall clock (1.0 = real time)")
+    p.add_argument("--rate", type=float, default=TICK_RATE_HZ,
+                   help="ticks per second of wall clock (datapoints per second)")
+    p.add_argument("--speed", type=float, default=1.0,
+                   help="simulated seconds per wall second (1.0 = real time)")
+    p.add_argument("--intensity", type=float, default=1.0,
+                   help="how busy the site is; >1 puts more crew near machines")
     p.add_argument("--log-level", default="info")
     return p.parse_args(argv)
 
 
-async def tick_loop(service: SimulatorService, rate: float) -> None:
+async def tick_loop(service: SimulatorService, rate: float, step_dt: float) -> None:
     """Fixed-cadence loop that never drifts and never stalls on a slow tick."""
     period = 1.0 / rate
+    # A tick is "slow" relative to its own budget: at 60 Hz there are only
+    # 16 ms to play with, so the 1 Hz threshold would never have fired.
+    slow_threshold = max(period * 0.8, 0.005)
     loop = asyncio.get_running_loop()
     next_at = loop.time()
     slow_ticks = 0
     while True:
         started = loop.time()
         try:
-            await service.step(dt=1.0)
+            await service.step(dt=step_dt)
         except Exception:
             log.exception("tick failed; continuing")
         elapsed = loop.time() - started
-        if elapsed > 0.05:
+        if elapsed > slow_threshold:
             slow_ticks += 1
-            if slow_ticks % 20 == 1:
+            if slow_ticks % 600 == 1:
                 log.warning("slow tick: %.0f ms", elapsed * 1000)
         next_at += period
         await asyncio.sleep(max(0.0, next_at - loop.time()))
@@ -86,6 +94,9 @@ def main(argv: list[str] | None = None) -> None:
         )
         raise SystemExit(1)
 
+    # Worker behaviour reads this at runtime, so the CLI can dial the site up.
+    config.SITE_INTENSITY = args.intensity
+
     service = SimulatorService(seed=args.seed)
     service.mode = args.mode
 
@@ -98,7 +109,10 @@ def main(argv: list[str] | None = None) -> None:
     async def lifespan(app):
         if hub is not None:
             hub.start()
-        ticker = asyncio.create_task(tick_loop(service, args.rate), name="tick")
+        step_dt = args.speed / args.rate
+        ticker = asyncio.create_task(
+            tick_loop(service, args.rate, step_dt), name="tick"
+        )
         log.info(
             "simulator running: mode=%s seed=%s rate=%.1f Hz  ws=ws://%s:%d/ws/live",
             args.mode, args.seed, args.rate, args.host, args.port,
