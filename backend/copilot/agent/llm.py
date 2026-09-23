@@ -106,6 +106,7 @@ class AnthropicLLM:
             raise LLMError("no_key", "no ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN or ant auth profile")
         import anthropic
 
+        model = {"main": DEFAULT_MODEL, "fast": DEFAULT_FAST_MODEL}.get(model, model)
         kwargs: dict[str, Any] = dict(model=model, max_tokens=max_tokens, system=system, messages=messages)
         if tools:
             kwargs["tools"] = [{**t, "eager_input_streaming": True} for t in tools]
@@ -176,7 +177,7 @@ class AnthropicLLM:
         try:
             async with asyncio.timeout(timeout_s):
                 msg = await self._client.messages.create(
-                    model=model, max_tokens=300,
+                    model={"main": DEFAULT_MODEL, "fast": DEFAULT_FAST_MODEL}.get(model, model), max_tokens=300,
                     messages=[{"role": "user", "content": [
                         {"type": "image", "source": {"type": "base64", "media_type": media_type,
                                                      "data": base64.standard_b64encode(image).decode()}},

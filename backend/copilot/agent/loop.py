@@ -51,6 +51,7 @@ class Route:
     confidence: float = 0.0
     prompt: str | None = None
     tool_names: set[str] | None = None  # None = all tools allowed on the surface
+    protocol_event: tuple[str, dict[str, Any]] | None = None  # safety: protocol fetched by code, steps appended
 
 
 @dataclass
@@ -102,6 +103,12 @@ def citations_from(name: str, res: ToolResult) -> list[dict[str, Any]]:
     return []
 
 
+def protocol_block(p: dict[str, Any]) -> str:
+    """The verbatim protocol block appended by code to safety answers (never written by the LLM)."""
+    steps = "\n".join(f"{i}. {step}" for i, step in enumerate(p["steps"], 1))
+    return f"{p['title']} ({p['id']}, {p['source']}):\n{steps}"
+
+
 def speak(text: str, surface: str) -> str:
     sentences = re.split(r"(?<=[.!?])\s+", text.strip())
     return " ".join(sentences[: SpeakMax.get(surface, 2)])
@@ -137,6 +144,15 @@ class Agent:
                                  "confidence": route.confidence}
 
         ctx = self.context_factory(req)
+        protocol: dict[str, Any] | None = None
+        if route.protocol_event is not None:  # deterministic: the protocol is fetched by code, not the model
+            evt, data = route.protocol_event
+            args = {"event": evt, **({"component": data["component"]} if "component" in data else {})}
+            async for ev in self._run_tools(t, ctx, Route(), [("protocol_0", "get_protocol", args)]):
+                yield ev
+            res = t.results[-1][1]
+            if res.ok and res.data.get("found"):
+                protocol = res.data["protocol"]
         final_text: str | None = None
         grounded = True
         llm_grounded: bool | None = None
@@ -156,6 +172,10 @@ class Agent:
             error = {"code": "llm_unavailable", "message": "no LLM configured (ANTHROPIC_API_KEY unset)",
                      "fallback_used": True}
 
+        if final_text is None and protocol is not None:  # safety answer needs no LLM at all
+            final_text = "Follow the site protocol for this alert."
+            if error:
+                yield "error", error
         if final_text is None:  # fallback: facts from tools only
             if not t.results:
                 async for ev in self._run_tools(t, ctx, route, [(f"rule_{i}", n, a) for i, (n, a) in
@@ -166,8 +186,12 @@ class Agent:
                 yield "error", error
         elif llm_grounded is False:
             grounded = True  # delivered text is the deterministic, data-only answer
+        speak_text = speak(final_text, req.surface)
+        if protocol is not None:
+            final_text = final_text.rstrip() + "\n\n" + protocol_block(protocol)
+            speak_text = (speak_text + " " + " ".join(protocol["steps"])).strip()
         yield "status", {"state": "answering"}
-        final = {"text": final_text, "speak_text": speak(final_text, req.surface), "citations": t.citations,
+        final = {"text": final_text, "speak_text": speak_text, "citations": t.citations,
                  "actions": t.actions, "grounded": grounded}
         yield "final", final
         yield "done", {}

@@ -54,22 +54,25 @@ async def hub_server(tmp_path):
 
 @pytest.fixture
 def hub_server_factory(tmp_path):
-    def make(llm=None, ml=None, **kw):
-        return _serve(make_settings(tmp_path, **kw), llm=llm, ml=ml)
+    def make(llm=None, ml=None, router=None, **kw):
+        """router=None (default in tests) isolates tool/report mechanics; pass "default" to route."""
+        return _serve(make_settings(tmp_path, **kw), llm=llm, ml=ml, router=router)
 
 
     return make
 
 
 class _serve:
-    def __init__(self, settings: Settings, llm=None, ml=None) -> None:
+    def __init__(self, settings: Settings, llm=None, ml=None, router=None) -> None:
         self.settings = settings
         self.llm = llm
         self.ml = ml
+        self.router = router
 
     async def __aenter__(self):
         port = free_port()
-        app = create_app(self.settings, llm=self.llm, ml=self.ml or FakeML(), embedder_factory=None)
+        app = create_app(self.settings, llm=self.llm, ml=self.ml or FakeML(), embedder_factory=None,
+                         router=self.router)
         cfg = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning", lifespan="on")
         self.server = uvicorn.Server(cfg)
         self.task = asyncio.create_task(self.server.serve())

@@ -194,3 +194,19 @@ fetch(`${apiBase()}/api/events`, { method: "POST", headers: { "Content-Type": "a
 
 **CONTRACT_CHANGES needing sign-off:** 1.2.0 (D, A).
 **Limitations:** describe_scene (vision, advisory) is behind `CV_DESCRIBE=1` and untested against the real model (no API key). Report drafts use the fast model; without a key every draft is the labelled template (`draft_source: "template (llm unavailable)"`).
+
+---
+
+## Phase D + free providers + browser voice (branch `p2/routing`)
+
+- **Routing:** each question goes to a specialist (safety, planner, maintenance, training, reporting, coordination, or general). SSE event `specialist {id, label, routed_by, confidence}`. Safety answers always end with the protocol steps **verbatim, appended by code** (also spoken), even with no LLM.
+- **LLM:** Groq → Gemini → Anthropic chain, keys from `backend/.env`.
+- **Voice for D (`/cab`):**
+```tsx
+import { useVoice } from "../../../web/lib/voice";            // free browser STT + TTS
+import { Avatar2D } from "../../../web/components/avatar";
+const v = useVoice({ surface: "cab", machineId: "EXC001", alert: hasCriticalAlert });
+<AvatarSlot state={v.state} message={v.messages.at(-1)?.text ?? ""} onPushToTalk={v.startTalking} />
+// or render <Avatar2D state={v.state} pulse={v.pulse} /> inside your slot's 64 px circle
+```
+  `v.state` uses your exact `AvatarState` names. Hold-to-talk = `onPointerDown={v.startTalking} onPointerUp={v.stopTalking}`; saying "confirm"/"cancel" resolves pending actions locally. Try it at `/dev/avatar`.

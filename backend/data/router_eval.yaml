@@ -1,0 +1,27 @@
+# make router-eval: 25 labelled questions -> expected specialist
+questions:
+  - {q: "My seatbelt alarm is beeping, what do I do?", expect: safety}
+  - {q: "There's a worker behind me, what should I do?", expect: safety}
+  - {q: "I feel tired and sleepy", expect: safety}
+  - {q: "The tip-over gauge is red, what now?", expect: safety}
+  - {q: "The dozer is reversing toward me, is it safe?", expect: safety}
+  - {q: "How long will this trench take?", expect: planner}
+  - {q: "What's my next task?", expect: planner}
+  - {q: "Reorder my tasks for the rain", expect: planner}
+  - {q: "What if we add two more trucks?", expect: planner}
+  - {q: "When will T-0001 finish?", expect: planner}
+  - {q: "What does fault code HYD-118 mean?", expect: maintenance}
+  - {q: "When is EXC001 due for service?", expect: maintenance}
+  - {q: "The hydraulic pump is making noise, raise a work order", expect: maintenance}
+  - {q: "Check the engine coolant on WHL001", expect: maintenance}
+  - {q: "Book me on the slope safety training module", expect: training}
+  - {q: "Which course should OP1006 take next?", expect: training}
+  - {q: "I want to practice trenching technique with an instructor", expect: training}
+  - {q: "Give me the weekly fuel cost summary", expect: reporting}
+  - {q: "Which machine has the worst idle cost this week?", expect: reporting}
+  - {q: "Show me the fleet utilisation KPIs", expect: reporting}
+  - {q: "Any anomalies I should know about for the owner report?", expect: reporting}
+  - {q: "Why is truck two waiting at the loader?", expect: coordination}
+  - {q: "How long is the loader queue right now?", expect: coordination}
+  - {q: "Which trucks are on the haul road?", expect: coordination}
+  - {q: "Hello, who are you?", expect: general}

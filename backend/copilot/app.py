@@ -10,9 +10,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from copilot.agent.confirm import ActionManager
-from copilot.agent.llm import AnthropicLLM
 from copilot.agent.loop import Agent, AgentSettings
+from copilot.agent.openai_compat import build_llm
 from copilot.agent.registry import ToolContext
+from copilot.agent.router import Router
 from copilot.agent.tools.definitions import build_registry
 from copilot.api import assistant, director, knowledge, live, rest
 from copilot.api.stubs import register_stubs
@@ -42,7 +43,8 @@ def load_rag(data_dir, embedder_factory=None):
     return ManualIndex.build(data_dir / "manuals", None)
 
 
-def create_app(settings: Settings | None = None, llm=None, ml=None, embedder_factory="default") -> FastAPI:
+def create_app(settings: Settings | None = None, llm=None, ml=None, embedder_factory="default",
+               router="default") -> FastAPI:
     """`llm` / `ml` / `embedder_factory` injection is for tests; production builds the real ones."""
     settings = settings or load_settings()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -78,18 +80,19 @@ def create_app(settings: Settings | None = None, llm=None, ml=None, embedder_fac
                                extras=extras)
 
         actions.registry, actions.context_factory = registry, context_factory
-        llm_port = llm or AnthropicLLM()
+        llm_port = llm or build_llm()
         reports = Reports(hub, llm_port, settings.llm_fast_model, protocols, records, ml_port, settings.cache_dir,
                           first_token_s=settings.llm_first_token_s, total_s=max(settings.llm_total_s, 2.0))
         extras.update(reports=reports, llm=llm_port, vision_model=settings.llm_model)
         agent = Agent(llm_port, registry, hub, context_factory, AgentSettings(
             model=settings.llm_model, fast_model=settings.llm_fast_model, first_token_s=settings.llm_first_token_s,
-            total_s=settings.llm_total_s, log_path=settings.log_dir / "turns.jsonl"))
+            total_s=settings.llm_total_s, log_path=settings.log_dir / "turns.jsonl"),
+            router=Router(llm_port, settings.llm_fast_model, registry) if router == "default" else router)
         app.state.records, app.state.ml, app.state.jobs, app.state.actions = records, ml_port, jobs, actions
         app.state.registry, app.state.context_factory, app.state.agent, app.state.extras = (
             registry, context_factory, agent, extras)
         app.state.protocols, app.state.reports = protocols, reports
-        hub.feature_flags.update(llm="live" if llm_port.available else "down (no ANTHROPIC_API_KEY)",
+        hub.feature_flags.update(llm=f"live ({llm_port.name})" if llm_port.available else "down (no LLM key)",
                                  ml=getattr(ml_port, "name", "custom"), rag=rag.provenance,
                                  protocols=str(len(protocols.protocols)))
         warm = getattr(getattr(ml_port, "real", None), "warm", None)

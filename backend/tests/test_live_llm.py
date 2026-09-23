@@ -6,12 +6,11 @@ It FAILS (never skips) when no credentials are available, so a green run always 
 model answered.
 """
 
-import os
 import time
 
 import pytest
 
-from copilot.agent.llm import AnthropicLLM
+from copilot.agent.openai_compat import build_llm
 from tests.conftest import FakeSimHTTP, machine
 
 pytestmark = pytest.mark.live
@@ -28,9 +27,12 @@ QUESTIONS = {
 
 @pytest.mark.parametrize("surface", list(QUESTIONS))
 async def test_live_question_per_surface(hub_server_factory, surface):
-    llm = AnthropicLLM()
+    from copilot.config import load_dotenv
+
+    load_dotenv()
+    llm = build_llm()
     if not llm.available:
-        pytest.fail("no ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN in the environment: live smoke cannot run")
+        pytest.fail("no GROQ_API_KEY / GEMINI_API_KEY / ANTHROPIC_API_KEY: live smoke cannot run")
     async with hub_server_factory(llm=llm) as srv:
         srv.app.state.sim = FakeSimHTTP()
         srv.hub.publish_machine(machine("EXC001", ts=NOW, fuel_level_pct=84.4, seatbelt="fastened"))
@@ -41,7 +43,7 @@ async def test_live_question_per_surface(hub_server_factory, surface):
                                 headers={"Accept": "application/json"}, timeout=30)
         body = r.json()
         errors = [e for e in body["events"] if e["event"] == "error"]
-        print(f"\n[{surface}] {time.monotonic() - t0:.1f}s mode={body['mode']} model={os.environ.get('LLM_MODEL', 'claude-opus-5')}"
+        print(f"\n[{surface}] {time.monotonic() - t0:.1f}s mode={body['mode']} provider={llm.last_used}"
               f"\n  Q: {question}\n  A: {body['text']}")
         assert body["mode"] == "live" and not errors, errors
         assert body["text"] and body["grounded"] is True

@@ -24,7 +24,7 @@ test:
 
 web-check:      ## typecheck + lint + node tests for my frontend files only
 	cd .. && npx tsc --noEmit -p web/lib/stream/tsconfig.json
-	cd .. && npx eslint web/lib src/app/dev
+	cd .. && npx eslint web/lib web/components/avatar src/app/dev
 	cd .. && node web/lib/stream/test/run-tests.mjs
 
 check: contracts-check lint test web-check
@@ -37,3 +37,6 @@ index:          ## build the manual RAG index (downloads the small embedding mod
 
 rag-eval:       ## demo questions must hit@5 = 100%
 	uv run python scripts/rag_eval.py
+
+router-eval:    ## 25 labelled questions: confusion table, accuracy, overhead
+	uv run python scripts/router_eval.py

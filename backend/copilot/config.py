@@ -10,6 +10,19 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 REPO_DIR = BACKEND_DIR.parent
 
 
+def load_dotenv(path: Path = BACKEND_DIR / ".env") -> None:
+    """Minimal .env loader: KEY=VALUE lines; never overrides variables already set; values never logged."""
+    if not path.is_file():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip().removeprefix("export ").strip()
+        os.environ.setdefault(key, value.strip().strip('"').strip("'"))
+
+
 def _env(name: str, default: str) -> str:
     return os.environ.get(f"COPILOT_{name}", default)
 
@@ -41,8 +54,8 @@ class Settings:
 
     log_dir: Path = BACKEND_DIR / "logs"
     cache_dir: Path = BACKEND_DIR / "cache"
-    llm_model: str = "claude-opus-5"
-    llm_fast_model: str = "claude-haiku-4-5"
+    llm_model: str = "main"  # alias resolved per provider (groq/gemini/anthropic); or a literal model id
+    llm_fast_model: str = "fast"
     llm_first_token_s: float = 5.0
     llm_total_s: float = 20.0
     ml_mode: str = "auto"  # auto | real | stub
@@ -56,6 +69,7 @@ class Settings:
 
 
 def load_settings(**overrides) -> Settings:
+    load_dotenv()
     s = Settings(
         host=_env("HOST", "0.0.0.0"),
         port=int(_env("PORT", "8000")),
@@ -69,8 +83,8 @@ def load_settings(**overrides) -> Settings:
         source_silence_s=float(_env("SOURCE_SILENCE_S", "3")),
         log_dir=Path(_env("LOG_DIR", str(BACKEND_DIR / "logs"))),
         cache_dir=Path(_env("CACHE_DIR", str(BACKEND_DIR / "cache"))),
-        llm_model=os.environ.get("LLM_MODEL", "claude-opus-5"),
-        llm_fast_model=os.environ.get("LLM_FAST_MODEL", "claude-haiku-4-5"),
+        llm_model=os.environ.get("LLM_MODEL", "main"),
+        llm_fast_model=os.environ.get("LLM_FAST_MODEL", "fast"),
         ml_mode=os.environ.get("ML_MODE", "auto"),
         rag_embeddings=_env("RAG_EMBEDDINGS", "1") == "1",
         cors_origins=tuple(
