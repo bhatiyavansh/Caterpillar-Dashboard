@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { BatteryCharging, Cog, Droplets, Flame, Shield, Snowflake, Waves } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { PageHeader, RunSimulationButton } from "@/components/navigation/dashboard-shell";
 import { StatusIndicator } from "@/components/shared/status";
 import { CHART_COLORS, TrendAreaChart } from "@/components/charts/charts";
@@ -11,7 +12,7 @@ import type { HealthStatus } from "@/lib/types";
 import { cn, statusStyles } from "@/lib/utils";
 import { readingStatus, useMachineStore } from "@/store/machine-store";
 
-const icons: Record<string, React.ElementType> = {
+const icons: Record<string, LucideIcon> = {
   engine: Flame,
   hydraulics: Waves,
   transmission: Cog,

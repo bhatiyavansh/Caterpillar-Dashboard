@@ -1,10 +1,11 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, Info, OctagonAlert, PowerOff } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { HealthStatus, Severity } from "@/lib/types";
 import { cn, severityStyles, statusStyles } from "@/lib/utils";
 
-const statusIcon: Record<HealthStatus, React.ElementType> = {
+const statusIcon: Record<HealthStatus, LucideIcon> = {
   healthy: CheckCircle2,
   warning: AlertTriangle,
   critical: OctagonAlert,

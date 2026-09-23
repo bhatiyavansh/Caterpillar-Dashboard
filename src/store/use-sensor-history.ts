@@ -4,7 +4,7 @@ import * as React from "react";
 import type { SensorData } from "@/lib/types";
 import { useMachineStore } from "./machine-store";
 
-export interface HistoryPoint {
+export interface HistoryPoint extends Record<string, unknown> {
   t: string;
   temp: number;
   psi: number;

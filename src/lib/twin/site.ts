@@ -391,13 +391,13 @@ export const WORKER_ROUTES: Record<string, Waypoint[]> = {
     { x: 78, z: 38, dwell: 5 },
     { x: 64, z: 36, dwell: 6 },
   ],
-];
+};
 
 /** Where EXC001 starts, and where `R` returns it to. */
 export const EXCAVATOR_HOME = {
   x: -5,
   z: -20,
-  heading: Math.PI, // facing north, into the excavation spur
+  heading: 0, // facing north, straight up the excavation spur
 };
 
 /** Static props: containers, site office, barriers, signage. */

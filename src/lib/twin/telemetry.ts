@@ -11,7 +11,7 @@ import type {
   MachineTelemetry,
   TelemetryProvider,
   VehicleInput,
-} from "@/types/simulation";
+} from "@/types/twin";
 import { clamp, headingVector } from "./site";
 import { sampleAttitude, terrainHeight } from "./terrain";
 

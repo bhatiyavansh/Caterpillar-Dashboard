@@ -12,7 +12,7 @@ import type {
   ProximityReading,
   ProximityResult,
   SiteWorker,
-} from "@/types/simulation";
+} from "@/types/twin";
 
 /** Metres. Outside `warning` is clear ground. */
 export const PROXIMITY = {

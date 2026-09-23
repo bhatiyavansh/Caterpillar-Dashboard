@@ -17,6 +17,7 @@ import {
   User,
   Wifi,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn, statusStyles } from "@/lib/utils";
 import { useMachineHealth, useMachineStore } from "@/store/machine-store";
 import { StatusDot } from "@/components/shared/status";
@@ -69,7 +70,7 @@ const screens: Record<MachineScreen, React.ComponentType<{ navigate: (s: Machine
   notifications: NotificationsScreen,
 };
 
-const quickActions: { screen: MachineScreen; label: string; icon: React.ElementType }[] = [
+const quickActions: { screen: MachineScreen; label: string; icon: LucideIcon }[] = [
   { screen: "home", label: "Home", icon: Home },
   { screen: "assistant", label: "Assistant", icon: MessageSquareText },
   { screen: "inspection", label: "Inspection", icon: ClipboardCheck },
@@ -186,7 +187,7 @@ export function QuickActionDock({
   return (
     <nav
       aria-label="Machine quick actions"
-      className="flex h-20 shrink-0 items-stretch gap-2 border-t-2 border-white/10 bg-ink-900 px-2 py-2"
+      className="flex h-20 shrink-0 items-stretch gap-2 overflow-x-auto border-t-2 border-white/10 bg-ink-900 px-2 py-2"
     >
       {quickActions.map(({ screen: target, label, icon: Icon }) => {
         const active = screen === target;

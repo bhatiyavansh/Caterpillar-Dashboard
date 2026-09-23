@@ -10,7 +10,7 @@
  * results into a `MachineTelemetry` object it mutates in place.
  */
 
-import type { MachineTelemetry, VehicleInput } from "@/types/simulation";
+import type { MachineTelemetry, VehicleInput } from "@/types/twin";
 import { SITE_HALF, clamp, headingVector, normalizeHeading } from "./site";
 import { sampleAttitude } from "./terrain";
 import {
