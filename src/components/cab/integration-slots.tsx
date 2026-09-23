@@ -3,10 +3,11 @@
 /**
  * The cab's rear camera panel.
  *
- * Hosts work owned by another track — the browser person detector — inside
- * product chrome that stays put whether or not the model has loaded. It
- * degrades to a useful resting state rather than an error, because a camera
- * that will not start must never take the cab HMI down mid-demo.
+ * Hosts work owned by another track — the browser person and fatigue
+ * detectors — inside product chrome that stays put whether or not the models
+ * have loaded. It degrades to a useful resting state rather than an error,
+ * because a camera that will not start must never take the cab HMI down
+ * mid-demo.
  *
  * The site assistant used to live here too, as a scripted one-line message
  * with a mic button wired to nothing. It is now `AssistantPanel`
@@ -14,21 +15,35 @@
  * the same `useVoice`/`useAssistant` stack this file already used for its
  * state names — that capability existed all along, just not reachable from
  * this screen.
+ *
+ * `FatigueDetector` was in the same position: fully built (MediaPipe face
+ * landmarker, times eyes-closed duration, fires `fatigue_alert`) but never
+ * mounted anywhere. It runs headless here (`showVideo={false}`) off the same
+ * shared camera stream `useWebcam` already ref-counts for `PersonDetector`,
+ * so there is still exactly one permission prompt and one visible feed.
  */
 import * as React from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
-import { Camera, CameraOff, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Camera, CameraOff, Eye, EyeOff, ShieldAlert, ShieldCheck } from "lucide-react";
 import type { ProximityLevel } from "@/lib/api/contracts";
-import { PROXIMITY } from "@/lib/status";
+import { PROXIMITY, MACHINE_STATUS } from "@/lib/status";
 import { cn } from "@/lib/utils";
-import type { CvProximityEvent } from "@web/components/cv";
+import type { CvFatigueEvent, CvProximityEvent } from "@web/components/cv";
 import { publishCvEvent } from "@web/lib/cv";
 
 const PersonDetector = dynamic(() => import("@web/components/cv").then((m) => m.PersonDetector), {
   ssr: false,
   loading: () => <div className="aspect-video w-full bg-ink-950" />,
 });
+
+const FatigueDetector = dynamic(() => import("@web/components/cv").then((m) => m.FatigueDetector), {
+  ssr: false,
+  loading: () => null,
+});
+
+/** How long a fatigue alert stays shown after the last eyes-closed event. */
+const FATIGUE_ALERT_HOLD_MS = 8000;
 
 export function WebcamSlot({
   machineId,
@@ -76,6 +91,27 @@ export function WebcamSlot({
     [onDetection],
   );
 
+  // Fatigue has no simulated channel to fall back to the way proximity does from
+  // machine.proximity — this reflects only what the browser detector itself has
+  // seen, and clears itself out after a hold so a one-off blink does not stick.
+  const [fatigue, setFatigue] = React.useState<{ eyesClosedS: number; at: number } | null>(null);
+  const handleFatigueEvent = React.useCallback((e: CvFatigueEvent) => {
+    setFatigue({ eyesClosedS: e.data.eyes_closed_s, at: Date.now() });
+    void publishCvEvent({
+      event: e.event,
+      severity: e.severity,
+      machine_id: e.machine_id,
+      message: e.message,
+      data: e.data,
+    });
+  }, []);
+  React.useEffect(() => {
+    if (!fatigue) return;
+    const timer = setTimeout(() => setFatigue(null), FATIGUE_ALERT_HOLD_MS);
+    return () => clearTimeout(timer);
+  }, [fatigue]);
+  const fatigueActive = fatigue !== null;
+
   return (
     <section
       className={cn(
@@ -99,12 +135,16 @@ export function WebcamSlot({
 
       <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-ink-950">
         {cameraOn ? (
-          <PersonDetector
-            machineId={machineId}
-            onEvent={handleEvent}
-            enabled={cameraOn}
-            className="absolute inset-0 size-full"
-          />
+          <>
+            <PersonDetector
+              machineId={machineId}
+              onEvent={handleEvent}
+              enabled={cameraOn}
+              className="absolute inset-0 size-full"
+            />
+            {/* Headless: same shared camera stream, no second video feed to fit. */}
+            <FatigueDetector machineId={machineId} onEvent={handleFatigueEvent} showVideo={false} enabled={cameraOn} />
+          </>
         ) : (
           <div className="absolute inset-0 grid place-items-center">
             <span className="text-[11px] text-muted">Camera off</span>
@@ -149,6 +189,32 @@ export function WebcamSlot({
           </span>
         ) : null}
       </div>
+
+      {cameraOn ? (
+        <div
+          className={cn(
+            "flex shrink-0 items-center gap-2.5 border-t border-white/10 px-3 py-2",
+            fatigueActive && MACHINE_STATUS.critical.bg,
+          )}
+        >
+          <span className={cn("shrink-0", fatigueActive ? MACHINE_STATUS.critical.text : "text-muted")}>
+            {fatigueActive ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p
+              className={cn(
+                "text-[11px] font-bold uppercase tracking-wider",
+                fatigueActive ? MACHINE_STATUS.critical.text : "text-zinc-300",
+              )}
+            >
+              {fatigueActive ? "Fatigue detected" : "Fatigue monitor"}
+            </p>
+            <p className="truncate text-[10px] text-muted">
+              {fatigueActive ? `Eyes closed ${fatigue?.eyesClosedS.toFixed(1)} s — take a break` : "Watching for microsleep"}
+            </p>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
