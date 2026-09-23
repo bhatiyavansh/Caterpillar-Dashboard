@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "fields": {
     "AssistantRequest.conversation_id": "string | null?",
     "AssistantRequest.machine_id": "string | null?",

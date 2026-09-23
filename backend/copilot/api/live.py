@@ -60,6 +60,9 @@ async def ws_ingest(ws: WebSocket) -> None:
                     log.warning("ingest %s: %d undecodable frames", conn.source_id, bad)
                 continue
             _ingest_any(hub, conn, raw)
+            # Frames already buffered are returned without suspending; yield so the per-client sender
+            # tasks can drain during a producer burst (e.g. C's sim replaying its queue after a reconnect).
+            await asyncio.sleep(0)
     except WebSocketDisconnect:
         pass
     except json.JSONDecodeError:

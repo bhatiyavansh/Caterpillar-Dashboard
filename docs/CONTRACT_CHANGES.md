@@ -20,3 +20,10 @@ Sign-off column: who has to confirm. ✅ means confirmed, ⏳ means pending.
 | Hub event kinds `source_changed`, `low_fuel`, `engine_fault`, `emergency_stop` | the last three come only from the twin source, whose alerts have no C equivalent | D ⏳ |
 | Hub-emitted events use C's `source: "rules"` with `data.created_by: "backend"` | C's `Source` enum has no `backend` value; this follows C's `incident_created` fixture precedent | C ⏳ |
 | Assistant SSE events `meta`, `specialist`, `status`, `tool_call`, `tool_result`, `token`, `citation`, `confirm_required`, `final`, `error`, `done`, plus `AssistantRequest` | `POST /api/assistant` | D ⏳ |
+
+## 1.1.0 (2026-09-23, Phase B): confirm flow and records
+
+| Addition | Why | Sign-off |
+|---|---|---|
+| Hub event kinds `action_pending`, `action_confirmed`, `action_cancelled`, `action_failed` (`data`: `action_id`, `tool`, `surface`) | UI can show and clear confirm cards on every screen; confirmed actions are visible site-wide | D ⏳ |
+| Hub event kinds `incident_created` (`data.incident_id`), `work_order_created` (`data.work_order_id`), `training_booked` (`data.booking_id`, `slot_id`) | README §10 lists `incident_created`; the others follow the same pattern | D ⏳ C ⏳ |

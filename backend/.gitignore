@@ -9,3 +9,4 @@ cache/
 !.env.example
 data/cv_snapshots/
 data/*.db-*
+logs/

@@ -35,10 +35,6 @@ PROVENANCE = {"sim": "live", "twin": "twin", "replay": "replay", "fake": "fake",
 CLOSE_SLOW_CONSUMER = 4008
 
 
-class SlowConsumer(Exception):
-    pass
-
-
 # --------------------------------------------------------------------------- clients
 
 
@@ -53,6 +49,7 @@ class LiveClient:
     sender: asyncio.Task | None = None
     handler: asyncio.Task | None = None
     killed: bool = False
+    last_progress: float = field(default_factory=time.monotonic)  # last successful send (or connect)
 
 
 # --------------------------------------------------------------------------- sources
@@ -163,9 +160,12 @@ class Hub:
     def _fan_reliable(self, msg: dict[str, Any]) -> None:
         text = json.dumps(msg, separators=(",", ":"))
         self.ring.append(msg)
+        now = time.monotonic()
         for c in list(self.clients.values()):
-            if not c.outbox.put_reliable(msg["seq"], text):
-                self._kill(c, "slow consumer: reliable backlog over limit")
+            # Over the backlog limit AND no send has completed recently: the client is stuck, not just
+            # momentarily behind a producer burst. (A blocked send is also caught by slow_send_timeout_s.)
+            if not c.outbox.put_reliable(msg["seq"], text) and now - c.last_progress > self.s.slow_progress_s:
+                self._kill(c, "slow consumer: reliable backlog over limit and no progress")
         self.counters["reliable_published"] += 1
 
     # ------------------------------------------------------------------ publish
@@ -329,13 +329,12 @@ class Hub:
             while True:
                 await ob.wakeup.wait()
                 ob.wakeup.clear()
-                if ob.overflowed:
-                    raise SlowConsumer
                 for text in ob.drain():
                     async with asyncio.timeout(self.s.slow_send_timeout_s):
                         await client.ws.send_text(text)
                     client.sent += 1
-        except (TimeoutError, SlowConsumer):
+                    client.last_progress = time.monotonic()
+        except TimeoutError:
             self._kill(client, "slow consumer: send blocked")
         except asyncio.CancelledError:
             raise

@@ -27,6 +27,7 @@ class Settings:
     ring_size: int = 10_000
     max_pending_reliable: int = 5_000
     slow_send_timeout_s: float = 5.0
+    slow_progress_s: float = 1.0
     source_silence_s: float = 3.0
     stale_event_s: float = 30.0
     alert_ttl_s: float = 120.0
@@ -36,6 +37,14 @@ class Settings:
     persist_state_interval_s: float = 1.0
 
     control_ack_timeout_s: float = 2.0
+
+    log_dir: Path = BACKEND_DIR / "logs"
+    cache_dir: Path = BACKEND_DIR / "cache"
+    llm_model: str = "claude-opus-5"
+    llm_fast_model: str = "claude-haiku-4-5"
+    llm_first_token_s: float = 5.0
+    llm_total_s: float = 20.0
+    ml_mode: str = "auto"  # auto | real | stub
     cors_origins: tuple[str, ...] = field(
         default=("http://localhost:3000", "http://127.0.0.1:3000")
     )
@@ -54,7 +63,13 @@ def load_settings(**overrides) -> Settings:
         ring_size=int(_env("RING_SIZE", "10000")),
         max_pending_reliable=int(_env("MAX_PENDING_RELIABLE", "5000")),
         slow_send_timeout_s=float(_env("SLOW_SEND_TIMEOUT_S", "5")),
+        slow_progress_s=float(_env("SLOW_PROGRESS_S", "1")),
         source_silence_s=float(_env("SOURCE_SILENCE_S", "3")),
+        log_dir=Path(_env("LOG_DIR", str(BACKEND_DIR / "logs"))),
+        cache_dir=Path(_env("CACHE_DIR", str(BACKEND_DIR / "cache"))),
+        llm_model=os.environ.get("LLM_MODEL", "claude-opus-5"),
+        llm_fast_model=os.environ.get("LLM_FAST_MODEL", "claude-haiku-4-5"),
+        ml_mode=os.environ.get("ML_MODE", "auto"),
         cors_origins=tuple(
             o.strip()
             for o in _env("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")

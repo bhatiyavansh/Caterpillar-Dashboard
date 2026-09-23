@@ -198,8 +198,9 @@ async def test_history_replay_and_fleet(hub_server):
 
 
 async def test_stubs_are_honest(hub_server):
-    r = await hub_server.http.post("/api/assistant", json={})
+    r = await hub_server.http.post("/api/tts", json={})
     assert r.status_code == 501 and r.headers["X-Stub"] == "1"
     health = (await hub_server.http.get("/api/health")).json()
-    assert {"method": "POST", "path": "/api/assistant", "phase": "B"} in health["stubs"]
-    assert "/api/health" not in {s["path"] for s in health["stubs"]}
+    assert {"method": "POST", "path": "/api/tts", "phase": "F"} in health["stubs"]
+    stubbed = {s["path"] for s in health["stubs"]}
+    assert "/api/health" not in stubbed and "/api/assistant" not in stubbed  # implemented routes leave the list

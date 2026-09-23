@@ -217,12 +217,17 @@ Ingest payloads never carry envelope fields. The hub strips any it receives.
 
 ## §5 Agent + tools + ML port + confirm
 
-### 5.1 LLM [TEAM TO CONFIRM: key]
+### 5.1 LLM [DECIDED; key TEAM TO CONFIRM]
 
-- Anthropic Messages API: streaming with tool use, through the async SDK behind an `LLMPort`.
-- `LLM_MODEL` defaults to `claude-sonnet-5`. `LLM_FAST_MODEL` (router, report drafts) defaults to `claude-haiku-4-5-20251001`.
-- **Timeouts:** first token 5 s, total 20 s.
-- **Fallback:** demo cache (Phase G), then a deterministic answer built from the tool results. Without a key, the LLM is reported as `down` in health.
+- Anthropic Messages API through the async SDK, via `client.beta.messages.stream`. The beta surface is needed for server-side refusal `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`). All of this sits behind `LLMPort`; tests use `FakeLLM`.
+- **Models:**
+  - `LLM_MODEL` defaults to **`claude-opus-5`**, with adaptive thinking (the default) and `effort` per surface: `low` for cab, training and AR; `medium` for command and owner.
+  - `LLM_FAST_MODEL` (router, report drafts) defaults to `claude-haiku-4-5`. It gets no `effort` and no fallbacks, since Haiku doesn't take them.
+  - Changing either needs only an env var.
+- **Content handling:** the model's full content blocks (including thinking) are appended to the history verbatim. Tools use `eager_input_streaming`, and every input is validated by Pydantic before it runs.
+- **Retries and timeouts:** SDK retries are off (`max_retries=0`). Timeouts: first token 5 s (first content block of any kind), total 20 s shared by all rounds.
+- **Errors:** overloaded (529), rate-limited, refusal and unavailable all map to the fallback. The fallback is a deterministic answer built from tool results, or from read-only tools picked by keyword rules; the demo cache joins in Phase G.
+- **Credentials:** `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` or an `ant auth login` profile. With none of them, health reports `llm: down` and every answer is data-only (`mode: "fallback"`).
 
 ### 5.2 Registry [DECIDED]
 

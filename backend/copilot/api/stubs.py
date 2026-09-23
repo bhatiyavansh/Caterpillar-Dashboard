@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from starlette.routing import Route
 
 #: (method, path, phase that will implement it)
 PLANNED: list[tuple[str, str, str]] = [
@@ -40,12 +39,22 @@ PLANNED: list[tuple[str, str, str]] = [
 ]
 
 
+def _routes(routes) -> list:
+    """Flatten routes; this FastAPI version wraps included routers in `_IncludedRouter` (no prefixes used here)."""
+    out = []
+    for r in routes:
+        inner = getattr(r, "original_router", None)
+        out += _routes(inner.routes) if inner is not None else [r]
+    return out
+
+
 def _implemented(app: FastAPI) -> set[tuple[str, str]]:
     out: set[tuple[str, str]] = set()
-    for r in app.router.routes:
-        if isinstance(r, Route) and r.methods:
-            for m in r.methods:
-                out.add((m, r.path))
+    for r in _routes(app.router.routes):  # duck-typed on path + methods
+        methods, path = getattr(r, "methods", None), getattr(r, "path", None)
+        if methods and path:
+            for m in methods:
+                out.add((m, path))
     return out
 
 

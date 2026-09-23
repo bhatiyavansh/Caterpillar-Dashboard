@@ -3,9 +3,9 @@
 // envelope + hub messages from backend/copilot/contracts. Changes are additive only.
 /* eslint-disable */
 
-export const CONTRACT_VERSION = "1.0.0";
-export const EVENT_CATALOGUE = ["seatbelt_unfastened", "seatbelt_fastened", "proximity_alert", "fatigue_alert", "tip_over_warning", "v2v_collision_risk", "v2i_suggestion", "anomaly_detected", "maintenance_due", "weather_change", "task_reordered", "working_risk_changed", "source_changed", "low_fuel", "engine_fault", "emergency_stop"] as const;
-export const HUB_EVENT_KINDS = ["source_changed", "low_fuel", "engine_fault", "emergency_stop"] as const;
+export const CONTRACT_VERSION = "1.1.0";
+export const EVENT_CATALOGUE = ["seatbelt_unfastened", "seatbelt_fastened", "proximity_alert", "fatigue_alert", "tip_over_warning", "v2v_collision_risk", "v2i_suggestion", "anomaly_detected", "maintenance_due", "weather_change", "task_reordered", "working_risk_changed", "source_changed", "low_fuel", "engine_fault", "emergency_stop", "action_pending", "action_confirmed", "action_cancelled", "action_failed", "incident_created", "work_order_created", "training_booked"] as const;
+export const HUB_EVENT_KINDS = ["source_changed", "low_fuel", "engine_fault", "emergency_stop", "action_pending", "action_confirmed", "action_cancelled", "action_failed", "incident_created", "work_order_created", "training_booked"] as const;
 export const SEVERITIES = ["info", "low", "medium", "high", "critical"] as const;
 export type EventKind = (typeof EVENT_CATALOGUE)[number];
 export type Severity = (typeof SEVERITIES)[number];

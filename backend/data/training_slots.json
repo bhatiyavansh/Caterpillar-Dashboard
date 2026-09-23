@@ -1,0 +1,141 @@
+{
+ "provenance": "demo_seed",
+ "note": "Demo training calendar seeded by Person B (backend/data/training_slots.json); module names from intelligence.summaries.MODULES",
+ "slots": [
+  {
+   "slot_id": "SL-001",
+   "module": "Pre-start inspection",
+   "date": "2026-09-24",
+   "start": "09:30",
+   "duration_min": 90,
+   "trainer": "Site trainer 1",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-002",
+   "module": "Slope and bench safety",
+   "date": "2026-09-24",
+   "start": "09:30",
+   "duration_min": 90,
+   "trainer": "Site trainer 1",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-003",
+   "module": "Working near ground crew",
+   "date": "2026-09-24",
+   "start": "09:30",
+   "duration_min": 90,
+   "trainer": "Site trainer 1",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-004",
+   "module": "Trenching technique",
+   "date": "2026-09-25",
+   "start": "14:00",
+   "duration_min": 90,
+   "trainer": "Site trainer 2",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-005",
+   "module": "Fuel-efficient operation",
+   "date": "2026-09-25",
+   "start": "14:00",
+   "duration_min": 90,
+   "trainer": "Site trainer 2",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-006",
+   "module": "Load handling",
+   "date": "2026-09-25",
+   "start": "14:00",
+   "duration_min": 90,
+   "trainer": "Site trainer 2",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-007",
+   "module": "Pre-start inspection",
+   "date": "2026-09-26",
+   "start": "09:30",
+   "duration_min": 90,
+   "trainer": "Site trainer 1",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-008",
+   "module": "Slope and bench safety",
+   "date": "2026-09-26",
+   "start": "09:30",
+   "duration_min": 90,
+   "trainer": "Site trainer 1",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-009",
+   "module": "Working near ground crew",
+   "date": "2026-09-26",
+   "start": "09:30",
+   "duration_min": 90,
+   "trainer": "Site trainer 1",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-010",
+   "module": "Trenching technique",
+   "date": "2026-09-27",
+   "start": "14:00",
+   "duration_min": 90,
+   "trainer": "Site trainer 2",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-011",
+   "module": "Fuel-efficient operation",
+   "date": "2026-09-27",
+   "start": "14:00",
+   "duration_min": 90,
+   "trainer": "Site trainer 2",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-012",
+   "module": "Load handling",
+   "date": "2026-09-27",
+   "start": "14:00",
+   "duration_min": 90,
+   "trainer": "Site trainer 2",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-013",
+   "module": "Pre-start inspection",
+   "date": "2026-09-28",
+   "start": "09:30",
+   "duration_min": 90,
+   "trainer": "Site trainer 1",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-014",
+   "module": "Slope and bench safety",
+   "date": "2026-09-28",
+   "start": "09:30",
+   "duration_min": 90,
+   "trainer": "Site trainer 1",
+   "capacity": 4
+  },
+  {
+   "slot_id": "SL-015",
+   "module": "Working near ground crew",
+   "date": "2026-09-28",
+   "start": "09:30",
+   "duration_min": 90,
+   "trainer": "Site trainer 1",
+   "capacity": 4
+  }
+ ]
+}

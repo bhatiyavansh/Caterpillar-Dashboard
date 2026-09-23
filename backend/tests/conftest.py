@@ -33,6 +33,8 @@ def make_settings(tmp_path: Path, **kw) -> Settings:
     base = dict(
         db_path=tmp_path / "hub.db",
         snapshot_dir=tmp_path / "cv_snapshots",
+        log_dir=tmp_path / "logs",
+        cache_dir=tmp_path / "cache",
         sim_url="http://127.0.0.1:9",  # nothing listens there; real sim calls are replaced by fakes
         heartbeat_s=0.5,
         source_silence_s=1.0,
@@ -52,19 +54,22 @@ async def hub_server(tmp_path):
 
 @pytest.fixture
 def hub_server_factory(tmp_path):
-    def make(**kw):
-        return _serve(make_settings(tmp_path, **kw))
+    def make(llm=None, ml=None, **kw):
+        return _serve(make_settings(tmp_path, **kw), llm=llm, ml=ml)
+
 
     return make
 
 
 class _serve:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, llm=None, ml=None) -> None:
         self.settings = settings
+        self.llm = llm
+        self.ml = ml
 
     async def __aenter__(self):
         port = free_port()
-        app = create_app(self.settings)
+        app = create_app(self.settings, llm=self.llm, ml=self.ml or FakeML())
         cfg = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning", lifespan="on")
         self.server = uvicorn.Server(cfg)
         self.task = asyncio.create_task(self.server.serve())
@@ -135,3 +140,73 @@ def start_hub_process(port: int, db: Path, **env) -> subprocess.Popen:
             time.sleep(0.1)
     p.kill()
     raise RuntimeError("hub process did not start:\n" + (p.stdout.read().decode() if p.stdout else ""))
+
+
+# ------------------------------------------------------------------ labelled fakes (no network, no C data)
+
+
+class FakeML:
+    """Deterministic ML double (labelled provenance 'fake')."""
+
+    name = "fake"
+
+    def __init__(self):
+        self.what_if_calls = []
+
+    def status(self):
+        return {"mode": "fake"}
+
+    async def estimate_task(self, f):
+        return {"p10": 170.0, "p50": 200.0, "p90": 250.0, "unit": "min", "reasons": [
+            {"feature": "soil", "label": "Clay", "impact_min": 15}], "provenance": "fake"}
+
+    async def anomalies(self, machine_id, since_hours=24, live=None):
+        rows = [{"machine_id": "EXC002", "type": "excessive_idling", "related": ["seatbelt_violation"],
+                 "score": 0.93, "fuel_cost_inr": 450, "evidence": {"idle_min": 50}}]
+        return {"anomalies": [r for r in rows if machine_id in (None, r["machine_id"])], "provenance": "fake"}
+
+    async def maintenance(self, machine_id):
+        return {"forecast": [{"machine_id": machine_id or "EXC001", "component": "hydraulic_pump",
+                              "health_pct": 77.8, "hours_to_service": 1315, "due_date": "2027-02-01"}],
+                "provenance": "fake"}
+
+    async def what_if(self, params):
+        self.what_if_calls.append(params)
+        await asyncio.sleep(0.05)
+        return {"params": params, "current": {"throughput_m3": 100}, "scenario": {"throughput_m3": 89},
+                "delta": {"throughput_m3": "-11%"}, "provenance": "fake"}
+
+    async def working_risk(self, **env):
+        return {"score": 10, "level": "low", "reasons": [], "provenance": "fake"}
+
+    async def fleet_kpis(self, snap):
+        return {"active_machines": len(snap.get("machines", [])), "provenance": "fake"}
+
+    async def training_profiles(self):
+        return {"profiles": [], "provenance": "fake"}
+
+
+class FakeSimHTTP:
+    """Stands in for C's HTTP control API (:8100), labelled fake."""
+
+    def __init__(self):
+        self.calls = []
+        self.task_list = json.loads((REPO_DIR / "fixtures" / "tasks.json").read_text())
+
+    async def run_scenario(self, name, params):
+        self.calls.append(("scenario", name, params))
+        return {"ok": True, "scenario": name, "events_emitted": [], "events": []}
+
+    async def scenarios(self):
+        return [{"name": "unbuckle"}]
+
+    async def tasks(self, operator_id=None):
+        self.calls.append(("tasks", operator_id))
+        return [t for t in self.task_list if operator_id in (None, t["operator_id"])]
+
+    async def reorder_tasks(self, operator_id, reason):
+        self.calls.append(("reorder", operator_id, reason))
+        return {"operator_id": operator_id, "old_order": ["T-0001"], "new_order": ["T-0001"], "reason": reason}
+
+    async def close(self):
+        pass

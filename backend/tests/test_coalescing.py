@@ -24,10 +24,11 @@ def test_outbox_coalesces_states_but_keeps_every_reliable():
     assert ob.drain() == []
 
 
-def test_outbox_overflow_flag():
+def test_outbox_reports_backlog_over_limit_but_keeps_the_message():
     ob = Outbox(max_reliable=3)
     assert all(ob.put_reliable(i, str(i)) for i in range(3))
-    assert ob.put_reliable(4, "4") is False and ob.overflowed
+    assert ob.put_reliable(4, "4") is False
+    assert ob.drain() == ["0", "1", "2", "4"]  # never dropped
 
 
 class FakeWS:

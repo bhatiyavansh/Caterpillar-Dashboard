@@ -128,3 +128,33 @@ Payload = the detector's object (`{type:"event", event, severity, machine_id, so
 1. `cd backend && make dev` 2. `uv run python -m simulator --mode hub --hub ws://localhost:8000/ws/ingest` 3. `NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev` 4. open `/dev/stream` (all 9 machines live), `/cab`, `/command` 5. press a director button → event appears on all three.
 
 **CONTRACT_CHANGES needing sign-off:** 1.0.0 (A, C, D) — `docs/CONTRACT_CHANGES.md`.
+
+---
+
+## Phase B — agent core (branch `p2/agent`)
+
+Gate: `make test` — FakeLLM tests for all 13 tools and every confirm path (confirm, double-confirm idempotent, cancel, supersede, 2-min expiry → 410, unknown → 404, downstream failure → 502 + `action_failed`), first-token/total timeouts, overloaded/rate-limited/refusal/unavailable fallbacks, grounding rejection + one regeneration + deterministic fallback, surface allow-list, parallel tool calls, max 5 rounds. **Live smoke (`make live-smoke`, one question per surface) FAILS: no `ANTHROPIC_API_KEY` on this machine** — it fails loudly by design, never skips.
+
+### → Person D (product UI)
+**Ready:** `POST http://localhost:8000/api/assistant` (SSE; `Accept: application/json` for one-shot JSON) and `web/lib/assistant`.
+```ts
+import { useAssistant } from "../../../web/lib/assistant";   // or "@web/lib/assistant" once the alias lands
+const a = useAssistant({ surface: "cab", machineId: "EXC001" });
+// a.send("How long will this trench take?")   a.messages   a.status ("thinking"|"calling_tool"|"answering"|"idle"|"error")
+// a.pending -> confirm cards: a.confirm(a.pending[0].action_id) / a.cancel(...)  (typing/saying "confirm" also works)
+```
+Your `AvatarSlot` state maps directly: `a.status === "thinking" | "calling_tool"` → `"thinking"`, streaming → `"talking"` (Phase F adds voice).
+**Render `final.text`, not the streamed tokens** — the grounding check can replace an ungrounded draft with a data-only answer. `mode` is `live | fallback` (fallback = answered from live data without the LLM; show a small badge).
+Other endpoints: `GET /api/actions?surface=`, `POST /api/actions/{id}/confirm|cancel`, `POST /api/tasks/estimate {task_id}`, `GET /api/anomalies?machine_id=&since_hours=`, `POST /api/whatif {trucks,weather,shift_hours,road_closed,add_spotter}` → `{job_id,status}` then `GET /api/whatif/{job_id}` (~40 s first time, cached after).
+**Stream events you may want:** `action_pending / action_confirmed / action_cancelled / action_failed`, `incident_created`, `work_order_created`, `training_booked` (contract 1.1.0).
+**I need (hour 14):** confirm the cab mount point for the assistant (your `AvatarSlot` `onPushToTalk` → `a.send` via voice in Phase F).
+
+### → Person C (ML / simulator)
+**Ready:** `docs/ML_INTERFACE.md` — exactly how I call `intelligence` (to_thread + timeouts + TTL cache + auto real⇄stub switch every 60 s) and the features I assemble for `predict_task_time`. Reorder confirmations call your `POST /tasks/{op}/reorder`; tasks come from `GET /tasks/{op}` (fixture fallback labelled).
+**Asks (hour 12):** see ML_INTERFACE §"What would make it better" — especially `models_available()` returning False when LightGBM can't import, and the live anomaly flood.
+**Known limitation on this Mac:** task time is `planner_fallback` (no libomp → no LightGBM/SHAP); the agent says so via provenance.
+
+### → Person A (3D twin)
+Nothing required. `run_what_if` results (`current/scenario/delta`) are available via REST for a before/after overlay if you want it.
+
+**CONTRACT_CHANGES needing sign-off:** 1.1.0 (D, C).

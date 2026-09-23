@@ -10,7 +10,7 @@ from collections import deque
 
 
 class Outbox:
-    __slots__ = ("_reliable", "_states", "wakeup", "max_reliable", "overflowed", "coalesced")
+    __slots__ = ("_reliable", "_states", "wakeup", "max_reliable", "coalesced")
 
     def __init__(self, max_reliable: int) -> None:
         self._reliable: deque[tuple[int, str]] = deque()
@@ -18,17 +18,14 @@ class Outbox:
         self._states: dict[str, tuple[int, str]] = {}
         self.wakeup = asyncio.Event()
         self.max_reliable = max_reliable
-        self.overflowed = False
         self.coalesced = 0
 
     def put_reliable(self, seq: int, text: str) -> bool:
-        """Queue a reliable message. Returns False (and flags overflow) past the limit."""
+        """Queue a reliable message (never dropped). Returns False when the backlog is past the limit;
+        the hub then decides whether the client is actually stuck (see Hub._fan_reliable)."""
         self._reliable.append((seq, text))
         self.wakeup.set()
-        if len(self._reliable) > self.max_reliable:
-            self.overflowed = True
-            return False
-        return True
+        return len(self._reliable) <= self.max_reliable
 
     def put_state(self, key: str, seq: int, text: str) -> None:
         if self._states.pop(key, None) is not None:

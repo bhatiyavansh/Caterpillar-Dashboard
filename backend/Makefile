@@ -1,5 +1,5 @@
 # Person B backend. Run from backend/.  (uv project; see pyproject.toml)
-.PHONY: dev fake-sim sim-hub contracts contracts-check test lint web-check web-test check
+.PHONY: dev fake-sim sim-hub contracts contracts-check test lint web-check check live-smoke
 
 dev:            ## hub on :8000
 	uv run python -m copilot
@@ -28,3 +28,6 @@ web-check:      ## typecheck + lint + node tests for my frontend files only
 	cd .. && node web/lib/stream/test/run-tests.mjs
 
 check: contracts-check lint test web-check
+
+live-smoke:     ## one real LLM question per surface (network; needs ANTHROPIC_API_KEY)
+	uv run pytest -o addopts="" -m live -s tests/test_live_llm.py

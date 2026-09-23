@@ -17,7 +17,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 from simulator.schemas import EVENT_CATALOGUE, Event, MachineState, Severity, WorkerState
 
-CONTRACT_VERSION = "1.0.0"
+CONTRACT_VERSION = "1.1.0"
 
 #: Event kinds the hub itself (or a non-C source) may emit, on top of C's catalogue.
 HUB_EVENT_KINDS: tuple[str, ...] = (
@@ -25,6 +25,14 @@ HUB_EVENT_KINDS: tuple[str, ...] = (
     "low_fuel",  # twin source only
     "engine_fault",  # twin source only
     "emergency_stop",  # twin source only
+    # 1.1.0 (Phase B): confirm flow and records
+    "action_pending",
+    "action_confirmed",
+    "action_cancelled",
+    "action_failed",
+    "incident_created",
+    "work_order_created",
+    "training_booked",
 )
 ALL_EVENT_KINDS: tuple[str, ...] = EVENT_CATALOGUE + HUB_EVENT_KINDS
 SEVERITIES: tuple[str, ...] = ("info", "low", "medium", "high", "critical")

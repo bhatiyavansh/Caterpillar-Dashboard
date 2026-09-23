@@ -256,7 +256,7 @@ class FakeSite:
             m.hyd_offset = float(args.get("delta_c", 25))
             m.faults = ["HYD-118"]
             self.event("maintenance_due", "medium", mid, "rules", f"Hydraulic temperature high on {mid}",
-                       {"component": "hydraulic", "health_pct": 40.0, "hours_to_service": 0})
+                       {"component": "hydraulic_pump", "health_pct": 40.0, "hours_to_service": 0})
         elif name == "idle_anomaly":
             e = self.by_id.get(args.get("machine_id", "EXC002"), m)
             e.frozen, e.idle_min = True, float(args.get("idle_min", 50))

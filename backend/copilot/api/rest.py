@@ -52,6 +52,13 @@ async def api_health(request: Request) -> dict[str, Any]:
     body = hub.health()
     body["stubs"] = getattr(request.app.state, "stubs", [])
     body["features"] = hub.features()
+    st = request.app.state
+    if hasattr(st, "ml"):
+        body["ml"] = st.ml.status() if hasattr(st.ml, "status") else {"mode": getattr(st.ml, "name", "custom")}
+        body["llm"] = {"available": st.agent.llm.available, "provider": st.agent.llm.name,
+                       "model": st.agent.s.model, "fast_model": st.agent.s.fast_model,
+                       "timeouts_s": {"first_token": st.agent.s.first_token_s, "total": st.agent.s.total_s}}
+        body["actions_pending"] = sum(1 for a in st.actions.list() if a["status"] == "pending")
     body["ok"] = body["db"]["ok"]
     return body
 
