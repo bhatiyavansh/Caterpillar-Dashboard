@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+data/*.db
+cache/
+# root .gitignore ignores .env*; keep the template tracked
+!.env.example
+data/cv_snapshots/
+data/*.db-*
+logs/
+data/models/

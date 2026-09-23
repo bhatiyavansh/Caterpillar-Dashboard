@@ -1,0 +1,21 @@
+# make rag-eval: each question must retrieve a passage whose citation starts with `expect` in the top 5.
+# Questions are the manual questions from README §19 plus the ones the demo script and agent tests ask.
+questions:
+  - {q: "What does fault code HYD-118 mean?", expect: "Demo site manual (CAT Copilot hackathon), p. 2"}
+  - {q: "hydraulic oil temperature too high, what should I do?", expect: "Demo site manual (CAT Copilot hackathon), p. 2"}
+  - {q: "How does the seatbelt escalation work?", expect: "Demo site manual (CAT Copilot hackathon), p. 3"}
+  - {q: "What do the tip-over gauge colours mean?", expect: "Demo site manual (CAT Copilot hackathon), p. 4"}
+  - {q: "How big is the red safety bubble around the machine?", expect: "Demo site manual (CAT Copilot hackathon), p. 5"}
+  - {q: "How far ahead does the V2V collision warning look?", expect: "Demo site manual (CAT Copilot hackathon), p. 6"}
+  - {q: "When does a fatigue alert fire?", expect: "Demo site manual (CAT Copilot hackathon), p. 7"}
+  - {q: "Are seat belts required on earthmoving equipment like dozers and loaders?", expect: "29 CFR 1926.602(a)"}
+  - {q: "Can a worker stand under a load lifted by an excavator?", expect: "29 CFR 1926.651(e)"}
+  - {q: "What warning system is needed when equipment works near the edge of an excavation?", expect: "29 CFR 1926.651(f)"}
+  - {q: "When must earthmoving equipment have a reverse signal alarm?", expect: "29 CFR 1926.602(a)(9)"}
+  - {q: "Who has to inspect excavations every day?", expect: "29 CFR 1926.651(k)"}
+  - {q: "What is a competent person?", expect: "29 CFR 1926.650(b)"}
+  - {q: "How deep can an excavation be without a protective system?", expect: "29 CFR 1926.652(a)"}
+  - {q: "How far back from the edge must spoil piles be kept?", expect: "29 CFR 1926.651(j)"}
+  - {q: "Ladder or ramp needed to get out of a trench how deep?", expect: "29 CFR 1926.651(c)"}
+  - {q: "What safety training must employers give workers?", expect: "29 CFR 1926.21(b)"}
+  - {q: "Recipe for chocolate cake", expect_none: true, expect: "-"}

@@ -1,0 +1,5 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": { "noEmit": true, "incremental": false, "types": ["node"] },
+  "include": ["./**/*.ts", "../assistant/**/*.ts", "../voice/**/*.ts", "../../components/avatar/**/*.tsx", "../../../src/app/dev/**/*.tsx", "../../../src/types/twin.ts"]
+}
