@@ -92,7 +92,11 @@ export function CabHmi() {
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col gap-2.5 p-2.5 transition-colors duration-500",
+        // At cab resolution everything fits without scrolling, which is the
+        // point: the operator takes it in at a glance. On a narrow screen the
+        // three panels stack, so the page has to be allowed to scroll rather
+        // than crush them into unreadable slivers.
+        "flex h-full flex-col gap-2.5 overflow-y-auto p-2.5 transition-colors duration-500 lg:min-h-0 lg:overflow-hidden",
         level === "critical" && "bg-status-crit/[0.07]",
       )}
     >
@@ -141,7 +145,7 @@ export function CabHmi() {
       />
 
       {/* Working area */}
-      <div className="grid min-h-0 flex-1 gap-2.5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)_minmax(0,0.85fr)]">
+      <div className="grid flex-1 gap-2.5 max-lg:shrink-0 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)_minmax(0,0.85fr)]">
         <TaskPanel tasks={tasks} className="min-h-0" />
 
         {/* Machine health */}

@@ -303,6 +303,9 @@ export function DataTable<T>({
 }) {
   if (!rows.length && empty) return <>{empty}</>;
   return (
+    // A dense table must be allowed to scroll rather than squeeze its columns
+    // into unreadable slivers on a narrow viewport.
+    <div className="w-full overflow-x-auto">
     <table className="w-full border-collapse text-sm">
       <caption className="sr-only">{caption}</caption>
       <thead>
@@ -361,5 +364,6 @@ export function DataTable<T>({
         })}
       </tbody>
     </table>
+    </div>
   );
 }

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { LayoutGrid, Search, Table2 } from "lucide-react";
 import { PageHeader, RunSimulationButton } from "@/components/navigation/dashboard-shell";
+import { SITE_NAME } from "@/lib/api/seed";
 import { MachineCard, MachineTable } from "@/components/dashboard/machine-card";
 import { Button, EmptyState, Input, Select } from "@/components/ui/primitives";
 import { machines } from "@/lib/mock-data";
@@ -30,7 +31,7 @@ export default function FleetPage() {
     <div className="pb-10">
       <PageHeader
         title="Fleet"
-        subtitle="Every connected machine on Northgate Quarry, with live operating figures."
+        subtitle={`Every connected machine on ${SITE_NAME}, with live operating figures.`}
         actions={<RunSimulationButton size="md" />}
       />
 

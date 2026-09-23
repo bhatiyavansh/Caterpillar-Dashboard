@@ -8,6 +8,7 @@ import { Button, Input } from "@/components/ui/primitives";
 import { Hint } from "@/components/ui/tooltip";
 import { useMachineStore } from "@/store/machine-store";
 import { cn } from "@/lib/utils";
+import { Breadcrumbs, type Crumb } from "@/components/ui/page";
 
 export function RunSimulationButton({ className, size = "lg" }: { className?: string; size?: "md" | "lg" | "touch" }) {
   const open = useMachineStore((s) => s.openSimulation);
@@ -166,15 +167,19 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 export function PageHeader({
   title,
   subtitle,
+  crumbs,
   actions,
 }: {
   title: string;
   subtitle: string;
+  /** Trail back up a nested route. Omitted on top-level section pages. */
+  crumbs?: Crumb[];
   actions?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 border-b border-white/10 bg-ink-900/40 px-4 py-4">
       <div className="min-w-0">
+        {crumbs?.length ? <Breadcrumbs items={crumbs} className="mb-1" /> : null}
         {/* The section rail above already names the area, so this states the
             page, not the product. A display-sized heading here would push the
             actual records below the fold for no gain. */}

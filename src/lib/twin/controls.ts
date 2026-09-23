@@ -111,11 +111,22 @@ const HANDLED = new Set<string>(Object.values(KEYS));
  * supplied handlers; continuous controls are polled from `readInput`.
  */
 export function attachControls(handlers: ControlHandlers): () => void {
+  /**
+   * Whether the key belongs to the focused control rather than to the machine.
+   *
+   * Text fields are the obvious case. Buttons and links matter just as much:
+   * Space and Enter activate a focused control, and `emergencyStop` is bound to
+   * Space — so without this a keyboard user who tabs to any button on the page
+   * would trigger an emergency stop instead of pressing the button.
+   */
   const isTypingTarget = (target: EventTarget | null) => {
     const el = target as HTMLElement | null;
     if (!el) return false;
     const tag = el.tagName;
-    return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable) return true;
+    if (tag === "BUTTON" || tag === "A" || tag === "SUMMARY") return true;
+    const role = el.getAttribute?.("role");
+    return role === "button" || role === "link" || role === "menuitem" || role === "tab";
   };
 
   const onKeyDown = (e: KeyboardEvent) => {

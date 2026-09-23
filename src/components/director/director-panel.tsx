@@ -18,6 +18,7 @@ import type { DirectorScenario, DirectorScenarioId } from "@/lib/api/contracts";
 import { useAlerts, useDirector, useSnapshot } from "@/lib/hooks/use-site";
 import { Button } from "@/components/ui/primitives";
 import { SectionHeader } from "@/components/ui/data";
+import { PageShell } from "@/components/ui/page";
 import { SeverityChip } from "@/components/ui/status";
 import { EmptyPanel } from "@/components/ui/states";
 import { relativeTime } from "@/components/alerts/alert-card";
@@ -126,18 +127,18 @@ export function DirectorPanel() {
   );
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="flex h-full min-h-0 flex-col">
       {/* Unmistakably internal */}
-      <div className="hazard-stripe h-1.5" aria-hidden />
+      <div className="hazard-stripe h-1.5 shrink-0" aria-hidden />
 
-      <div className="mx-auto max-w-[1400px] px-4 py-5">
+      <PageShell>
         <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="grid size-11 shrink-0 place-items-center rounded bg-cat-500 text-ink-950">
               <MonitorCog className="size-6" aria-hidden />
             </span>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-zinc-50">Demo control</h1>
+              <h1 className="text-lg font-bold leading-tight tracking-tight text-zinc-50">Demo control</h1>
               <p className="text-xs text-muted">
                 Internal only. Every button drives the live site that the other screens are reading.
               </p>
@@ -274,7 +275,7 @@ export function DirectorPanel() {
             </Button>
           </div>
         </div>
-      </div>
+      </PageShell>
     </div>
   );
 }

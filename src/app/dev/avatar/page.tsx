@@ -2,9 +2,9 @@
 
 /** /dev/avatar: try the free browser voice + 2D avatar against the live hub (Person B dev page). */
 import { useState } from "react";
-import { Avatar2D } from "../../../../web/components/avatar";
-import { useActiveAlerts } from "../../../../web/lib/stream";
-import { useVoice } from "../../../../web/lib/voice";
+import { Avatar2D } from "@web/components/avatar";
+import { useActiveAlerts } from "@web/lib/stream";
+import { useVoice } from "@web/lib/voice";
 
 export default function DevAvatarPage() {
   const alerts = useActiveAlerts();
@@ -13,7 +13,7 @@ export default function DevAvatarPage() {
   const [text, setText] = useState("");
 
   return (
-    <main className="min-h-screen space-y-4 bg-ink-950 p-6 text-sm text-zinc-200">
+    <main className="h-full overflow-y-auto space-y-4 bg-ink-950 p-6 text-sm text-zinc-200">
       <h1 className="text-sm font-bold uppercase tracking-[0.2em] text-cat-500">/dev/avatar</h1>
       <div className="flex items-center gap-6">
         <Avatar2D state={v.state} pulse={v.pulse} size={120} />
@@ -33,6 +33,7 @@ export default function DevAvatarPage() {
       </div>
       <form onSubmit={(e) => { e.preventDefault(); void v.send(text); setText(""); }} className="flex gap-2">
         <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Ask, or type confirm / cancel"
+          aria-label="Message to the assistant"
           className="h-10 flex-1 rounded border border-white/15 bg-ink-900 px-3" />
         <button className="h-10 rounded border border-white/15 px-4">Send</button>
       </form>

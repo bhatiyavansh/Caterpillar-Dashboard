@@ -10,7 +10,7 @@
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence } from "motion/react";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Boxes, ListFilter, PanelLeftClose, PanelLeftOpen, SlidersHorizontal } from "lucide-react";
 import { FleetList } from "./fleet-list";
 import { MachineInspector } from "./machine-inspector";
 import { TimelineBar } from "./timeline-bar";
@@ -66,6 +66,13 @@ export function CommandCenter() {
   const [replayAt, setReplayAt] = React.useState<number | null>(null);
   const [railOpen, setRailOpen] = React.useState(true);
 
+  /**
+   * Below `lg` there is not room for three panes side by side, so the console
+   * becomes one pane at a time. Above `lg` this state is ignored and all three
+   * show at once — the tab bar is hidden there.
+   */
+  const [pane, setPane] = React.useState<"fleet" | "site" | "inspector">("site");
+
   // A new critical alert pulls the inspector onto the machine that raised it,
   // so the manager is already looking at the right thing when they glance up.
   const lastCritical = React.useRef<string | null>(null);
@@ -88,18 +95,47 @@ export function CommandCenter() {
     <div className="flex h-full min-h-0 flex-col">
       <KpiRail items={buildKpis(kpis)} />
 
+      {/* Pane switcher — small screens only */}
+      <div className="flex shrink-0 items-center gap-1 border-b border-white/10 bg-ink-900 px-2 py-1.5 lg:hidden">
+        {([
+          { id: "fleet" as const, label: "Fleet", icon: ListFilter },
+          { id: "site" as const, label: "Site", icon: Boxes },
+          { id: "inspector" as const, label: "Inspector", icon: SlidersHorizontal },
+        ]).map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setPane(id)}
+            aria-pressed={pane === id}
+            className={cn(
+              "inline-flex flex-1 items-center justify-center gap-1.5 rounded px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors",
+              pane === id ? "bg-cat-500 text-ink-950" : "text-muted hover:bg-white/5 hover:text-zinc-200",
+            )}
+          >
+            <Icon className="size-3.5" aria-hidden />
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Fleet rail */}
         <FleetList
           machines={machines}
           selectedId={selectedId}
-          onSelect={setSelectedId}
+          onSelect={(id) => {
+            setSelectedId(id);
+            setPane("inspector");
+          }}
           loading={loading}
-          className={cn("w-64 shrink-0 transition-[width]", !railOpen && "hidden xl:flex xl:w-0 xl:overflow-hidden xl:border-0")}
+          className={cn(
+            "shrink-0 transition-[width] max-lg:w-full lg:w-64",
+            pane === "fleet" ? "flex" : "hidden lg:flex",
+            !railOpen && "xl:w-0 xl:overflow-hidden xl:border-0",
+          )}
         />
 
         {/* Twin + live alert strip */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className={cn("min-w-0 flex-1 flex-col", pane === "site" ? "flex" : "hidden lg:flex")}>
           <div className="flex items-center gap-2 border-b border-white/10 bg-ink-900 px-2 py-1.5">
             <Button
               variant="ghost"
@@ -131,8 +167,13 @@ export function CommandCenter() {
           <TimelineBar now={snapshot.t} markers={markers} replayAt={replayAt} onReplayAtChange={setReplayAt} />
         </div>
 
-        {/* Inspector + alerts */}
-        <div className="hidden w-80 shrink-0 flex-col lg:flex 2xl:w-96">
+        {/* Inspector */}
+        <div
+          className={cn(
+            "shrink-0 flex-col max-lg:w-full lg:flex lg:w-80 2xl:w-96",
+            pane === "inspector" ? "flex" : "hidden lg:flex",
+          )}
+        >
           <MachineInspector
             machine={selected}
             alerts={alerts}

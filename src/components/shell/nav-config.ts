@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   type LucideIcon,
   MonitorCog,
+  MessagesSquare,
   MonitorPlay,
   Radio,
   ScanLine,
@@ -27,8 +28,6 @@ export interface NavItem {
   icon: LucideIcon;
   /** Marks an internal, non-customer route. */
   internal?: boolean;
-  /** Opens outside the app shell (full-bleed route). */
-  fullBleed?: boolean;
 }
 
 export interface NavGroup {
@@ -44,7 +43,7 @@ export const NAV: NavGroup[] = [
     items: [
       { href: "/command", label: "Command centre", audience: "Site manager", icon: LayoutDashboard },
       { href: "/cab", label: "Operator cab", audience: "Machine operator", icon: Truck },
-      { href: "/twin", label: "Live 3D twin", audience: "Full-screen site view", icon: Boxes, fullBleed: true },
+      { href: "/twin", label: "Live 3D twin", audience: "Drivable site view", icon: Boxes },
     ],
   },
   {
@@ -58,9 +57,9 @@ export const NAV: NavGroup[] = [
   },
   {
     id: "records",
-    label: "Machine records",
+    label: "Records",
     items: [
-      { href: "/dashboard", label: "Fleet operations", audience: "Maintenance and diagnostics", icon: Gauge },
+      { href: "/dashboard", label: "Machine records", audience: "Maintenance and diagnostics", icon: Gauge },
     ],
   },
   {
@@ -70,6 +69,7 @@ export const NAV: NavGroup[] = [
       { href: "/director", label: "Demo control", audience: "Scenario triggers", icon: MonitorCog, internal: true },
       { href: "/machine", label: "In-cab display", audience: "Hardware simulation", icon: MonitorPlay, internal: true },
       { href: "/dev/stream", label: "Stream inspector", audience: "Live hub diagnostics", icon: Radio, internal: true },
+      { href: "/dev/avatar", label: "Assistant bench", audience: "Voice and avatar", icon: MessagesSquare, internal: true },
     ],
   },
 ];

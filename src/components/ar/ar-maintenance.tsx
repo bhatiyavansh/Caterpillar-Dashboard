@@ -24,6 +24,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/primitives";
+import { PageShell } from "@/components/ui/page";
 import { cn } from "@/lib/utils";
 
 interface Hotspot {
@@ -256,8 +257,7 @@ export function ArMaintenance() {
   const key = `${selected.id}-${step}`;
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-2xl space-y-4 px-4 py-4 lg:max-w-5xl">
+    <PageShell width="narrow" className="lg:max-w-5xl">
         <header className="flex items-center justify-between gap-3">
           <div>
             <p className="label-xs">AR maintenance</p>
@@ -418,7 +418,6 @@ export function ArMaintenance() {
             </div>
           </section>
         </div>
-      </div>
-    </div>
+    </PageShell>
   );
 }

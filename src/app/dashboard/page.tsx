@@ -37,7 +37,7 @@ export default function OverviewPage() {
   return (
     <div className="pb-10">
       <PageHeader
-        title="Fleet Overview"
+        title="Fleet overview"
         subtitle="Monitor machine health, operations and maintenance."
         actions={<RunSimulationButton />}
       />

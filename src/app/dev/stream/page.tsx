@@ -14,7 +14,7 @@ import {
   useStreamMeta,
   useStreamStore,
   useWorkers,
-} from "../../../../web/lib/stream";
+} from "@web/lib/stream";
 
 const SCENARIOS = [
   "start_shift", "rain", "unbuckle", "buckle", "worker_behind", "fatigue", "dozer_reversing",
@@ -59,7 +59,7 @@ export default function DevStreamPage() {
   const p95 = percentile(latency, 0.95);
 
   return (
-    <main className="min-h-screen bg-ink-950 p-6 font-mono text-xs text-zinc-200">
+    <main className="h-full overflow-y-auto bg-ink-950 p-6 font-mono text-xs text-zinc-200">
       <header className="mb-4 flex flex-wrap items-center gap-4">
         <h1 className="text-sm font-bold uppercase tracking-[0.2em] text-cat-500">/dev/stream</h1>
         <span data-testid="status" className={meta.status === "live" ? "text-status-ok" : "text-status-warn"}>
@@ -105,7 +105,7 @@ export default function DevStreamPage() {
       <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
         <section>
           <h2 className="label-xs mb-2">machines ({machines.length}) · workers ({workers.length})</h2>
-          <table className="w-full border-collapse">
+          <table className="w-full min-w-[640px] border-collapse">
             <thead className="text-left text-muted">
               <tr>
                 {["id", "model", "status", "intent", "x", "y", "hdg", "m/s", "fuel %", "belt", "bubble", "tip", "hyd °C", "task", "ts"].map((h) => (

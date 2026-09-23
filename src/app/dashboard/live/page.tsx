@@ -25,7 +25,7 @@ export default function LiveMonitoringPage() {
   return (
     <div className="pb-10">
       <PageHeader
-        title="Live Monitoring"
+        title="Live monitoring"
         subtitle="Real-time telemetry from the connected machine and its worksite neighbours."
         actions={<RunSimulationButton size="md" />}
       />
