@@ -161,7 +161,7 @@ export function TopBar({
     : "operating";
 
   return (
-    <header className="relative z-20 flex h-16 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-ink-900/60 px-3 backdrop-blur-xl sm:px-5">
+    <header className="relative z-20 flex h-13 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-ink-900/60 px-3 backdrop-blur-xl sm:px-5">
       <NavToggle onClick={onOpenNav} />
 
       <div className="min-w-0">

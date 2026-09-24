@@ -119,49 +119,54 @@ export function TwinViewport({
       >
         {/* Controls float above the scene so the canvas keeps the full box. */}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 p-2.5">
-          <div className="pointer-events-auto flex flex-wrap items-center gap-1">
+          <div className="pointer-events-auto flex flex-wrap items-center gap-2.5">
             {/* View switch */}
-            <div className="mr-1 flex items-center overflow-hidden rounded border border-white/12 bg-ink-900/90">
-              {[
-                { id: "3d" as const, label: "3D", icon: Box },
-                { id: "plan" as const, label: "Plan", icon: MapIcon },
-              ].map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setView(id)}
-                  disabled={replaying}
-                  aria-pressed={effectiveView === id}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-40",
-                    effectiveView === id
-                      ? "bg-cat-500 text-ink-950"
-                      : "text-muted hover:text-zinc-200",
-                  )}
-                >
-                  <Icon className="size-3" aria-hidden />
-                  {label}
-                </button>
-              ))}
+            <div className="flex items-center gap-1.5 rounded border border-white/12 bg-ink-900/90 px-1.5 py-1">
+              <span className="label-xs !text-[9px] pl-0.5 pr-0.5 text-zinc-500">View</span>
+              <div className="flex items-center overflow-hidden rounded-sm">
+                {[
+                  { id: "3d" as const, label: "3D", icon: Box },
+                  { id: "plan" as const, label: "Plan", icon: MapIcon },
+                ].map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setView(id)}
+                    disabled={replaying}
+                    aria-pressed={effectiveView === id}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-40",
+                      effectiveView === id
+                        ? "bg-cat-500 text-ink-950"
+                        : "text-muted hover:text-zinc-200",
+                    )}
+                  >
+                    <Icon className="size-3" aria-hidden />
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {LAYER_CONTROLS.map(({ key, label, short, icon: Icon }) => (
-              <Hint key={key} label={label}>
-                <button
-                  onClick={() => toggle(key)}
-                  aria-pressed={layers[key]}
-                  aria-label={label}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors",
-                    layers[key]
-                      ? "border-cat-500/40 bg-cat-500/12 text-cat-500"
-                      : "border-white/10 bg-ink-900/90 text-muted hover:text-zinc-200",
-                  )}
-                >
-                  <Icon className="size-3" aria-hidden />
-                  <span className="hidden lg:inline">{short}</span>
-                </button>
-              </Hint>
-            ))}
+            {/* Layer toggles */}
+            <div className="flex items-center gap-1 rounded border border-white/12 bg-ink-900/90 px-1.5 py-1">
+              <span className="label-xs !text-[9px] pl-0.5 pr-0.5 text-zinc-500">Layers</span>
+              {LAYER_CONTROLS.map(({ key, label, short, icon: Icon }) => (
+                <Hint key={key} label={label}>
+                  <button
+                    onClick={() => toggle(key)}
+                    aria-pressed={layers[key]}
+                    aria-label={label}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors",
+                      layers[key] ? "bg-cat-500/12 text-cat-500" : "text-muted hover:text-zinc-200",
+                    )}
+                  >
+                    <Icon className="size-3" aria-hidden />
+                    <span className="hidden lg:inline">{short}</span>
+                  </button>
+                </Hint>
+              ))}
+            </div>
           </div>
 
           <div className="pointer-events-auto flex shrink-0 items-center gap-1.5">
