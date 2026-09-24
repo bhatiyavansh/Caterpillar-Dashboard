@@ -7,7 +7,9 @@
   "page": null,
   "section": "1926.21(a)",
   "text": "(a) General requirements. The Secretary shall, pursuant to section 107(f) of the Act, establish and supervise programs for the education and training of employers and employees in the recognition, avoidance and prevention of unsafe conditions in employments covered by the act.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_21#1",
@@ -17,7 +19,9 @@
   "page": null,
   "section": "1926.21(b)",
   "text": "(b) Employer responsibility. (1) The employer should avail himself of the safety and health training programs the Secretary provides.\n(2) The employer shall instruct each employee in the recognition and avoidance of unsafe conditions and the regulations applicable to his work environment to control or eliminate any hazards or other exposure to illness or injury.\n(3) Employees required to handle or use poisons, caustics, and other harmful substances shall be instructed regarding the safe handling and use, and be made aware of the potential hazards, personal hygiene, and personal protective measures required.\n(4) In job site areas where harmful plants or animals are present, employees who may be exposed shall be instructed regarding the potential hazards, and how to avoid injury, and the first aid procedures to be used in the event of injury.\n(5) Employees required to handle or use flammable liquids, gases, or toxic materials shall be instructed in the safe handling and use of these materials and made aware of the specific requirements contained in subparts D, F, and other applicable subparts of this part.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_600#0",
@@ -27,7 +31,9 @@
   "page": null,
   "section": "1926.600(a)",
   "text": "(a) General requirements. (1) All equipment left unattended at night, adjacent to a highway in normal use, or adjacent to construction areas where work is in progress, shall have appropriate lights or reflectors, or barricades equipped with appropriate lights or reflectors, to identify the location of the equipment.\n(2) A safety tire rack, cage, or equivalent protection shall be provided and used when inflating, mounting, or dismounting tires installed on split rims, or rims equipped with locking rings or similar devices.\n(3)(i) Heavy machinery, equipment, or parts thereof, which are suspended or held aloft by use of slings, hoists, or jacks shall be substantially blocked or cribbed to prevent falling or shifting before employees are permitted to work under or between them. Bulldozer and scraper blades, end-loader buckets, dump bodies, and similar equipment, shall be either fully lowered or blocked when being repaired or when not in use. All controls shall be in a neutral position, with the motors stopped and brakes set, unless work being performed requires otherwise.\n(ii) Whenever the equipment is parked, the parking brake shall be set. Equipment parked on inclines shall have the wheels chocked and the parking brake set.\n(4) The use, care and charging of all batteries shall conform to the requirements of subpart K of this part.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_600#1",
@@ -37,7 +43,9 @@
   "page": null,
   "section": "1926.600(a)(5)",
   "text": "(5) All cab glass shall be safety glass, or equivalent, that introduces no visible distortion affecting the safe operation of any machine covered by this subpart.\n(6) All equipment covered by this subpart shall comply with the following requirements when working or being moved in the vicinity of power lines or energized transmitters, except where electrical distribution and transmission lines have been deenergized and visibly grounded at point of work or where insulating barriers, not a part of or an attachment to the equipment or machinery, have been erected to prevent physical contact with the lines:\n(i) For lines rated 50 kV or below, minimum clearance between the lines and any part of the crane or load shall be 10 feet;\n(ii) For lines rated over 50 kV, minimum clearance between the lines and any part of the crane or load shall be 10 feet plus 0.4 inch for each 1 kV over 50 kV, or twice the length of the line insulator, but never less than 10 feet;\n(iii) In transit with no load and boom lowered, the equipment clearance shall be a minimum of 4 feet for voltages less than 50 kV, and 10 feet for voltages over 50 kV, up to and including 345 kV, and 16 feet for voltages up to and including 750 kV;",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_600#2",
@@ -47,7 +55,9 @@
   "page": null,
   "section": "1926.600(a)",
   "text": "(iv) A person shall be designated to observe clearance of the equipment and give timely warning for all operations where it is difficult for the operator to maintain the desired clearance by visual means;\n(v) Cage-type boom guards, insulating links, or proximity warning devices may be used on cranes, but the use of such devices shall not alter the requirements of any other regulation of this part even if such device is required by law or regulation;\n(vi) Any overhead wire shall be considered to be an energized line unless and until the person owning such line or the electrical utility authorities indicate that it is not an energized line and it has been visibly grounded;\n(vii) Prior to work near transmitter towers where an electrical charge can be induced in the equipment or materials being handled, the transmitter shall be de-energized or tests shall be made to determine if electrical charge is induced on the crane. The following precautions shall be taken when necessary to dissipate induced voltages:\n(A) The equipment shall be provided with an electrical ground directly to the upper rotating structure supporting the boom; and",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_600#3",
@@ -57,7 +67,9 @@
   "page": null,
   "section": "1926.600(a)",
   "text": "(B) Ground jumper cables shall be attached to materials being handled by boom equipment when electrical charge is induced while working near energized transmitters. Crews shall be provided with nonconductive poles having large alligator clips or other similar protection to attach the ground cable to the load.\n(C) Combustible and flammable materials shall be removed from the immediate area prior to operations.\n(7) Rolling railroad cars. Derail and/or bumper blocks shall be provided on spur railroad tracks where a rolling car could contact other cars being worked, enter a building, work or traffic area.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_600#4",
@@ -67,7 +79,9 @@
   "page": null,
   "section": "1926.600(b)",
   "text": "(b) Specific requirements. [Reserved]",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_601#0",
@@ -77,7 +91,9 @@
   "page": null,
   "section": "1926.601(a)",
   "text": "(a) Coverage. Motor vehicles as covered by this part are those vehicles that operate within an off-highway jobsite, not open to public traffic. The requirements of this section do not apply to equipment for which rules are prescribed in \u00a7 1926.602.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_601#1",
@@ -87,7 +103,9 @@
   "page": null,
   "section": "1926.601(b)",
   "text": "(b) General requirements. (1) All vehicles shall have a service brake system, an emergency brake system, and a parking brake system. These systems may use common components, and shall be maintained in operable condition.\n(2)(i) Whenever visibility conditions warrant additional light, all vehicles, or combinations of vehicles, in use shall be equipped with at least two headlights and two taillights in operable condition.\n(ii) All vehicles, or combination of vehicles, shall have brake lights in operable condition regardless of light conditions.\n(3) All vehicles shall be equipped with an adequate audible warning device at the operator's station and in an operable condition.\n(4) No employer shall use any motor vehicle equipment having an obstructed view to the rear unless:\n(i) The vehicle has a reverse signal alarm audible above the surrounding noise level or:\n(ii) The vehicle is backed up only when an observer signals that it is safe to do so.\n(5) All vehicles with cabs shall be equipped with windshields and powered wipers. Cracked and broken glass shall be replaced. Vehicles operating in areas or under conditions that cause fogging or frosting of the windshields shall be equipped with operable defogging or defrosting devices.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_601#2",
@@ -97,7 +115,9 @@
   "page": null,
   "section": "1926.601(b)(6)",
   "text": "(6) All haulage vehicles, whose pay load is loaded by means of cranes, power shovels, loaders, or similar equipment, shall have a cab shield and/or canopy adequate to protect the operator from shifting or falling materials.\n(7) Tools and material shall be secured to prevent movement when transported in the same compartment with employees.\n(8) Vehicles used to transport employees shall have seats firmly secured and adequate for the number of employees to be carried.\n(9) Seat belts and anchorages meeting the requirements of 49 CFR part 571 (Department of Transportation, Federal Motor Vehicle Safety Standards) shall be installed in all motor vehicles.\n(10) Trucks with dump bodies shall be equipped with positive means of support, permanently attached, and capable of being locked in position to prevent accidental lowering of the body while maintenance or inspection work is being done.\n(11) Operating levers controlling hoisting or dumping devices on haulage bodies shall be equipped with a latch or other device which will prevent accidental starting or tripping of the mechanism.\n(12) Trip handles for tailgates of dump trucks shall be so arranged that, in dumping, the operator will be in the clear.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_601#3",
@@ -107,7 +127,9 @@
   "page": null,
   "section": "1926.601(b)(13)",
   "text": "(13) (i) All rubber-tired motor vehicle equipment manufactured on or after May 1, 1972, shall be equipped with fenders. All rubber-tired motor vehicle equipment manufactured before May 1, 1972, shall be equipped with fenders not later than May 1, 1973.\n(ii) Mud flaps may be used in lieu of fenders whenever motor vehicle equipment is not designed for fenders.\n(14) All vehicles in use shall be checked at the beginning of each shift to assure that the following parts, equipment, and accessories are in safe operating condition and free of apparent damage that could cause failure while in use: service brakes, including trailer brake connections; parking system (hand brake); emergency stopping system (brakes); tires; horn; steering mechanism; coupling devices; seat belts; operating controls; and safety devices. All defects shall be corrected before the vehicle is placed in service. These requirements also apply to equipment such as lights, reflectors, windshield wipers, defrosters, fire extinguishers, etc., where such equipment is necessary.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_602#0",
@@ -117,7 +139,9 @@
   "page": null,
   "section": "1926.602(a)",
   "text": "(a) Earthmoving equipment; General. (1) These rules apply to the following types of earthmoving equipment: scrapers, loaders, crawler or wheel tractors, bulldozers, off-highway trucks, graders, agricultural and industrial tractors, and similar equipment. The promulgation of specific rules for compactors and rubber-tired \u201cskid-steer\u201d equipment is reserved pending consideration of standards currently being developed.\n(2) Seat belts. (i) Seat belts shall be provided on all equipment covered by this section and shall meet the requirements of the Society of Automotive Engineers, J386-1969, Seat Belts for Construction Equipment. Seat belts for agricultural and light industrial tractors shall meet the seat belt requirements of Society of Automotive Engineers J333a-1970, Operator Protection for Agricultural and Light Industrial Tractors.\n(ii) Seat belts need not be provided for equipment which is designed only for standup operation.\n(iii) Seat belts need not be provided for equipment which does not have roll-over protective structure (ROPS) or adequate canopy protection.\n(3) Access roadways and grades. (i) No employer shall move or cause to be moved construction equipment or vehicles upon any access roadway or grade unless the access roadway or grade is constructed and maintained to accommodate safely the movement of the equipment and vehicles involved.\n(ii) Every emergency access ramp and berm used by an employer shall be constructed to restrain and control runaway vehicles.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_602#1",
@@ -127,7 +151,9 @@
   "page": null,
   "section": "1926.602(a)(4)",
   "text": "(4) Brakes. All earthmoving equipment mentioned in this \u00a7 1926.602(a) shall have a service braking system capable of stopping and holding the equipment fully loaded, as specified in Society of Automotive Engineers SAE-J237, Loader Dozer-1971, J236, Graders-1971, and J319b, Scrapers-1971. Brake systems for self-propelled rubber-tired off-highway equipment manufactured after January 1, 1972 shall meet the applicable minimum performance criteria set forth in the following Society of Automotive Engineers Recommended Practices:\n(5) Fenders. Pneumatic-tired earth-moving haulage equipment (trucks, scrapers, tractors, and trailing units) whose maximum speed exceeds 15 miles per hour, shall be equipped with fenders on all wheels to meet the requirements of Society of Automotive Engineers SAE J321a-1970, Fenders for Pneumatic-Tired Earthmoving Haulage Equipment. An employer may, of course, at any time seek to show under \u00a7 1926.2, that the uncovered wheels present no hazard to personnel from flying materials.\n(6) Rollover protective structures (ROPS). See subpart W of this part for requirements for rollover protective structures and overhead protection.\n(7) Rollover protective structures for off-highway trucks. The promulgation of standards for rollover protective structures for off-highway trucks is reserved pending further study and development.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_602#2",
@@ -137,7 +163,9 @@
   "page": null,
   "section": "1926.602(a)(8)",
   "text": "(8) Specific effective dates\u2014brakes and fenders. (i) Equipment mentioned in paragraph (a)(4) and (5) of this section, and manufactured after January 1, 1972, which is used by any employer after that date, shall comply with the applicable rules prescribed therein concerning brakes and fenders. Equipment mentioned in paragraphs (a) (4) and (5) of this section, and manufactured before January 1, 1972, which is used by any employer after that date, shall meet the applicable rules prescribed herein not later than June 30, 1973. It should be noted that, as permitted under \u00a7 1926.2, employers may request variations from the applicable brakes and fender standards required by this subpart. Employers wishing to seek variations from the applicable brakes and fenders rules may submit any requests for variations after the publication of this document in the Federal Register. Any statements intending to meet the requirements of \u00a7 1926.2(b)(4), should specify how the variation would protect the safety of the employees by providing for any compensating restrictions on the operation of equipment.\n(ii) Notwithstanding the provisions of paragraphs (a)(5) and (a)(8)(i) of this section, the requirement that fenders be installed on pneumatic-tired earthmoving haulage equipment, is suspended pending reconsideration of the requirement.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_602#3",
@@ -147,7 +175,9 @@
   "page": null,
   "section": "1926.602(a)(9)",
   "text": "(9) Audible alarms. (i) All bidirectional machines, such as rollers, compacters, front-end loaders, bulldozers, and similar equipment, shall be equipped with a horn, distinguishable from the surrounding noise level, which shall be operated as needed when the machine is moving in either direction. The horn shall be maintained in an operative condition.\n(ii) No employer shall permit earthmoving or compacting equipment which has an obstructed view to the rear to be used in reverse gear unless the equipment has in operation a reverse signal alarm distinguishable from the surrounding noise level or an employee signals that it is safe to do so.\n(10) Scissor points. Scissor points on all front-end loaders, which constitute a hazard to the operator during normal operation, shall be guarded.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_602#4",
@@ -157,7 +187,9 @@
   "page": null,
   "section": "1926.602(b)",
   "text": "(b) Excavating and other equipment. (1) Tractors covered in paragraph (a) of this section shall have seat belts as required for the operators when seated in the normal seating arrangement for tractor operation, even though back-hoes, breakers, or other similar attachments are used on these machines for excavating or other work.\n(2) For the purposes of this subpart and of subpart N of this part, the nomenclatures and descriptions for measurement of dimensions of machinery and attachments shall be as described in Society of Automotive Engineers 1970 Handbook, pages 1088 through 1103.\n(3) The safety requirements, ratios, or limitations applicable to machines or attachment usage covered in Power Crane and Shovel Associations Standards No. 1 and No. 2 of 1968, and No. 3 of 1969, shall be complied with, and shall apply to cranes, machines, and attachments under this part.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_602#5",
@@ -167,7 +199,9 @@
   "page": null,
   "section": "1926.602(c)",
   "text": "(c) Lifting and hauling equipment (other than equipment covered under subpart N of this part). (1) Industrial trucks shall meet the requirements of \u00a7 1926.600 and the following:\n(i) Lift trucks, stackers, etc., shall have the rated capacity clearly posted on the vehicle so as to be clearly visible to the operator. When auxiliary removable counterweights are provided by the manufacturer, corresponding alternate rated capacities also shall be clearly shown on the vehicle. These ratings shall not be exceeded.\n(ii) No modifications or additions which affect the capacity or safe operation of the equipment shall be made without the manufacturer's written approval. If such modifications or changes are made, the capacity, operation, and maintenance instruction plates, tags, or decals shall be changed accordingly. In no case shall the original safety factor of the equipment be reduced.\n(iii) If a load is lifted by two or more trucks working in unison, the proportion of the total load carried by any one truck shall not exceed its capacity.\n(iv) Steering or spinner knobs shall not be attached to the steering wheel unless the steering mechanism is of a type that prevents road reactions from causing the steering handwheel to spin. The steering knob shall be mounted within the periphery of the wheel.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_602#6",
@@ -177,7 +211,9 @@
   "page": null,
   "section": "1926.602(c)",
   "text": "(v) All high lift rider industrial trucks shall be equipped with overhead guards which meet the configuration and structural requirements as defined in paragraph 421 of American National Standards Institute B56.1-1969, Safety Standards for Powered Industrial Trucks.\n(vi) All industrial trucks in use shall meet the applicable requirements of design, construction, stability, inspection, testing, maintenance, and operation, as defined in American National Standards Institute B56.1-1969, Safety Standards for Powered Industrial Trucks.\n(vii) Unauthorized personnel shall not be permitted to ride on powered industrial trucks. A safe place to ride shall be provided where riding of trucks is authorized.\n(viii) Whenever a truck is equipped with vertical only, or vertical and horizontal controls elevatable with the lifting carriage or forks for lifting personnel, the following additional precautions shall be taken for the protection of personnel being elevated.\n(A) Use of a safety platform firmly secured to the lifting carriage and/or forks.\n(B) Means shall be provided whereby personnel on the platform can shut off power to the truck.\n(C) Such protection from falling objects as indicated necessary by the operating conditions shall be provided.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_602#7",
@@ -187,7 +223,9 @@
   "page": null,
   "section": "1926.602(d)",
   "text": "(d) Powered industrial truck operator training.\nThe requirements applicable to construction work under this paragraph are identical to those set forth at \u00a7 1910.178(l) of this chapter.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#0",
@@ -197,7 +235,9 @@
   "page": null,
   "section": "1926.650(a)",
   "text": "(a) Scope and application. This subpart applies to all open excavations made in the earth's surface. Excavations are defined to include trenches.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#1",
@@ -207,7 +247,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "(b) Definitions applicable to this subpart.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#2",
@@ -217,7 +259,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Accepted engineering practices means those requirements which are compatible with standards of practice required by a registered professional engineer.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#3",
@@ -227,7 +271,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Aluminum Hydraulic Shoring means a pre-engineered shoring system comprised of aluminum hydraulic cylinders (crossbraces) used in conjunction with vertical rails (uprights) or horizontal rails (walers). Such system is designed, specifically to support the sidewalls of an excavation and prevent cave-ins.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#4",
@@ -237,7 +283,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Bell-bottom pier hole means a type of shaft or footing excavation, the bottom of which is made larger than the cross section above to form a belled shape.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#5",
@@ -247,7 +295,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Benching (Benching system) means a method of protecting employees from cave-ins by excavating the sides of an excavation to form one or a series of horizontal levels or steps, usually with vertical or near-vertical surfaces between levels.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#6",
@@ -257,7 +307,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Cave-in means the separation of a mass of soil or rock material from the side of an excavation, or the loss of soil from under a trench shield or support system, and its sudden movement into the excavation, either by falling or sliding, in sufficient quantity so that it could entrap, bury, or otherwise injure and immobilize a person.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#7",
@@ -267,7 +319,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Competent person means one who is capable of identifying existing and predictable hazards in the surroundings, or working conditions which are unsanitary, hazardous, or dangerous to employees, and who has authorization to take prompt corrective measures to eliminate them.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#8",
@@ -277,7 +331,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Cross braces mean the horizontal members of a shoring system installed perpendicular to the sides of the excavation, the ends of which bear against either uprights or wales.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#9",
@@ -287,7 +343,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Excavation means any man-made cut, cavity, trench, or depression in an earth surface, formed by earth removal.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#10",
@@ -297,7 +355,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Faces or sides means the vertical or inclined earth surfaces formed as a result of excavation work.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#11",
@@ -307,7 +367,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Failure means the breakage, displacement, or permanent deformation of a structural member or connection so as to reduce its structural integrity and its supportive capabilities.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#12",
@@ -317,7 +379,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Hazardous atmosphere means an atmosphere which by reason of being explosive, flammable, poisonous, corrosive, oxidizing, irritating, oxygen deficient, toxic, or otherwise harmful, may cause death, illness, or injury.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#13",
@@ -327,7 +391,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Kickout means the accidental release or failure of a cross brace.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#14",
@@ -337,7 +403,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Protective system means a method of protecting employees from cave-ins, from material that could fall or roll from an excavation face or into an excavation, or from the collapse of adjacent structures. Protective systems include support systems, sloping and benching systems, shield systems, and other systems that provide the necessary protection.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#15",
@@ -347,7 +415,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Ramp means an inclined walking or working surface that is used to gain access to one point from another, and is constructed from earth or from structural materials such as steel or wood.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#16",
@@ -357,7 +427,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Registered Professional Engineer means a person who is registered as a professional engineer in the state where the work is to be performed. However, a professional engineer, registered in any state is deemed to be a \u201cregistered professional engineer\u201d within the meaning of this standard when approving designs for \u201cmanufactured protective systems\u201d or \u201ctabulated data\u201d to be used in interstate commerce.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#17",
@@ -367,7 +439,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Sheeting means the members of a shoring system that retain the earth in position and in turn are supported by other members of the shoring system.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#18",
@@ -377,7 +451,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Shield (Shield system) means a structure that is able to withstand the forces imposed on it by a cave-in and thereby protect employees within the structure. Shields can be permanent structures or can be designed to be portable and moved along as work progresses. Additionally, shields can be either premanufactured or job-built in accordance with \u00a7 1926.652 (c)(3) or (c)(4). Shields used in trenches are usually referred to as \u201ctrench boxes\u201d or \u201ctrench shields.\u201d",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#19",
@@ -387,7 +463,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Shoring (Shoring system) means a structure such as a metal hydraulic, mechanical or timber shoring system that supports the sides of an excavation and which is designed to prevent cave-ins.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#20",
@@ -397,7 +475,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Sides. See \u201cFaces.\u201d",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#21",
@@ -407,7 +487,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Sloping (Sloping system) means a method of protecting employees from cave-ins by excavating to form sides of an excavation that are inclined away from the excavation so as to prevent cave-ins. The angle of incline required to prevent a cave-in varies with differences in such factors as the soil type, environmental conditions of exposure, and application of surcharge loads.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#22",
@@ -417,7 +499,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Stable rock means natural solid mineral material that can be excavated with vertical sides and will remain intact while exposed. Unstable rock is considered to be stable when the rock material on the side or sides of the excavation is secured against caving-in or movement by rock bolts or by another protective system that has been designed by a registered professional engineer.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#23",
@@ -427,7 +511,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Structural ramp means a ramp built of steel or wood, usually used for vehicle access. Ramps made of soil or rock are not considered structural ramps.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#24",
@@ -437,7 +523,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Support system means a structure such as underpinning, bracing, or shoring, which provides support to an adjacent structure, underground installation, or the sides of an excavation.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#25",
@@ -447,7 +535,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Tabulated data means tables and charts approved by a registered professional engineer and used to design and construct a protective system.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#26",
@@ -457,7 +547,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Trench (Trench excavation) means a narrow excavation (in relation to its length) made below the surface of the ground. In general, the depth is greater than the width, but the width of a trench (measured at the bottom) is not greater than 15 feet (4.6 m). If forms or other structures are installed or constructed in an excavation so as to reduce the dimension measured from the forms or structure to the side of the excavation to 15 feet (4.6 m) or less (measured at the bottom of the excavation), the excavation is also considered to be a trench.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#27",
@@ -467,7 +559,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Trench box. See \u201cShield.\u201d\nTrench shield. See \u201cShield.\u201d",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#28",
@@ -477,7 +571,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Uprights means the vertical members of a trench shoring system placed in contact with the earth and usually positioned so that individual members do not contact each other. Uprights placed so that individual members are closely spaced, in contact with or interconnected to each other, are often called \u201csheeting.\u201d",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_650#29",
@@ -487,7 +583,9 @@
   "page": null,
   "section": "1926.650(b)",
   "text": "Wales means horizontal members of a shoring system placed parallel to the excavation face whose sides bear against the vertical members of the shoring system or earth.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#0",
@@ -497,7 +595,9 @@
   "page": null,
   "section": "1926.651(a)",
   "text": "(a) Surface encumbrances. All surface encumbrances that are located so as to create a hazard to employees shall be removed or supported, as necessary, to safeguard employees.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#1",
@@ -507,7 +607,9 @@
   "page": null,
   "section": "1926.651(b)",
   "text": "(b) Underground installations. (1) The estimated location of utility installations, such as sewer, telephone, fuel, electric, water lines, or any other underground installations that reasonably may be expected to be encountered during excavation work, shall be determined prior to opening an excavation.\n(2) Utility companies or owners shall be contacted within established or customary local response times, advised of the proposed work, and asked to establish the location of the utility underground installations prior to the start of actual excavation. When utility companies or owners cannot respond to a request to locate underground utility installations within 24 hours (unless a longer period is required by state or local law), or cannot establish the exact location of these installations, the employer may proceed, provided the employer does so with caution, and provided detection equipment or other acceptable means to locate utility installations are used.\n(3) When excavation operations approach the estimated location of underground installations, the exact location of the installations shall be determined by safe and acceptable means.\n(4) While the excavation is open, underground installations shall be protected, supported or removed as necessary to safeguard employees.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#2",
@@ -517,7 +619,9 @@
   "page": null,
   "section": "1926.651(c)",
   "text": "(c) Access and egress\u2014(1) Structural ramps. (i) Structural ramps that are used solely by employees as a means of access or egress from excavations shall be designed by a competent person. Structural ramps used for access or egress of equipment shall be designed by a competent person qualified in structural design, and shall be constructed in accordance with the design.\n(ii) Ramps and runways constructed of two or more structural members shall have the structural members connected together to prevent displacement.\n(iii) Structural members used for ramps and runways shall be of uniform thickness.\n(iv) Cleats or other appropriate means used to connect runway structural members shall be attached to the bottom of the runway or shall be attached in a manner to prevent tripping.\n(v) Structural ramps used in lieu of steps shall be provided with cleats or other surface treatments on the top surface to prevent slipping.\n(2) Means of egress from trench excavations. A stairway, ladder, ramp or other safe means of egress shall be located in trench excavations that are 4 feet (1.22 m) or more in depth so as to require no more than 25 feet (7.62 m) of lateral travel for employees.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#3",
@@ -527,7 +631,9 @@
   "page": null,
   "section": "1926.651(d)",
   "text": "(d) Exposure to vehicular traffic. Employees exposed to public vehicular traffic shall be provided with, and shall wear, warning vests or other suitable garments marked with or made of reflectorized or high-visibility material.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#4",
@@ -537,7 +643,9 @@
   "page": null,
   "section": "1926.651(e)",
   "text": "(e) Exposure to falling loads. No employee shall be permitted underneath loads handled by lifting or digging equipment. Employees shall be required to stand away from any vehicle being loaded or unloaded to avoid being struck by any spillage or falling materials. Operators may remain in the cabs of vehicles being loaded or unloaded when the vehicles are equipped, in accordance with \u00a7 1926.601(b)(6), to provide adequate protection for the operator during loading and unloading operations.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#5",
@@ -547,7 +655,9 @@
   "page": null,
   "section": "1926.651(f)",
   "text": "(f) Warning system for mobile equipment. When mobile equipment is operated adjacent to an excavation, or when such equipment is required to approach the edge of an excavation, and the operator does not have a clear and direct view of the edge of the excavation, a warning system shall be utilized such as barricades, hand or mechanical signals, or stop logs. If possible, the grade should be away from the excavation.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#6",
@@ -557,7 +667,9 @@
   "page": null,
   "section": "1926.651(g)",
   "text": "(g) Hazardous atmospheres\u2014(1) Testing and controls. In addition to the requirements set forth in subparts D and E of this part (29 CFR 1926.50-1926.107) to prevent exposure to harmful levels of atmospheric contaminants and to assure acceptable atmospheric conditions, the following requirements shall apply:\n(i) Where oxygen deficiency (atmospheres containing less than 19.5 percent oxygen) or a hazardous atmosphere exists or could reasonably be expected to exist, such as in excavations in landfill areas or excavations in areas where hazardous substances are stored nearby, the atmospheres in the excavation shall be tested before employees enter excavations greater than 4 feet (1.22 m) in depth.\n(ii) Adequate precautions shall be taken to prevent employee exposure to atmospheres containing less than 19.5 percent oxygen and other hazardous atmospheres. These precautions include providing proper respiratory protection or ventilation in accordance with subparts D and E of this part respectively.\n(iii) Adequate precaution shall be taken such as providing ventilation, to prevent employee exposure to an atmosphere containing a concentration of a flammable gas in excess of 20 percent of the lower flammable limit of the gas.\n(iv) When controls are used that are intended to reduce the level of atmospheric contaminants to acceptable levels, testing shall be conducted as often as necessary to ensure that the atmosphere remains safe.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#7",
@@ -567,7 +679,9 @@
   "page": null,
   "section": "1926.651(g)(2)",
   "text": "(2) Emergency rescue equipment. (i) Emergency rescue equipment, such as breathing apparatus, a safety harness and line, or a basket stretcher, shall be readily available where hazardous atmospheric conditions exist or may reasonably be expected to develop during work in an excavation. This equipment shall be attended when in use.\n(ii) Employees entering bell-bottom pier holes, or other similar deep and confined footing excavations, shall wear a harness with a life-line securely attached to it. The lifeline shall be separate from any line used to handle materials, and shall be individually attended at all times while the employee wearing the lifeline is in the excavation.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#8",
@@ -577,7 +691,9 @@
   "page": null,
   "section": "1926.651(h)",
   "text": "(h) Protection from hazards associated with water accumulation. (1) Employees shall not work in excavations in which there is accumulated water, or in excavations in which water is accumulating, unless adequate precautions have been taken to protect employees against the hazards posed by water accumulation. The precautions necessary to protect employees adequately vary with each situation, but could include special support or shield systems to protect from cave-ins, water removal to control the level of accumulating water, or use of a safety harness and lifeline.\n(2) If water is controlled or prevented from accumulating by the use of water removal equipment, the water removal equipment and operations shall be monitored by a competent person to ensure proper operation.\n(3) If excavation work interrupts the natural drainage of surface water (such as streams), diversion ditches, dikes, or other suitable means shall be used to prevent surface water from entering the excavation and to provide adequate drainage of the area adjacent to the excavation. Excavations subject to runoff from heavy rains will require an inspection by a competent person and compliance with paragraphs (h)(1) and (h)(2) of this section.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#9",
@@ -587,7 +703,9 @@
   "page": null,
   "section": "1926.651(i)",
   "text": "(i) Stability of adjacent structures. (1) Where the stability of adjoining buildings, walls, or other structures is endangered by excavation operations, support systems such as shoring, bracing, or underpinning shall be provided to ensure the stability of such structures for the protection of employees.\n(2) Excavation below the level of the base or footing of any foundation or retaining wall that could be reasonably expected to pose a hazard to employees shall not be permitted except when:\n(i) A support system, such as underpinning, is provided to ensure the safety of employees and the stability of the structure; or\n(ii) The excavation is in stable rock; or\n(iii) A registered professional engineer has approved the determination that the structure is sufficently removed from the excavation so as to be unaffected by the excavation activity; or\n(iv) A registered professional engineer has approved the determination that such excavation work will not pose a hazard to employees.\n(3) Sidewalks, pavements, and appurtenant structure shall not be undermined unless a support system or another method of protection is provided to protect employees from the possible collapse of such structures.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#10",
@@ -597,7 +715,9 @@
   "page": null,
   "section": "1926.651(j)",
   "text": "(j) Protection of employees from loose rock or soil. (1) Adequate protection shall be provided to protect employees from loose rock or soil that could pose a hazard by falling or rolling from an excavation face. Such protection shall consist of scaling to remove loose material; installation of protective barricades at intervals as necessary on the face to stop and contain falling material; or other means that provide equivalent protection.\n(2) Employees shall be protected from excavated or other materials or equipment that could pose a hazard by falling or rolling into excavations. Protection shall be provided by placing and keeping such materials or equipment at least 2 feet (.61 m) from the edge of excavations, or by the use of retaining devices that are sufficient to prevent materials or equipment from falling or rolling into excavations, or by a combination of both if necessary.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#11",
@@ -607,7 +727,9 @@
   "page": null,
   "section": "1926.651(k)",
   "text": "(k) Inspections. (1) Daily inspections of excavations, the adjacent areas, and protective systems shall be made by a competent person for evidence of a situation that could result in possible cave-ins, indications of failure of protective systems, hazardous atmospheres, or other hazardous conditions. An inspection shall be conducted by the competent person prior to the start of work and as needed throughout the shift. Inspections shall also be made after every rainstorm or other hazard increasing occurrence. These inspections are only required when employee exposure can be reasonably anticipated.\n(2) Where the competent person finds evidence of a situation that could result in a possible cave-in, indications of failure of protective systems, hazardous atmospheres, or other hazardous conditions, exposed employees shall be removed from the hazardous area until the necessary precautions have been taken to ensure their safety.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_651#12",
@@ -617,7 +739,9 @@
   "page": null,
   "section": "1926.651(l)",
   "text": "(l) Walkways shall be provided where employees or equipment are required or permitted to cross over excavations. Guardrails which comply with \u00a7 1926.502(b) shall be provided where walkways are 6 feet (1.8 m) or more above lower levels.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_652#0",
@@ -627,7 +751,9 @@
   "page": null,
   "section": "1926.652(a)",
   "text": "(a) Protection of employees in excavations. (1) Each employee in an excavation shall be protected from cave-ins by an adequate protective system designed in accordance with paragraph (b) or (c) of this section except when:\n(i) Excavations are made entirely in stable rock; or\n(ii) Excavations are less than 5 feet (1.52m) in depth and examination of the ground by a competent person provides no indication of a potential cave-in.\n(2) Protective systems shall have the capacity to resist without failure all loads that are intended or could reasonably be expected to be applied or transmitted to the system.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_652#1",
@@ -637,7 +763,9 @@
   "page": null,
   "section": "1926.652(b)",
   "text": "(b) Design of sloping and benching systems. The slopes and configurations of sloping and benching systems shall be selected and constructed by the employer or his designee and shall be in accordance with the requirements of paragraph (b)(1); or, in the alternative, paragraph (b)(2); or, in the alternative, paragraph (b)(3), or, in the alternative, paragraph (b)(4), as follows:\n(1) Option (1)\u2014Allowable configurations and slopes. (i) Excavations shall be sloped at an angle not steeper than one and one-half horizontal to one vertical (34 degrees measured from the horizontal), unless the employer uses one of the other options listed below.\n(ii) Slopes specified in paragraph (b)(1)(i) of this section, shall be excavated to form configurations that are in accordance with the slopes shown for Type C soil in appendix B to this subpart.\n(2) Option (2)\u2014Determination of slopes and configurations using Appendices A and B. Maximum allowable slopes, and allowable configurations for sloping and benching systems, shall be determined in accordance with the conditions and requirements set forth in appendices A and B to this subpart.\n(3) Option (3)\u2014Designs using other tabulated data. (i) Designs of sloping or benching systems shall be selected from and be in accordance with tabulated data, such as tables and charts.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_652#2",
@@ -647,7 +775,9 @@
   "page": null,
   "section": "1926.652(b)",
   "text": "(ii) The tabulated data shall be in written form and shall include all of the following:\n(A) Identification of the parameters that affect the selection of a sloping or benching system drawn from such data;\n(B) Identification of the limits of use of the data, to include the magnitude and configuration of slopes determined to be safe;\n(C) Explanatory information as may be necessary to aid the user in making a correct selection of a protective system from the data.\n(iii) At least one copy of the tabulated data which identifies the registered professional engineer who approved the data, shall be maintained at the jobsite during construction of the protective system. After that time the data may be stored off the jobsite, but a copy of the data shall be made available to the Secretary upon request.\n(4) Option (4)\u2014Design by a registered professional engineer. (i) Sloping and benching systems not utilizing Option (1) or Option (2) or Option (3) under paragraph (b) of this section shall be approved by a registered professional engineer.\n(ii) Designs shall be in written form and shall include at least the following:\n(A) The magnitude of the slopes that were determined to be safe for the particular project;\n(B) The configurations that were determined to be safe for the particular project; and",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_652#3",
@@ -657,7 +787,9 @@
   "page": null,
   "section": "1926.652(b)",
   "text": "(C) The identity of the registered professional engineer approving the design.\n(iii) At least one copy of the design shall be maintained at the jobsite while the slope is being constructed. After that time the design need not be at the jobsite, but a copy shall be made available to the Secretary upon request.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_652#4",
@@ -667,7 +799,9 @@
   "page": null,
   "section": "1926.652(c)",
   "text": "(c) Design of support systems, shield systems, and other protective systems. Designs of support systems shield systems, and other protective systems shall be selected and constructed by the employer or his designee and shall be in accordance with the requirements of paragraph (c)(1); or, in the alternative, paragraph (c)(2); or, in the alternative, paragraph (c)(3); or, in the alternative, paragraph (c)(4) as follows:\n(1) Option (1)\u2014Designs using appendices A, C and D. Designs for timber shoring in trenches shall be determined in accordance with the conditions and requirements set forth in appendices A and C to this subpart. Designs for aluminum hydraulic shoring shall be in accordance with paragraph (c)(2) of this section, but if manufacturer's tabulated data cannot be utilized, designs shall be in accordance with appendix D.\n(2) Option (2)\u2014Designs Using Manufacturer's Tabulated Data. (i) Design of support systems, shield systems, or other protective systems that are drawn from manufacturer's tabulated data shall be in accordance with all specifications, recommendations, and limitations issued or made by the manufacturer.\n(ii) Deviation from the specifications, recommendations, and limitations issued or made by the manufacturer shall only be allowed after the manufacturer issues specific written approval.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_652#5",
@@ -677,7 +811,9 @@
   "page": null,
   "section": "1926.652(c)",
   "text": "(iii) Manufacturer's specifications, recommendations, and limitations, and manufacturer's approval to deviate from the specifications, recommendations, and limitations shall be in written form at the jobsite during construction of the protective system. After that time this data may be stored off the jobsite, but a copy shall be made available to the Secretary upon request.\n(3) Option (3)\u2014Designs using other tabulated data. (i) Designs of support systems, shield systems, or other protective systems shall be selected from and be in accordance with tabulated data, such as tables and charts.\n(ii) The tabulated data shall be in written form and include all of the following:\n(A) Identification of the parameters that affect the selection of a protective system drawn from such data;\n(B) Identification of the limits of use of the data;\n(C) Explanatory information as may be necessary to aid the user in making a correct selection of a protective system from the data.\n(iii) At least one copy of the tabulated data, which identifies the registered professional engineer who approved the data, shall be maintained at the jobsite during construction of the protective system. After that time the data may be stored off the jobsite, but a copy of the data shall be made available to the Secretary upon request.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_652#6",
@@ -687,7 +823,9 @@
   "page": null,
   "section": "1926.652(c)(4)",
   "text": "(4) Option (4)\u2014Design by a registered professional engineer. (i) Support systems, shield systems, and other protective systems not utilizing Option 1, Option 2 or Option 3, above, shall be approved by a registered professional engineer.\n(ii) Designs shall be in written form and shall include the following:\n(A) A plan indicating the sizes, types, and configurations of the materials to be used in the protective system; and\n(B) The identity of the registered professional engineer approving the design.\n(iii) At least one copy of the design shall be maintained at the jobsite during construction of the protective system. After that time, the design may be stored off the jobsite, but a copy of the design shall be made available to the Secretary upon request.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_652#7",
@@ -697,7 +835,9 @@
   "page": null,
   "section": "1926.652(d)",
   "text": "(d) Materials and equipment. (1) Materials and equipment used for protective systems shall be free from damage or defects that might impair their proper function.\n(2) Manufactured materials and equipment used for protective systems shall be used and maintained in a manner that is consistent with the recommendations of the manufacturer, and in a manner that will prevent employee exposure to hazards.\n(3) When material or equipment that is used for protective systems is damaged, a competent person shall examine the material or equipment and evaluate its suitability for continued use. If the competent person cannot assure the material or equipment is able to support the intended loads or is otherwise suitable for safe use, then such material or equipment shall be removed from service, and shall be evaluated and approved by a registered professional engineer before being returned to service.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_652#8",
@@ -707,7 +847,9 @@
   "page": null,
   "section": "1926.652(e)",
   "text": "(e) Installation and removal of support\u2014(1) General. (i) Members of support systems shall be securely connected together to prevent sliding, falling, kickouts, or other predictable failure.\n(ii) Support systems shall be installed and removed in a manner that protects employees from cave-ins, structural collapses, or from being struck by members of the support system.\n(iii) Individual members of support systems shall not be subjected to loads exceeding those which those members were designed to withstand.\n(iv) Before temporary removal of individual members begins, additional precautions shall be taken to ensure the safety of employees, such as installing other structural members to carry the loads imposed on the support system.\n(v) Removal shall begin at, and progress from, the bottom of the excavation. Members shall be released slowly so as to note any indication of possible failure of the remaining members of the structure or possible cave-in of the sides of the excavation.\n(vi) Backfilling shall progress together with the removal of support systems from excavations.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_652#9",
@@ -717,7 +859,9 @@
   "page": null,
   "section": "1926.652(e)(2)",
   "text": "(2) Additional requirements for support systems for trench excavations. (i) Excavation of material to a level no greater than 2 feet (.61 m) below the bottom of the members of a support system shall be permitted, but only if the system is designed to resist the forces calculated for the full depth of the trench, and there are no indications while the trench is open of a possible loss of soil from behind or below the bottom of the support system.\n(ii) Installation of a support system shall be closely coordinated with the excavation of trenches.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_652#10",
@@ -727,7 +871,9 @@
   "page": null,
   "section": "1926.652(f)",
   "text": "(f) Sloping and benching systems. Employees shall not be permitted to work on the faces of sloped or benched excavations at levels above other employees except when employees at the lower levels are adequately protected from the hazard of falling, rolling, or sliding material or equipment.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "cfr_1926_652#11",
@@ -737,7 +883,9 @@
   "page": null,
   "section": "1926.652(g)",
   "text": "(g) Shield systems\u2014(1) General. (i) Shield systems shall not be subjected to loads exceeding those which the system was designed to withstand.\n(ii) Shields shall be installed in a manner to restrict lateral or other hazardous movement of the shield in the event of the application of sudden lateral loads.\n(iii) Employees shall be protected from the hazard of cave-ins when entering or exiting the areas protected by shields.\n(iv) Employees shall not be allowed in shields when shields are being installed, removed, or moved vertically.\n(2) Additional requirement for shield systems used in trench excavations. Excavations of earth material to a level not greater than 2 feet (.61 m) below the bottom of a shield shall be permitted, but only if the shield is designed to resist the forces calculated for the full depth of the trench, and there are no indications while the trench is open of a possible loss of soil from behind or below the bottom of the shield.",
-  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01"
+  "source": "eCFR (U.S. Government Publishing Office), Title 29 Part 1926, text as of 2025-01-01",
+  "domain": "regulation",
+  "kind": "manual"
  },
  {
   "chunk_id": "demo_site_manual#p1",
@@ -747,7 +895,9 @@
   "page": 1,
   "section": null,
   "text": "# How to use this manual\nThis manual explains the alerts and fault codes shown on the CAT Copilot cab display at the demo site. Every threshold in it is the value the site simulator actually uses. Safety alerts are raised by fixed rules on the machine, never by the assistant.",
-  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication."
+  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication.",
+  "domain": "site_manual",
+  "kind": "manual"
  },
  {
   "chunk_id": "demo_site_manual#p2",
@@ -757,7 +907,9 @@
   "page": 2,
   "section": null,
   "text": "# Fault code HYD-118: hydraulic oil over-temperature\nHYD-118 is set when the hydraulic oil temperature reaches 95 \u00b0C or more. It clears when the temperature falls below 90 \u00b0C. While HYD-118 is active the site raises a maintenance_due alert for the hydraulic system.\nWhat to do when HYD-118 is active: reduce continuous high-load work, let the machine idle so the oil can cool, check the hydraulic oil level and the cooler for blockage at the next safe stop, and raise a work order if the code returns during the same shift.",
-  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication."
+  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication.",
+  "domain": "site_manual",
+  "kind": "manual"
  },
  {
   "chunk_id": "demo_site_manual#p3",
@@ -767,7 +919,9 @@
   "page": 3,
   "section": null,
   "text": "# Seatbelt escalation\nWhen the seatbelt is unfastened while the engine is on, the cab escalates in three steps: level 1 immediately (warning chime), level 2 after 5 seconds (voice warning), level 3 after 10 seconds (travel locked message). Fastening the seatbelt clears the alert and records a seatbelt_fastened event.",
-  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication."
+  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication.",
+  "domain": "site_manual",
+  "kind": "manual"
  },
  {
   "chunk_id": "demo_site_manual#p4",
@@ -777,7 +931,9 @@
   "page": 4,
   "section": null,
   "text": "# Tip-over margin gauge\nThe tip-over margin is the ratio of the restoring moment to the overturning moment. Green means a margin above 1.5, amber means 1.2 to 1.5, and red means below 1.2. A red margin raises a critical tip_over_warning; amber raises a medium warning. Heavy loads carried low and far out over the side on a slope reduce the margin the most.",
-  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication."
+  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication.",
+  "domain": "site_manual",
+  "kind": "manual"
  },
  {
   "chunk_id": "demo_site_manual#p5",
@@ -787,7 +943,9 @@
   "page": 5,
   "section": null,
   "text": "# Safety bubble around the machine\nThe safety bubble is green, amber or red. The red radius is 5 m plus 1.5 m for every metre per second of travel speed, plus the swing radius while an excavator is slewing. A person inside the red radius raises a proximity_alert: critical below 3 m, otherwise high. The amber radius is 10 m plus 2 m per metre per second, plus the swing radius.",
-  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication."
+  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication.",
+  "domain": "site_manual",
+  "kind": "manual"
  },
  {
   "chunk_id": "demo_site_manual#p6",
@@ -797,7 +955,9 @@
   "page": 6,
   "section": null,
   "text": "# Machine-to-machine (V2V) collision warning\nEach machine's path is projected in a straight line for 5 seconds in half-second steps. When two machines' projected safety envelopes overlap and they are closing by at least 1 m, a v2v_collision_risk alert is raised for the pair, with both predicted paths. Warnings near the loader, dump, stockpile and fuel bay are suppressed because traffic there is controlled by the site plan.",
-  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication."
+  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication.",
+  "domain": "site_manual",
+  "kind": "manual"
  },
  {
   "chunk_id": "demo_site_manual#p7",
@@ -807,6 +967,920 @@
   "page": 7,
   "section": null,
   "text": "# Operator fatigue\nThe fatigue score runs from 0 to 1. A score of 0.75 or higher raises a fatigue_alert. The webcam fatigue detector raises the same alert when both eyes stay closed for 2 seconds or more.",
-  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication."
+  "source": "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication.",
+  "domain": "site_manual",
+  "kind": "manual"
+ },
+ {
+  "chunk_id": "syn_loading_unloading#s1",
+  "doc_id": "syn_loading_unloading",
+  "title": "Loading and unloading principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Loading and unloading principles, \u00a71 Loading a truck",
+  "page": null,
+  "section": "Loading a truck",
+  "text": "Loading a truck. Position the truck so the excavator slews the shortest distance and never swings the bucket over the truck's cab. The truck driver stays in the cab or in an agreed safe place, never beside the truck while it is being loaded. Place material evenly and avoid dropping it from height.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_loading_unloading#s2",
+  "doc_id": "syn_loading_unloading",
+  "title": "Loading and unloading principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Loading and unloading principles, \u00a72 Spillage and falling material",
+  "page": null,
+  "section": "Spillage and falling material",
+  "text": "Spillage and falling material. Material can fall from a moving bucket. Nobody should stand under or near a load being lifted or swung. Keep the bucket as low as practical while slewing.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_loading_unloading#s3",
+  "doc_id": "syn_loading_unloading",
+  "title": "Loading and unloading principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Loading and unloading principles, \u00a73 Loading and unloading a machine for transport",
+  "page": null,
+  "section": "Loading and unloading a machine for transport",
+  "text": "Loading and unloading a machine for transport. Use a level, firm area and ramps designed for the machine. Line the machine up with the ramps before driving up, travel slowly and do not steer on the ramps. Once on the trailer, lower the attachment, shut down, and secure the machine as the transport procedure requires.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_loading_unloading#s4",
+  "doc_id": "syn_loading_unloading",
+  "title": "Loading and unloading principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Loading and unloading principles, \u00a74 Communication",
+  "page": null,
+  "section": "Communication",
+  "text": "Communication. The machine operator and truck drivers agree on signals before loading begins. When the queue at a loader backs up, drivers wait in the marked area rather than approaching the working machine.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_machine_shutdown#s1",
+  "doc_id": "syn_machine_shutdown",
+  "title": "Parking and shutting down the machine (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Parking and shutting down the machine, \u00a71 Choose a safe place",
+  "page": null,
+  "section": "Choose a safe place",
+  "text": "Choose a safe place. Park on firm, level ground away from excavation edges, traffic routes and overhead power lines. If parking on a slope cannot be avoided, turn the machine so it cannot roll and follow the site rule for blocking the tracks or wheels.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_machine_shutdown#s2",
+  "doc_id": "syn_machine_shutdown",
+  "title": "Parking and shutting down the machine (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Parking and shutting down the machine, \u00a72 Lower everything",
+  "page": null,
+  "section": "Lower everything",
+  "text": "Lower everything. Lower the bucket, blade or other attachment flat to the ground. This removes stored energy from the hydraulics and stops the attachment dropping later.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_machine_shutdown#s3",
+  "doc_id": "syn_machine_shutdown",
+  "title": "Parking and shutting down the machine (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Parking and shutting down the machine, \u00a73 Shut down",
+  "page": null,
+  "section": "Shut down",
+  "text": "Shut down. Put the controls in neutral, engage the hydraulic lockout and parking brake, and let the engine idle briefly if the machine's manual asks for a cool-down. Then switch off the engine and remove the key.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_machine_shutdown#s4",
+  "doc_id": "syn_machine_shutdown",
+  "title": "Parking and shutting down the machine (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Parking and shutting down the machine, \u00a74 Leaving the cab",
+  "page": null,
+  "section": "Leaving the cab",
+  "text": "Leaving the cab. Unfasten the seatbelt only after the engine is off. Climb down facing the machine, using the steps and handholds. Report any fault or warning seen during the shift before leaving.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_safe_movement#s1",
+  "doc_id": "syn_safe_movement",
+  "title": "Safe machine movement (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Safe machine movement, \u00a71 Before moving",
+  "page": null,
+  "section": "Before moving",
+  "text": "Before moving. Check the route is clear, look in the direction of travel and check mirrors and cameras. Sound the horn before moving off if people may be nearby. Confirm which way the tracks face relative to the cab.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_safe_movement#s2",
+  "doc_id": "syn_safe_movement",
+  "title": "Safe machine movement (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Safe machine movement, \u00a72 Travelling",
+  "page": null,
+  "section": "Travelling",
+  "text": "Travelling. Travel at a speed that lets you stop well within the distance you can see. Keep the attachment low and close to the machine. Go straight up and down slopes rather than across them where possible, and avoid sudden turns on slopes.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_safe_movement#s3",
+  "doc_id": "syn_safe_movement",
+  "title": "Safe machine movement (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Safe machine movement, \u00a73 Reversing",
+  "page": null,
+  "section": "Reversing",
+  "text": "Reversing. Reversing is where most struck-by incidents happen. Look behind before and during reversing, use cameras and mirrors, and use a spotter when the view is blocked. Stop immediately if you lose sight of the spotter.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_safe_movement#s4",
+  "doc_id": "syn_safe_movement",
+  "title": "Safe machine movement (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Safe machine movement, \u00a74 Stability",
+  "page": null,
+  "section": "Stability",
+  "text": "Stability. A machine becomes less stable when it carries a load high or far out, works on a side slope, or travels over soft or uneven ground. On this site the tip-over margin gauge shows how close the machine is to its stability limit; its colour bands are described in the Demo site manual (tip-over gauge page).",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_safe_movement#s5",
+  "doc_id": "syn_safe_movement",
+  "title": "Safe machine movement (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Safe machine movement, \u00a75 When a warning appears",
+  "page": null,
+  "section": "When a warning appears",
+  "text": "When a warning appears. If a safety warning appears while moving, stop, find out why, and follow the site protocol for that warning before continuing. Do not work around an alert.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_safe_operating#s1",
+  "doc_id": "syn_safe_operating",
+  "title": "Safe operating principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Safe operating principles, \u00a71 Know the machine and the plan",
+  "page": null,
+  "section": "Know the machine and the plan",
+  "text": "Know the machine and the plan. Operate only machines you are trained and authorised for. Know the day's task, the work area limits, where people and other machines will be, and the site's traffic rules.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_safe_operating#s2",
+  "doc_id": "syn_safe_operating",
+  "title": "Safe operating principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Safe operating principles, \u00a72 Stay aware",
+  "page": null,
+  "section": "Stay aware",
+  "text": "Stay aware. Look before every movement, keep mirrors and cameras clean, and keep checking for people. Expect people and vehicles to appear where you do not expect them.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_safe_operating#s3",
+  "doc_id": "syn_safe_operating",
+  "title": "Safe operating principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Safe operating principles, \u00a73 Respect warnings",
+  "page": null,
+  "section": "Respect warnings",
+  "text": "Respect warnings. Warnings, fault codes and safety alerts exist to stop an incident before it happens. Stop, understand the warning and follow the site protocol before continuing. Never disable or bypass a safety system.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_safe_operating#s4",
+  "doc_id": "syn_safe_operating",
+  "title": "Safe operating principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Safe operating principles, \u00a74 Work within limits",
+  "page": null,
+  "section": "Work within limits",
+  "text": "Work within limits. Do not overload the attachment, work on slopes steeper than the site plan allows, or work beyond what you can see. When conditions change, slow down or stop and ask.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_safe_operating#s5",
+  "doc_id": "syn_safe_operating",
+  "title": "Safe operating principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Safe operating principles, \u00a75 Report",
+  "page": null,
+  "section": "Report",
+  "text": "Report. Report faults, near misses and unsafe conditions straight away. Reports are how the site learns and fixes problems before someone is hurt.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "machine",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_basic_machine_care#s1",
+  "doc_id": "syn_basic_machine_care",
+  "title": "Basic machine care (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Basic machine care, \u00a71 Daily care",
+  "page": null,
+  "section": "Daily care",
+  "text": "Daily care. Keep the machine clean enough to see leaks and damage, especially around the engine, hydraulics and undercarriage. Clear mud and debris from the tracks and around moving parts. Keep the cab windows, mirrors and cameras clean.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "maintenance",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_basic_machine_care#s2",
+  "doc_id": "syn_basic_machine_care",
+  "title": "Basic machine care (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Basic machine care, \u00a72 Lubrication",
+  "page": null,
+  "section": "Lubrication",
+  "text": "Lubrication. Grease the pins and bushings the machine's manual lists, at the intervals it gives. Wipe grease fittings before greasing so dirt is not pushed in. Pins that squeak or look dry need attention.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "maintenance",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_basic_machine_care#s3",
+  "doc_id": "syn_basic_machine_care",
+  "title": "Basic machine care (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Basic machine care, \u00a73 Fluids and filters",
+  "page": null,
+  "section": "Fluids and filters",
+  "text": "Fluids and filters. Check fluid levels as part of the pre-start inspection and use only the fluids the manual specifies. Change filters at the intervals in the manual or when the machine's service indicators ask for it. A level that keeps dropping points to a leak.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "maintenance",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_basic_machine_care#s4",
+  "doc_id": "syn_basic_machine_care",
+  "title": "Basic machine care (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Basic machine care, \u00a74 Records and forecasts",
+  "page": null,
+  "section": "Records and forecasts",
+  "text": "Records and forecasts. Record checks, top-ups and faults so trends are visible. On this site the maintenance forecast estimates hours until service for each component from the machine's data, and a work order is only raised after a person confirms it.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "maintenance",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_basic_machine_care#s5",
+  "doc_id": "syn_basic_machine_care",
+  "title": "Basic machine care (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Basic machine care, \u00a75 Know when to stop",
+  "page": null,
+  "section": "Know when to stop",
+  "text": "Know when to stop. Stop and report instead of carrying on when a warning lamp or fault code appears, a component is damaged, or the machine behaves differently from normal.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "maintenance",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_hydraulic_warnings#s1",
+  "doc_id": "syn_hydraulic_warnings",
+  "title": "Interpreting hydraulic warnings (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Interpreting hydraulic warnings, \u00a71 What hydraulic temperature tells you",
+  "page": null,
+  "section": "What hydraulic temperature tells you",
+  "text": "What hydraulic temperature tells you. Hydraulic oil heats up under continuous heavy work, in hot weather, or when cooling is restricted. Hot oil thins, seals and hoses age faster, and performance drops. A rising temperature trend is a warning to act on before it becomes a fault.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "maintenance",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_hydraulic_warnings#s2",
+  "doc_id": "syn_hydraulic_warnings",
+  "title": "Interpreting hydraulic warnings (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Interpreting hydraulic warnings, \u00a72 Common causes of overheating",
+  "page": null,
+  "section": "Common causes of overheating",
+  "text": "Common causes of overheating. Long periods of full-load work without pauses, a blocked or dirty oil cooler, a low oil level, a slipping or damaged cooling fan, and internal leakage in pumps or valves can all push the temperature up.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "maintenance",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_hydraulic_warnings#s3",
+  "doc_id": "syn_hydraulic_warnings",
+  "title": "Interpreting hydraulic warnings (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Interpreting hydraulic warnings, \u00a73 What to do",
+  "page": null,
+  "section": "What to do",
+  "text": "What to do. Reduce continuous high-load work and let the machine idle so the oil can cool. At the next safe stop, check the hydraulic oil level and look at the cooler for blockage. If the warning returns during the same shift, raise a work order. On this site the over-temperature fault code and its thresholds are in the Demo site manual (fault code HYD-118 page), and the hydraulic overheat protocol lists the steps.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "maintenance",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_hydraulic_warnings#s4",
+  "doc_id": "syn_hydraulic_warnings",
+  "title": "Interpreting hydraulic warnings (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Interpreting hydraulic warnings, \u00a74 Other hydraulic signs",
+  "page": null,
+  "section": "Other hydraulic signs",
+  "text": "Other hydraulic signs. Slow or weak movements, jerky operation, unusual whining, visible leaks and wet hoses are also signs of a hydraulic problem. Do not look for leaks with bare hands: fluid under pressure can penetrate skin. Report them for inspection.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "maintenance",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_emergency_response#s1",
+  "doc_id": "syn_emergency_response",
+  "title": "Emergency response basics (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Emergency response basics, \u00a71 First, make it safe",
+  "page": null,
+  "section": "First, make it safe",
+  "text": "First, make it safe. In any emergency, stop the machine's movement first. Lower the attachment to the ground if it is safe to do so, and use the emergency stop if the machine will not respond normally. Do not leave the cab into a hazard such as a fallen power line or a collapsing edge.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_emergency_response#s2",
+  "doc_id": "syn_emergency_response",
+  "title": "Emergency response basics (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Emergency response basics, \u00a72 Raise the alarm",
+  "page": null,
+  "section": "Raise the alarm",
+  "text": "Raise the alarm. Use the radio or the site's emergency procedure to report what happened, where, and whether anyone is hurt. Give clear, short information. Follow the site's emergency plan for who to call and where to meet.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_emergency_response#s3",
+  "doc_id": "syn_emergency_response",
+  "title": "Emergency response basics (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Emergency response basics, \u00a73 Help only if safe",
+  "page": null,
+  "section": "Help only if safe",
+  "text": "Help only if safe. Help an injured person only if you can do so without becoming a second casualty. Do not move a seriously injured person unless they are in immediate danger. Trained first aiders and emergency services take over as soon as they arrive.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_emergency_response#s4",
+  "doc_id": "syn_emergency_response",
+  "title": "Emergency response basics (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Emergency response basics, \u00a74 Afterwards",
+  "page": null,
+  "section": "Afterwards",
+  "text": "Afterwards. Leave the scene as it is where possible so it can be investigated. Report the incident through the site's incident reporting protocol so the cause can be found and fixed. Near misses should be reported too: they are the warning before the next incident.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_excavation_trenching#s1",
+  "doc_id": "syn_excavation_trenching",
+  "title": "Excavation and trenching principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Excavation and trenching principles, \u00a71 Before digging",
+  "page": null,
+  "section": "Before digging",
+  "text": "Before digging. Find out what is underground before the first bucket goes in: utilities such as power, gas, water and telecom lines must be located and marked. The site's permit or plan should say where it is safe to dig. Treat any unexpected pipe, cable or tape as live until confirmed otherwise.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_excavation_trenching#s2",
+  "doc_id": "syn_excavation_trenching",
+  "title": "Excavation and trenching principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Excavation and trenching principles, \u00a72 Trench walls",
+  "page": null,
+  "section": "Trench walls",
+  "text": "Trench walls. Soil can collapse without warning, and a small collapse can bury a person. Trenches that people enter need protective systems such as sloping, benching, shoring or shields, as decided by a competent person. The exact depth and slope requirements are set by regulation; see 29 CFR 1926.651 and 1926.652 in the document library.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_excavation_trenching#s3",
+  "doc_id": "syn_excavation_trenching",
+  "title": "Excavation and trenching principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Excavation and trenching principles, \u00a73 Keep weight away from the edge",
+  "page": null,
+  "section": "Keep weight away from the edge",
+  "text": "Keep weight away from the edge. Machines, spoil piles and materials close to the edge load the trench wall and make collapse more likely. Keep spoil and equipment back from the edge, and use a warning system such as barricades or stop logs when a machine works near an edge the operator cannot see.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_excavation_trenching#s4",
+  "doc_id": "syn_excavation_trenching",
+  "title": "Excavation and trenching principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Excavation and trenching principles, \u00a74 Getting in and out",
+  "page": null,
+  "section": "Getting in and out",
+  "text": "Getting in and out. People in a trench need a safe way out close to where they work, such as a ladder or ramp. Nobody should be in a trench while a machine is digging next to them or while loads pass overhead.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_excavation_trenching#s5",
+  "doc_id": "syn_excavation_trenching",
+  "title": "Excavation and trenching principles (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Excavation and trenching principles, \u00a75 Daily checks",
+  "page": null,
+  "section": "Daily checks",
+  "text": "Daily checks. A competent person should inspect excavations before each shift and after rain or anything that could affect stability, and stop work if there are signs of collapse such as cracks, bulging or water seeping in.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_fatigue_awareness#s1",
+  "doc_id": "syn_fatigue_awareness",
+  "title": "Fatigue awareness (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Fatigue awareness, \u00a71 Why fatigue matters",
+  "page": null,
+  "section": "Why fatigue matters",
+  "text": "Why fatigue matters. A tired operator reacts more slowly, misses hazards and makes more control errors. Fatigue builds over long shifts, repetitive work, heat, poor sleep and night work, and people are poor judges of how tired they are.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_fatigue_awareness#s2",
+  "doc_id": "syn_fatigue_awareness",
+  "title": "Fatigue awareness (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Fatigue awareness, \u00a72 Warning signs",
+  "page": null,
+  "section": "Warning signs",
+  "text": "Warning signs. Heavy eyelids, long blinks, yawning, drifting attention, missing a signal or a turn, and not remembering the last few minutes are all signs of fatigue. Microsleeps can happen with the eyes partly open.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_fatigue_awareness#s3",
+  "doc_id": "syn_fatigue_awareness",
+  "title": "Fatigue awareness (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Fatigue awareness, \u00a73 What to do",
+  "page": null,
+  "section": "What to do",
+  "text": "What to do. Stop in a safe place and park the machine properly. Tell the supervisor. Take a break, get fresh air and water, and do not return to operating until alert. Caffeine or turning up the radio only masks fatigue for a short time.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_fatigue_awareness#s4",
+  "doc_id": "syn_fatigue_awareness",
+  "title": "Fatigue awareness (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Fatigue awareness, \u00a74 On this site",
+  "page": null,
+  "section": "On this site",
+  "text": "On this site. The site watches for fatigue using the machine's fatigue score and the cab camera, which can raise a fatigue alert. The thresholds are in the Demo site manual (operator fatigue page) and the steps are in the site fatigue protocol. The alert comes from fixed rules and the camera detector, not from the assistant.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_proximity_hazards#s1",
+  "doc_id": "syn_proximity_hazards",
+  "title": "Proximity hazards around machines (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Proximity hazards around machines, \u00a71 The danger zone",
+  "page": null,
+  "section": "The danger zone",
+  "text": "The danger zone. Every working machine has an area around it where a person can be struck or crushed: the path of travel, the swing area of the upper structure and counterweight, and the reach of the attachment. Blind spots mean the operator may not see a person inside this area, especially close behind or beside the machine.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_proximity_hazards#s2",
+  "doc_id": "syn_proximity_hazards",
+  "title": "Proximity hazards around machines (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Proximity hazards around machines, \u00a72 What the operator does",
+  "page": null,
+  "section": "What the operator does",
+  "text": "What the operator does. Stop all travel and implement movement when a person enters the danger zone. Use the horn and make eye contact before doing anything else. Wait until the person is clearly outside the zone. When a person was behind the machine, use a spotter before reversing. The site proximity protocol lists the exact steps to follow.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_proximity_hazards#s3",
+  "doc_id": "syn_proximity_hazards",
+  "title": "Proximity hazards around machines (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Proximity hazards around machines, \u00a73 What the site system does",
+  "page": null,
+  "section": "What the site system does",
+  "text": "What the site system does. On this site each machine has a safety bubble. A person inside the red part of the bubble raises a proximity alert from fixed rules and from the camera detector. The bubble sizes are described in the Demo site manual (safety bubble page). The alert is deterministic; the assistant explains it but never raises or clears it.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_proximity_hazards#s4",
+  "doc_id": "syn_proximity_hazards",
+  "title": "Proximity hazards around machines (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Proximity hazards around machines, \u00a74 Why it keeps happening",
+  "page": null,
+  "section": "Why it keeps happening",
+  "text": "Why it keeps happening. Proximity incidents usually come from assumptions: the operator assumes the area is still clear, and the person on foot assumes the operator has seen them. Both checking every time is what prevents it.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_seatbelt_use#s1",
+  "doc_id": "syn_seatbelt_use",
+  "title": "Seatbelt use (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Seatbelt use, \u00a71 Why the seatbelt matters",
+  "page": null,
+  "section": "Why the seatbelt matters",
+  "text": "Why the seatbelt matters. Earthmoving machines are fitted with a rollover or tip-over protective structure. That structure only protects an operator who stays inside it. In a rollover or sudden stop, an unbelted operator can be thrown out of the seat or out of the cab and crushed by the machine. The seatbelt keeps the operator inside the protected zone.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_seatbelt_use#s2",
+  "doc_id": "syn_seatbelt_use",
+  "title": "Seatbelt use (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Seatbelt use, \u00a72 When to wear it",
+  "page": null,
+  "section": "When to wear it",
+  "text": "When to wear it. Fasten the seatbelt before starting the engine and keep it fastened whenever the machine is running, including short moves and idling. Unfasten it only after the machine is parked, the attachment is lowered and the engine is off.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_seatbelt_use#s3",
+  "doc_id": "syn_seatbelt_use",
+  "title": "Seatbelt use (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Seatbelt use, \u00a73 What the cab does on this site",
+  "page": null,
+  "section": "What the cab does on this site",
+  "text": "What the cab does on this site. On this site the cab display escalates a seatbelt warning while the engine is running and the belt is unfastened. The escalation steps and timings are described in the Demo site manual (seatbelt escalation page) and the steps to follow are in the site seatbelt protocol. The warning is raised by fixed rules on the machine, not by the assistant.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_seatbelt_use#s4",
+  "doc_id": "syn_seatbelt_use",
+  "title": "Seatbelt use (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Seatbelt use, \u00a74 Habits that help",
+  "page": null,
+  "section": "Habits that help",
+  "text": "Habits that help. Adjust the seat first, then fasten the belt, so it fits properly. Replace a belt that is frayed, cut or does not latch; report it rather than working without one. If leaving the seat, shut down properly first instead of leaving the engine running.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_weather_rain#s1",
+  "doc_id": "syn_weather_rain",
+  "title": "Operating in rain and poor weather (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Operating in rain and poor weather, \u00a71 Ground conditions change",
+  "page": null,
+  "section": "Ground conditions change",
+  "text": "Ground conditions change. Rain softens ground, turns haul roads slippery and can undermine the edges of excavations and embankments. A slope that was safe in the morning can be unsafe after rain. Travel slower, keep further from edges and avoid side slopes where possible.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_weather_rain#s2",
+  "doc_id": "syn_weather_rain",
+  "title": "Operating in rain and poor weather (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Operating in rain and poor weather, \u00a72 Visibility",
+  "page": null,
+  "section": "Visibility",
+  "text": "Visibility. Rain, fog and dust reduce how far the operator can see and how well people on foot can be seen. Use lights, slow down, keep windows, mirrors and cameras clean, and increase the distance kept from people and other machines.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_weather_rain#s3",
+  "doc_id": "syn_weather_rain",
+  "title": "Operating in rain and poor weather (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Operating in rain and poor weather, \u00a73 Plan the work around the weather",
+  "page": null,
+  "section": "Plan the work around the weather",
+  "text": "Plan the work around the weather. Some tasks are much riskier in the wet, such as working near trench edges or on slopes. Supervisors may re-sequence tasks so weather-sensitive work waits. On this site the task plan can be reordered for rain, and any reorder is only applied after a person confirms it.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_weather_rain#s4",
+  "doc_id": "syn_weather_rain",
+  "title": "Operating in rain and poor weather (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Operating in rain and poor weather, \u00a74 Lightning and extreme conditions",
+  "page": null,
+  "section": "Lightning and extreme conditions",
+  "text": "Lightning and extreme conditions. Stop work and follow the site's weather procedure when lightning is near or conditions make it impossible to see hazards. A machine is not a safe place to wait out lightning unless the site procedure says so.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_worker_awareness#s1",
+  "doc_id": "syn_worker_awareness",
+  "title": "Worker awareness for people on foot (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Worker awareness for people on foot, \u00a71 Be seen",
+  "page": null,
+  "section": "Be seen",
+  "text": "Be seen. People on foot should wear high-visibility clothing and stay where operators expect them: marked walkways and agreed areas. Never walk behind a working machine or through its swing area.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_worker_awareness#s2",
+  "doc_id": "syn_worker_awareness",
+  "title": "Worker awareness for people on foot (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Worker awareness for people on foot, \u00a72 Make contact before approaching",
+  "page": null,
+  "section": "Make contact before approaching",
+  "text": "Make contact before approaching. Before approaching a machine, get the operator's attention and wait for a clear signal that they have seen you and stopped. Approach from where the operator can see you. Eye contact is the simplest confirmation.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_worker_awareness#s3",
+  "doc_id": "syn_worker_awareness",
+  "title": "Worker awareness for people on foot (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Worker awareness for people on foot, \u00a73 Stay out of the line of fire",
+  "page": null,
+  "section": "Stay out of the line of fire",
+  "text": "Stay out of the line of fire. Do not stand under a raised load or bucket, next to a truck being loaded, or between a machine and a fixed object. Spillage and swinging loads travel further than expected.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_worker_awareness#s4",
+  "doc_id": "syn_worker_awareness",
+  "title": "Worker awareness for people on foot (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Worker awareness for people on foot, \u00a74 Spotters",
+  "page": null,
+  "section": "Spotters",
+  "text": "Spotters. A spotter guides a machine where the operator cannot see. The operator and spotter agree on signals before starting, the spotter stays in the operator's view, and the operator stops immediately if they lose sight of the spotter.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "safety",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_common_mistakes#s1",
+  "doc_id": "syn_common_mistakes",
+  "title": "Common trainee mistakes and how to correct them (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Common trainee mistakes and how to correct them, \u00a71 Jerky control inputs",
+  "page": null,
+  "section": "Jerky control inputs",
+  "text": "Jerky control inputs. Symptom: the machine lurches and the bucket bounces. Cause: moving controls fully and suddenly. Correction: rest your hand or forearm for support, ease the control in slowly, and hold it steady. Practise starting and stopping each movement as gently as possible.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_common_mistakes#s2",
+  "doc_id": "syn_common_mistakes",
+  "title": "Common trainee mistakes and how to correct them (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Common trainee mistakes and how to correct them, \u00a72 Overshooting a slew",
+  "page": null,
+  "section": "Overshooting a slew",
+  "text": "Overshooting a slew. Symptom: the upper structure swings past the target and has to come back. Cause: releasing the control too late. Correction: start easing off before the target, let the swing slow down, and approach the last part slowly. Example: to face a truck, start slowing as the bucket passes the truck's front corner.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_common_mistakes#s3",
+  "doc_id": "syn_common_mistakes",
+  "title": "Common trainee mistakes and how to correct them (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Common trainee mistakes and how to correct them, \u00a73 Forgetting the direction of travel",
+  "page": null,
+  "section": "Forgetting the direction of travel",
+  "text": "Forgetting the direction of travel. Symptom: pushing the travel controls forward and the machine moves backward. Cause: the upper structure is turned relative to the tracks. Correction: check where the drive sprockets are before every travel movement.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_common_mistakes#s4",
+  "doc_id": "syn_common_mistakes",
+  "title": "Common trainee mistakes and how to correct them (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Common trainee mistakes and how to correct them, \u00a74 Travelling with the load high",
+  "page": null,
+  "section": "Travelling with the load high",
+  "text": "Travelling with the load high. Symptom: the machine rocks or feels light on one side. Cause: the boom is raised or the stick is extended while travelling. Correction: lower the attachment and keep it close to the machine before moving, especially on uneven ground.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_common_mistakes#s5",
+  "doc_id": "syn_common_mistakes",
+  "title": "Common trainee mistakes and how to correct them (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Common trainee mistakes and how to correct them, \u00a75 Not looking behind",
+  "page": null,
+  "section": "Not looking behind",
+  "text": "Not looking behind. Symptom: a proximity warning during a reverse or slew. Cause: relying on memory instead of checking. Correction: before every reverse or slew, look over your shoulder and check mirrors and cameras, even if the area was clear a minute ago.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_learning_controls#s1",
+  "doc_id": "syn_learning_controls",
+  "title": "Learning the machine controls (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Learning the machine controls, \u00a71 One function at a time",
+  "page": null,
+  "section": "One function at a time",
+  "text": "One function at a time. New operators learn fastest by moving one function at a time: travel, then steering, then slew, then boom and stick. Combining functions smoothly comes later, once each single movement is predictable. Trying to do everything at once makes it hard to know which input caused which movement.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_learning_controls#s2",
+  "doc_id": "syn_learning_controls",
+  "title": "Learning the machine controls (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Learning the machine controls, \u00a72 Smooth, small inputs",
+  "page": null,
+  "section": "Smooth, small inputs",
+  "text": "Smooth, small inputs. Hydraulic controls respond in proportion to how far they are moved. Small, steady inputs give slow, controllable motion; sudden full inputs make the machine jerk, spill loads and unsettle its stability. Ease a control in, hold it, and ease it out. Smoothness matters more than speed while learning.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_learning_controls#s3",
+  "doc_id": "syn_learning_controls",
+  "title": "Learning the machine controls (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Learning the machine controls, \u00a73 Know which way is forward",
+  "page": null,
+  "section": "Know which way is forward",
+  "text": "Know which way is forward. On a tracked machine the upper structure can face a different direction from the tracks. Before travelling, check where the travel motors or drive sprockets are. If they are in front of you, the travel controls work in the opposite sense to what you expect. Always confirm the direction before moving.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_learning_controls#s4",
+  "doc_id": "syn_learning_controls",
+  "title": "Learning the machine controls (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Learning the machine controls, \u00a74 Look before every movement",
+  "page": null,
+  "section": "Look before every movement",
+  "text": "Look before every movement. Before each travel or slew movement, look in the direction the machine will move and check mirrors and cameras. The rear of an excavator's upper structure swings out beyond the tracks when slewing, so the area behind and beside the machine must be clear as well.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_learning_controls#s5",
+  "doc_id": "syn_learning_controls",
+  "title": "Learning the machine controls (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Learning the machine controls, \u00a75 Practising in a simulator",
+  "page": null,
+  "section": "Practising in a simulator",
+  "text": "Practising in a simulator. A simulator lets a trainee repeat movements without risk. In this training system each lesson step is checked by the simulated machine's sensors: the step passes only when the machine actually does what was asked, for long enough. The instructor explains and encourages, but the sensors decide whether a step passed.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_lesson_explanations#s1",
+  "doc_id": "syn_lesson_explanations",
+  "title": "Why each lesson skill matters (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Why each lesson skill matters, \u00a71 Travel",
+  "page": null,
+  "section": "Travel",
+  "text": "Travel. Travelling slowly and in a straight line is the base skill. Most machine incidents on site involve travel: reversing into people, driving onto soft ground, or tipping on a slope. Controlled travel means being able to stop exactly where intended.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_lesson_explanations#s2",
+  "doc_id": "syn_lesson_explanations",
+  "title": "Why each lesson skill matters (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Why each lesson skill matters, \u00a72 Steering and turning",
+  "page": null,
+  "section": "Steering and turning",
+  "text": "Steering and turning. Tracked machines turn by driving one track faster than the other, or in opposite directions for a spot turn. Turning on the spot scuffs the ground and loads the undercarriage, so gentle, wide turns are preferred where there is room. Turning also sweeps the machine's tail through a wider area, so look before turning.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_lesson_explanations#s3",
+  "doc_id": "syn_lesson_explanations",
+  "title": "Why each lesson skill matters (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Why each lesson skill matters, \u00a73 Slewing the upper structure",
+  "page": null,
+  "section": "Slewing the upper structure",
+  "text": "Slewing the upper structure. Slewing moves the whole upper structure, including the counterweight at the back. The counterweight's swing area is a common place for people to be struck. Slew smoothly, stop gently, and never slew over people or over a truck cab.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_lesson_explanations#s4",
+  "doc_id": "syn_lesson_explanations",
+  "title": "Why each lesson skill matters (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Why each lesson skill matters, \u00a74 Boom and stick",
+  "page": null,
+  "section": "Boom and stick",
+  "text": "Boom and stick. The boom and stick place the bucket. Raising a load high or reaching far out makes the machine less stable, especially on a slope. Keeping loads low and close while moving them is the habit this lesson builds.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_lesson_explanations#s5",
+  "doc_id": "syn_lesson_explanations",
+  "title": "Why each lesson skill matters (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Why each lesson skill matters, \u00a75 Working near people",
+  "page": null,
+  "section": "Working near people",
+  "text": "Working near people. The last lesson is about stopping. When a person comes close, the correct response is to stop all movement, get their attention and wait until they are clear. The site's safety system also watches for people near the machine; the operator's own awareness comes first.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_prestart_inspection#s1",
+  "doc_id": "syn_prestart_inspection",
+  "title": "Pre-start inspection (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Pre-start inspection, \u00a71 Why check before starting",
+  "page": null,
+  "section": "Why check before starting",
+  "text": "Why check before starting. A pre-start inspection finds problems while the machine is still parked, when fixing them is cheap and nobody is at risk. Most failures give a visible sign first: a leak, a loose part, a damaged hose, a warning lamp. Starting a shift without looking means the first sign may appear while the machine is working near people.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_prestart_inspection#s2",
+  "doc_id": "syn_prestart_inspection",
+  "title": "Pre-start inspection (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Pre-start inspection, \u00a72 Walk around the machine",
+  "page": null,
+  "section": "Walk around the machine",
+  "text": "Walk around the machine. Walk all the way around before climbing in. Look under and around the machine for fluid leaks, puddles or fresh drips. Check the tracks or tyres, rollers and guards for damage or debris. Look at the attachment, its pins and retainers, and the hydraulic hoses for cracks, rubbing or wet spots. Make sure nobody is working near or under the machine and that nothing is stored against it.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_prestart_inspection#s3",
+  "doc_id": "syn_prestart_inspection",
+  "title": "Pre-start inspection (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Pre-start inspection, \u00a73 Fluids and filters",
+  "page": null,
+  "section": "Fluids and filters",
+  "text": "Fluids and filters. Check the levels the machine's own manual asks for, such as engine oil, coolant, hydraulic oil and fuel, with the machine parked on level ground. Top up only with the fluid the manual specifies. A level that keeps dropping is a fault to report, not something to keep topping up.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_prestart_inspection#s4",
+  "doc_id": "syn_prestart_inspection",
+  "title": "Pre-start inspection (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Pre-start inspection, \u00a74 In the cab before the engine runs",
+  "page": null,
+  "section": "In the cab before the engine runs",
+  "text": "In the cab before the engine runs. Climb in using the steps and handholds, facing the machine. Adjust the seat so you can reach every control, then fasten the seatbelt. Check that mirrors and cameras are clean and give a clear view. Make sure the controls are in neutral and the hydraulic lockout is engaged before starting.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
+ },
+ {
+  "chunk_id": "syn_prestart_inspection#s5",
+  "doc_id": "syn_prestart_inspection",
+  "title": "Pre-start inspection (synthetic demo knowledge)",
+  "citation": "Synthetic demo knowledge: Pre-start inspection, \u00a75 After starting",
+  "page": null,
+  "section": "After starting",
+  "text": "After starting. Watch the display for warning lamps or fault codes and do not work until each one is understood. Listen for unusual noises. Test the horn, travel alarm and lights. Then operate each function slowly in a clear area to confirm it responds correctly. Report anything unusual before starting work, and record the check.",
+  "source": "CAT Copilot synthetic demo knowledge, written by the team for the hackathon prototype from generic safe-operating principles. Not a Caterpillar publication, not an official procedure, and no substitute for the machine's own Operation and Maintenance Manual or site rules.",
+  "domain": "training",
+  "kind": "synthetic"
  }
 ]

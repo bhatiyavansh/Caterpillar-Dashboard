@@ -1,8 +1,40 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "CAT Copilot hub contracts",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "$defs": {
+    "AssistantContext": {
+      "additionalProperties": false,
+      "description": "1.3.0: what the screen the user is on knows. Optional; the hub's own data stays authoritative.",
+      "properties": {
+        "route": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Route"
+        },
+        "training": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TrainingContext"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "AssistantContext",
+      "type": "object"
+    },
     "AssistantRequest": {
       "additionalProperties": false,
       "properties": {
@@ -58,6 +90,17 @@
           ],
           "default": null,
           "title": "Conversation Id"
+        },
+        "context": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AssistantContext"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -137,6 +180,18 @@
           ],
           "default": null,
           "title": "Citation"
+        },
+        "synthetic": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Synthetic"
         }
       },
       "required": [
@@ -306,7 +361,7 @@
           "type": "string"
         },
         "contract_version": {
-          "default": "1.2.0",
+          "default": "1.3.0",
           "title": "Contract Version",
           "type": "string"
         },
@@ -1588,6 +1643,511 @@
         "latency_ms"
       ],
       "title": "SseToolResult",
+      "type": "object"
+    },
+    "TrainingAlert": {
+      "additionalProperties": false,
+      "description": "1.3.0: an alert the lesson simulator's own deterministic rules raised.",
+      "properties": {
+        "kind": {
+          "maxLength": 40,
+          "title": "Kind",
+          "type": "string"
+        },
+        "severity": {
+          "maxLength": 20,
+          "title": "Severity",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 120,
+          "title": "Title",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 300,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "severity",
+        "title",
+        "message"
+      ],
+      "title": "TrainingAlert",
+      "type": "object"
+    },
+    "TrainingContext": {
+      "additionalProperties": false,
+      "description": "1.3.0: where the trainee is. Every verdict here (phase, steps passed) comes from the lesson's\ntelemetry validator, never from a language model.",
+      "properties": {
+        "lesson_active": {
+          "default": false,
+          "title": "Lesson Active",
+          "type": "boolean"
+        },
+        "phase": {
+          "anyOf": [
+            {
+              "enum": [
+                "idle",
+                "running",
+                "passed",
+                "retrying",
+                "levelDone",
+                "finished"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Phase"
+        },
+        "module_id": {
+          "anyOf": [
+            {
+              "maxLength": 60,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Module Id"
+        },
+        "module_title": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Module Title"
+        },
+        "skill": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Skill"
+        },
+        "module_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Module Index"
+        },
+        "module_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Module Count"
+        },
+        "step_id": {
+          "anyOf": [
+            {
+              "maxLength": 60,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Id"
+        },
+        "step_instruction": {
+          "anyOf": [
+            {
+              "maxLength": 400,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Instruction"
+        },
+        "real_control": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Real Control"
+        },
+        "keys": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 6,
+          "title": "Keys",
+          "type": "array"
+        },
+        "step_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Index"
+        },
+        "step_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Count"
+        },
+        "attempt": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempt"
+        },
+        "last_failure_reason": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Failure Reason"
+        },
+        "coach_line": {
+          "anyOf": [
+            {
+              "maxLength": 400,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coach Line"
+        },
+        "steps_passed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Steps Passed"
+        },
+        "levels_passed": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Levels Passed",
+          "type": "array"
+        },
+        "next_level": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Next Level"
+        },
+        "learner": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TrainingLearner"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "machine_source": {
+          "anyOf": [
+            {
+              "enum": [
+                "lesson_sim",
+                "live_hub"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Machine Source"
+        },
+        "telemetry": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TrainingTelemetry"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "alerts": {
+          "items": {
+            "$ref": "#/$defs/TrainingAlert"
+          },
+          "maxItems": 6,
+          "title": "Alerts",
+          "type": "array"
+        },
+        "recent_events": {
+          "items": {
+            "$ref": "#/$defs/TrainingEventNote"
+          },
+          "maxItems": 8,
+          "title": "Recent Events",
+          "type": "array"
+        }
+      },
+      "title": "TrainingContext",
+      "type": "object"
+    },
+    "TrainingEventNote": {
+      "additionalProperties": false,
+      "description": "1.3.0: one line of the lesson simulator's event log.",
+      "properties": {
+        "time": {
+          "maxLength": 20,
+          "title": "Time",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 200,
+          "title": "Text",
+          "type": "string"
+        },
+        "severity": {
+          "maxLength": 20,
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "time",
+        "text",
+        "severity"
+      ],
+      "title": "TrainingEventNote",
+      "type": "object"
+    },
+    "TrainingLearner": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 60,
+          "title": "Name",
+          "type": "string"
+        },
+        "level": {
+          "maxLength": 30,
+          "title": "Level",
+          "type": "string"
+        },
+        "weakest_skill": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Weakest Skill"
+        }
+      },
+      "required": [
+        "name",
+        "level"
+      ],
+      "title": "TrainingLearner",
+      "type": "object"
+    },
+    "TrainingTelemetry": {
+      "additionalProperties": false,
+      "description": "1.3.0: the lesson machine's readings (browser simulator), rounded for the prompt.",
+      "properties": {
+        "speed_kmh": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speed Kmh"
+        },
+        "heading_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Heading Deg"
+        },
+        "swing_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Swing Deg"
+        },
+        "boom_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boom Deg"
+        },
+        "nearest_person_m": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nearest Person M"
+        },
+        "tip_over_margin": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tip Over Margin"
+        },
+        "hydraulic_temp_c": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hydraulic Temp C"
+        },
+        "activity": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Activity"
+        },
+        "emergency_stopped": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Emergency Stopped"
+        }
+      },
+      "title": "TrainingTelemetry",
       "type": "object"
     },
     "Utterance": {

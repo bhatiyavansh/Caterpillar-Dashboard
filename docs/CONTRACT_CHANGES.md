@@ -34,3 +34,10 @@ Sign-off column: who has to confirm. ✅ means confirmed, ⏳ means pending.
 |---|---|---|
 | `LiveEvent.protocol?` (`ProtocolRef {id, title, severity, steps[], escalation[], source, regulation?{citation, quote}}`) | Every safety event carries its site protocol, attached deterministically by the hub. Steps are verbatim. | D ⏳ A ⏳ |
 | `Citation.section?`, `Citation.citation?` | Regulation citations (29 CFR sections have no pages) | D ⏳ |
+
+## 1.3.0 (2026-09-24): screen context and synthetic knowledge
+
+| Addition | Why | Sign-off |
+|---|---|---|
+| `AssistantRequest.context?` (`AssistantContext {route?, training?}`) | The one global assistant tells the backend which screen it is on. On `/training` it carries `TrainingContext`: the lesson step, the validator's phase and diagnosis, the lesson machine's readings, and the lesson simulator's own alerts and events. The phase and steps passed come from the telemetry validator, never from the LLM. | A ⏳ D ⏳ |
+| `Citation.synthetic?` | Passages from the synthetic demo knowledge corpus (`backend/data/synthetic/`) are marked, so the UI can label them as not official documentation | D ⏳ |

@@ -30,6 +30,7 @@ import { thresholdStatus } from "@/lib/status";
 import { MACHINE_STATUS } from "@/lib/status";
 import type { WeatherMode } from "@/lib/api/contracts";
 import { cn } from "@/lib/utils";
+import { AssistantDock } from "@/components/assistant/global-assistant";
 
 const WEATHER: Record<WeatherMode, { icon: LucideIcon; label: string }> = {
   clear: { icon: Sun, label: "Clear" },
@@ -220,6 +221,9 @@ export function TopBar({
             Ctrl K
           </kbd>
         </Button>
+
+        {/* The one site assistant: open it, or hold the mic to talk, from any screen. */}
+        <AssistantDock />
 
         <AlertBell />
 

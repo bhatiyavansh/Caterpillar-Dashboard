@@ -3,12 +3,18 @@
 // envelope + hub messages from backend/copilot/contracts. Changes are additive only.
 /* eslint-disable */
 
-export const CONTRACT_VERSION = "1.2.0";
+export const CONTRACT_VERSION = "1.3.0";
 export const EVENT_CATALOGUE = ["seatbelt_unfastened", "seatbelt_fastened", "proximity_alert", "fatigue_alert", "tip_over_warning", "v2v_collision_risk", "v2i_suggestion", "anomaly_detected", "maintenance_due", "weather_change", "task_reordered", "working_risk_changed", "source_changed", "low_fuel", "engine_fault", "emergency_stop", "action_pending", "action_confirmed", "action_cancelled", "action_failed", "incident_created", "work_order_created", "training_booked"] as const;
 export const HUB_EVENT_KINDS = ["source_changed", "low_fuel", "engine_fault", "emergency_stop", "action_pending", "action_confirmed", "action_cancelled", "action_failed", "incident_created", "work_order_created", "training_booked"] as const;
 export const SEVERITIES = ["info", "low", "medium", "high", "critical"] as const;
 export type EventKind = (typeof EVENT_CATALOGUE)[number];
 export type Severity = (typeof SEVERITIES)[number];
+
+/** 1.3.0: what the screen the user is on knows. Optional; the hub's own data stays authoritative. */
+export interface AssistantContext {
+  route?: string | null;
+  training?: TrainingContext | null;
+}
 
 export interface AssistantRequest {
   surface: "cab" | "command" | "owner" | "training" | "ar";
@@ -16,6 +22,7 @@ export interface AssistantRequest {
   machine_id?: string | null;
   operator_id?: string | null;
   conversation_id?: string | null;
+  context?: AssistantContext | null;
 }
 
 export interface Citation {
@@ -27,6 +34,7 @@ export interface Citation {
   quote: string;
   section?: string | null;
   citation?: string | null;
+  synthetic?: boolean | null;
 }
 
 /** Hub -> source, only to sources whose source_hello set accepts_control. */
@@ -325,6 +333,68 @@ export interface SseToolResult {
   summary: string;
   provenance: string;
   latency_ms: number;
+}
+
+/** 1.3.0: an alert the lesson simulator's own deterministic rules raised. */
+export interface TrainingAlert {
+  kind: string;
+  severity: string;
+  title: string;
+  message: string;
+}
+
+/** 1.3.0: where the trainee is. Every verdict here (phase, steps passed) comes from the lesson's telemetry validator, never from a language model. */
+export interface TrainingContext {
+  lesson_active: boolean;
+  phase?: "idle" | "running" | "passed" | "retrying" | "levelDone" | "finished" | null;
+  module_id?: string | null;
+  module_title?: string | null;
+  skill?: string | null;
+  module_index?: number | null;
+  module_count?: number | null;
+  step_id?: string | null;
+  step_instruction?: string | null;
+  real_control?: string | null;
+  keys?: string[];
+  step_index?: number | null;
+  step_count?: number | null;
+  attempt?: number | null;
+  last_failure_reason?: string | null;
+  coach_line?: string | null;
+  steps_passed?: number | null;
+  levels_passed?: string[];
+  next_level?: string | null;
+  learner?: TrainingLearner | null;
+  machine_source?: "lesson_sim" | "live_hub" | null;
+  telemetry?: TrainingTelemetry | null;
+  alerts?: TrainingAlert[];
+  recent_events?: TrainingEventNote[];
+}
+
+/** 1.3.0: one line of the lesson simulator's event log. */
+export interface TrainingEventNote {
+  time: string;
+  text: string;
+  severity: string;
+}
+
+export interface TrainingLearner {
+  name: string;
+  level: string;
+  weakest_skill?: string | null;
+}
+
+/** 1.3.0: the lesson machine's readings (browser simulator), rounded for the prompt. */
+export interface TrainingTelemetry {
+  speed_kmh?: number | null;
+  heading_deg?: number | null;
+  swing_deg?: number | null;
+  boom_deg?: number | null;
+  nearest_person_m?: number | null;
+  tip_over_margin?: number | null;
+  hydraulic_temp_c?: number | null;
+  activity?: string | null;
+  emergency_stopped?: boolean | null;
 }
 
 export interface Utterance {

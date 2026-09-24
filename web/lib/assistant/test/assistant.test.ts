@@ -42,3 +42,17 @@ test("local confirm/cancel phrases", () => {
   for (const s of ["confirm the tasks for tomorrow please", "what is confirm"]) assert.ok(!CONFIRM_RE.test(s), s);
   for (const s of ["cancel", "no", "never mind that"]) assert.ok(CANCEL_RE.test(s), s);
 });
+
+test("screen context is sent as-is, and a refusal carries its HTTP status for the old-hub fallback", async () => {
+  let sent: unknown = null;
+  const refusing = (async (_url: string, init: RequestInit) => {
+    sent = JSON.parse(String(init.body));
+    return new Response("{}", { status: 422 });
+  }) as unknown as typeof fetch;
+  const context = { route: "/training/lesson", training: { lesson_active: true, phase: "running" as const, step_id: "t1" } };
+  await assert.rejects(
+    streamAssistant({ surface: "training", message: "what next?", context }, { fetchImpl: refusing, apiBase: "http://x" }),
+    (e: Error & { status?: number }) => e.status === 422,
+  );
+  assert.deepEqual((sent as { context: unknown }).context, context);
+});

@@ -1,16 +1,18 @@
 "use client";
 
-/** /dev/avatar: try the free browser voice + 2D avatar against the live hub (Person B dev page). */
+/** /dev/avatar: try the free browser voice + 2D avatar against the live hub (Person B dev page).
+ *  A bench for the global assistant (the same conversation as the dock), not a second assistant. */
 import { useState } from "react";
+import { useAssistantScope, useGlobalAssistant } from "@/components/assistant/assistant-provider";
 import { Avatar2D } from "../../../../web/components/avatar";
 import { useActiveAlerts } from "../../../../web/lib/stream";
-import { useVoice, VOICE_LANGS } from "../../../../web/lib/voice";
+import { VOICE_LANGS } from "../../../../web/lib/voice";
 
 export default function DevAvatarPage() {
   const alerts = useActiveAlerts();
   const critical = alerts.some((a) => a.machine_id === "EXC001" && (a.severity === "critical" || a.severity === "high"));
-  const [lang, setLang] = useState("auto");
-  const v = useVoice({ surface: "cab", machineId: "EXC001", alert: critical, lang });
+  useAssistantScope({ surface: "cab", machineId: "EXC001", alert: critical, label: "Dev bench · EXC001" });
+  const { voice: v, lang, setLang } = useGlobalAssistant();
   const [text, setText] = useState("");
 
   return (

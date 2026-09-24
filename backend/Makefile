@@ -46,5 +46,5 @@ index:          ## build the manual RAG index (downloads the small embedding mod
 rag-eval:       ## demo questions must hit@5 = 100%
 	uv run python scripts/rag_eval.py
 
-router-eval:    ## 25 labelled questions: confusion table, accuracy, overhead
+router-eval:    ## labelled questions per surface: confusion table, accuracy, overhead
 	uv run python scripts/router_eval.py
