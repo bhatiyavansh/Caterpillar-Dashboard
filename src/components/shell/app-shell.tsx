@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
  * gives. The rail collapses to icons rather than disappearing, so navigation is
  * always one click away.
  */
-const FOCUSED_ROUTES = ["/hmi", "/training/lesson", "/cab", "/ar", "/director", "/twin", "/machine"];
+const FOCUSED_ROUTES = ["/hmi", "/training/lesson", "/cab", "/ar/procedures", "/director", "/twin", "/machine"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

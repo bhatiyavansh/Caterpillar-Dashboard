@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { ArMaintenance } from "@/components/ar/ar-maintenance";
+import { MaintenanceHub } from "@/components/maintenance/maintenance-hub";
 
 export const metadata: Metadata = {
   title: "AR maintenance",
-  description: "Guided maintenance procedures with manual citations, for use at the machine.",
+  description: "Every machine's maintenance state, open breakdowns and their reports.",
 };
 
 export default function ArPage() {
-  return <ArMaintenance />;
+  return <MaintenanceHub />;
 }

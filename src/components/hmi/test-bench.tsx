@@ -267,7 +267,7 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
             const firing = cameraActive(hmi.camera, c.id);
             return (
               <Btn key={c.id} active={on} onClick={() => hmi.simulate(c.id, !on)} className={cn("h-8", firing && !on && "ring-1 ring-status-crit")}>
-                {c.title.replace(" detected", "").replace("Operator not ", "Not ")}
+                {c.title.replace("Operator not detected", "Not in seat").replace(" detected", "")}
               </Btn>
             );
           })}

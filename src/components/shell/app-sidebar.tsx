@@ -8,6 +8,7 @@ import { NAV, activeNavItem, type NavItem } from "./nav-config";
 import { useAlerts, useConnection, useFleet } from "@/lib/hooks/use-site";
 import { Hint } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useOpenBreakdowns } from "@/components/maintenance/fault-indicators";
 
 const CONNECTION_COPY = {
   connecting: { label: "Connecting", dot: "bg-status-warn", help: "Waiting for the first site frame." },
@@ -93,6 +94,7 @@ export function AppSidebar({
 }) {
   const connection = useConnection();
   const { data: alerts } = useAlerts({ includeAcknowledged: false });
+  const breakdowns = useOpenBreakdowns();
   const { kpis } = useFleet();
   const conn = CONNECTION_COPY[connection];
 
@@ -133,7 +135,7 @@ export function AppSidebar({
                   <NavLink
                     item={item}
                     collapsed={collapsed}
-                    badge={item.href === "/command" ? alerts.length : undefined}
+                    badge={item.href === "/command" ? alerts.length : item.href === "/ar" ? breakdowns : undefined}
                   />
                 </li>
               ))}

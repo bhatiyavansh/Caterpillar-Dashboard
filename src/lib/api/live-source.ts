@@ -95,6 +95,8 @@ const EVENT_TITLES: Record<string, string> = {
   seatbelt_unfastened: "Seatbelt unfastened",
   proximity_alert: "Person in the danger zone",
   fatigue_alert: "Operator fatigue detected",
+  operator_distracted: "Operator distracted",
+  operator_absent: "Operator not in the seat",
   tip_over_warning: "Tip-over margin critical",
   v2v_collision_risk: "Collision risk predicted",
   v2i_suggestion: "Site routing suggestion",

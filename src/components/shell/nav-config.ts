@@ -56,7 +56,7 @@ export const NAV: NavGroup[] = [
     items: [
       { href: "/owner", label: "Fleet and cost", audience: "Owner and dealer", icon: Wallet },
       { href: "/training", label: "Training hub", audience: "Trainee and instructor", icon: GraduationCap },
-      { href: "/ar", label: "AR maintenance", audience: "Technician, on a phone", icon: ScanLine },
+      { href: "/ar", label: "AR maintenance", audience: "Breakdowns, reports, service", icon: ScanLine },
     ],
   },
   {

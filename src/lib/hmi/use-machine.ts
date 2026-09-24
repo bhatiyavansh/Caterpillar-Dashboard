@@ -9,7 +9,9 @@ import { useTwinStore } from "@/store/twinStore";
 import { PRIMARY_MACHINE } from "@/lib/twin/simulation";
 import { angleDelta, headingTo } from "@/lib/twin/site";
 import { PROXIMITY } from "@/lib/twin/proximity";
+import { publishCvEvent } from "@web/lib/cv";
 import { CAMERA_CHECKS, cameraActive, useHmiStore, type AlertLevel } from "./hmi-store";
+import { operatorSnapshot } from "./use-operator-camera";
 
 export type Side = "front" | "rear" | "left" | "right";
 
@@ -172,9 +174,40 @@ export function useMachineMonitor(report: IncidentSink): void {
       for (const c of CAMERA_CHECKS) {
         const key = `cam-${c.id}`;
         if (cameraActive(hmi.camera, c.id)) {
-          if (raise(key, c.level, c.title, c.action, "camera") && c.level === 3 && !loggedCamera.has(key)) {
+          if (!raise(key, c.level, c.title, c.action, "camera")) continue;
+          // A new camera alert is a site event: publish it so the command centre, alert ribbon,
+          // incident log and assistant see it, not just this display.
+          const simulated = Boolean(hmi.camera.simulated[c.id]) && !hmi.camera.detected[c.id];
+          const m = hmi.camera.metrics;
+          void publishCvEvent(
+            {
+              event: c.hub.event,
+              severity: c.hub.severity,
+              machine_id: PRIMARY_MACHINE,
+              message: `${c.title} on ${PRIMARY_MACHINE}. ${c.action}`,
+              data: {
+                condition: c.hub.condition,
+                simulated,
+                ...(m && !simulated
+                  ? {
+                      eyes_closed_s: Number(m.eyesClosedS.toFixed(1)),
+                      perclos: m.perclos === null ? null : Number(m.perclos.toFixed(3)),
+                      blinks_per_min: m.blinksPerMin === null ? null : Math.round(m.blinksPerMin),
+                      long_blinks_60s: m.longBlinks,
+                      microsleeps_5min: m.microsleeps,
+                      yawns_10min: m.yawns,
+                      head_yaw_deg: m.yawDeg === null ? null : Math.round(m.yawDeg),
+                      head_pitch_deg: m.pitchDeg === null ? null : Math.round(m.pitchDeg),
+                    }
+                  : {}),
+              },
+              snapshot: c.level === 3 && !simulated ? operatorSnapshot() : undefined,
+            },
+            { force: c.level === 3 },
+          );
+          if (c.level === 3 && !loggedCamera.has(key)) {
             loggedCamera.add(key);
-            reportRef.current({ title: c.title, kind: "fatigue", severity: "critical", summary: `Operator camera: ${c.action}` });
+            reportRef.current({ title: c.title, kind: c.id === "phone" ? "anomaly" : "fatigue", severity: "critical", summary: `Operator camera: ${c.action}` });
             hmi.countIncident();
           }
         } else {

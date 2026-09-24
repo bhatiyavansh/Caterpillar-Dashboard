@@ -31,6 +31,7 @@ import { MACHINE_STATUS } from "@/lib/status";
 import type { WeatherMode } from "@/lib/api/contracts";
 import { cn } from "@/lib/utils";
 import { AssistantDock } from "@/components/assistant/global-assistant";
+import { FaultPill } from "@/components/maintenance/fault-indicators";
 
 const WEATHER: Record<WeatherMode, { icon: LucideIcon; label: string }> = {
   clear: { icon: Sun, label: "Clear" },
@@ -184,6 +185,8 @@ export function TopBar({
       ) : null}
 
       <div className="ml-auto flex items-center gap-2">
+        <FaultPill />
+
         {/* Live site conditions — the reason a task got re-ordered. */}
         {snapshot ? (
           <div className="hidden items-center divide-x divide-white/10 rounded-full border border-white/[0.08] bg-white/[0.03] px-1 text-[11px] xl:flex">

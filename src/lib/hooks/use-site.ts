@@ -163,7 +163,10 @@ export function useIncidents(machineId?: string): Query<Incident[]> & {
 
 export function useMaintenance(): Query<MaintenanceItem[]> {
   const snapshot = useSnapshot();
-  const data = React.useMemo(() => (onClient() ? getFleetSource().getMaintenance() : []), [snapshot]);
+  // Empty until hydrated, like the server render, so the first client render
+  // matches it.
+  const hydrated = useHydrated();
+  const data = React.useMemo(() => (hydrated ? getFleetSource().getMaintenance() : []), [snapshot, hydrated]);
   return { data, loading: false, error: null };
 }
 

@@ -10,6 +10,7 @@
  * only ever reads.
  */
 import { create } from "zustand";
+import type { DmsMetrics } from "@web/components/cv/operator-monitor";
 
 export type AlertLevel = 1 | 2 | 3;
 export type AlertSource = "machine" | "monitor" | "camera";
@@ -27,16 +28,29 @@ export interface HmiAlert {
   resolved: boolean;
 }
 
-export type CameraCheck = "absent" | "drowsy" | "yawn" | "distracted" | "head_down" | "phone" | "extra_person";
+export type CameraCheck = "absent" | "drowsy" | "fatigue" | "yawn" | "distracted" | "head_down" | "phone" | "extra_person";
 
-export const CAMERA_CHECKS: { id: CameraCheck; label: string; level: AlertLevel; title: string; action: string }[] = [
-  { id: "absent", label: "Operator in seat", level: 2, title: "Operator not detected", action: "Return to the seat before operating. Controls stay locked." },
-  { id: "drowsy", label: "Eyes open", level: 3, title: "Drowsiness detected", action: "Eyes closed too long. Stop, lower the bucket and take a break." },
-  { id: "yawn", label: "Alertness", level: 1, title: "Fatigue signs", action: "Repeated yawning. Plan a break in the next 15 minutes." },
-  { id: "distracted", label: "Eyes on work area", level: 2, title: "Eyes off the work area", action: "Look at the work area while the machine is moving." },
-  { id: "head_down", label: "Head up", level: 2, title: "Head down", action: "Keep your head up while operating." },
-  { id: "phone", label: "No phone", level: 3, title: "Phone in use", action: "Put the phone away. Phone use while operating is prohibited." },
-  { id: "extra_person", label: "One person in cab", level: 2, title: "Second person in view", action: "Passengers are not permitted in the cab." },
+/**
+ * One row per thing the operator camera watches for. Detection rules and their
+ * thresholds live in `@web/components/cv/operator-monitor` (DMS_THRESHOLDS) and
+ * `use-operator-camera.ts`; `hub` is the event each one is published as.
+ */
+export const CAMERA_CHECKS: {
+  id: CameraCheck;
+  label: string;
+  level: AlertLevel;
+  title: string;
+  action: string;
+  hub: { event: string; severity: "medium" | "high" | "critical"; condition: string };
+}[] = [
+  { id: "absent", label: "Operator in seat", level: 2, title: "Operator not detected", action: "Return to the seat before operating. Controls stay locked.", hub: { event: "operator_absent", severity: "high", condition: "operator_absent" } },
+  { id: "drowsy", label: "Eyes open", level: 3, title: "Microsleep detected", action: "Eyes closed for over 1.5 s. Stop, lower the bucket and take a break.", hub: { event: "fatigue_alert", severity: "critical", condition: "microsleep" } },
+  { id: "fatigue", label: "Eye closure (PERCLOS)", level: 2, title: "Drowsiness building", action: "Eyes closing too often over the last minute. Park safely and take a 15 minute break.", hub: { event: "fatigue_alert", severity: "high", condition: "drowsy" } },
+  { id: "yawn", label: "Alertness", level: 1, title: "Fatigue signs", action: "Repeated yawning. Plan a break in the next 15 minutes.", hub: { event: "fatigue_alert", severity: "medium", condition: "yawning" } },
+  { id: "distracted", label: "Eyes on work area", level: 2, title: "Eyes off the work area", action: "Look at the work area while the machine is moving.", hub: { event: "operator_distracted", severity: "high", condition: "eyes_off_work_area" } },
+  { id: "head_down", label: "Head up", level: 2, title: "Head down", action: "Keep your head up while operating.", hub: { event: "operator_distracted", severity: "high", condition: "head_down" } },
+  { id: "phone", label: "No phone", level: 3, title: "Phone in use", action: "Put the phone away. Phone use while operating is prohibited.", hub: { event: "operator_distracted", severity: "critical", condition: "phone_use" } },
+  { id: "extra_person", label: "One person in cab", level: 2, title: "Second person in view", action: "Passengers are not permitted in the cab.", hub: { event: "operator_distracted", severity: "medium", condition: "passenger" } },
 ];
 
 export type CameraStatus = "off" | "starting" | "loading" | "running" | "denied" | "unavailable" | "error";
@@ -61,6 +75,8 @@ interface HmiState {
     detected: Partial<Record<CameraCheck, boolean>>;
     simulated: Partial<Record<CameraCheck, boolean>>;
     fps: number;
+    /** Live driver-monitoring readings, ~4 Hz, while the camera runs. */
+    metrics: DmsMetrics | null;
   };
 
   autoIncidents: number;
@@ -100,7 +116,7 @@ let seq = 0;
 
 export const useHmiStore = create<HmiState>()((set, get) => ({
   ...INITIAL,
-  camera: { enabled: false, status: "off", detected: {}, simulated: {}, fps: 0 },
+  camera: { enabled: false, status: "off", detected: {}, simulated: {}, fps: 0, metrics: null },
 
   setSeatbelt: (seatbelt) => set({ seatbelt }),
   setInterlock: (interlock) => set({ interlock }),

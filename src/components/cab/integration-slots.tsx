@@ -215,25 +215,29 @@ export function FrontCameraPanel({
   machineId: string;
   cameraOn: boolean;
   onToggleCamera: () => void;
-  /** Raised when the browser detector sees the operator's eyes closed past the threshold. */
+  /** Raised on a microsleep or when drowsiness builds up (see FatigueDetector). */
   onDetection?: (e: CvFatigueEvent) => void;
   className?: string;
 }) {
   // Fatigue has no simulated channel to fall back to the way proximity falls back to
   // machine.proximity — this reflects only what the browser detector itself has seen,
-  // and clears itself out after a hold so a one-off blink does not stick.
-  const [fatigue, setFatigue] = React.useState<{ eyesClosedS: number; at: number } | null>(null);
+  // and clears itself out after a hold once the detector stops re-raising it.
+  const [fatigue, setFatigue] = React.useState<{ data: CvFatigueEvent["data"]; at: number } | null>(null);
   const handleEvent = React.useCallback(
     (e: CvFatigueEvent) => {
       onDetection?.(e);
-      setFatigue({ eyesClosedS: e.data.eyes_closed_s, at: Date.now() });
-      void publishCvEvent({
-        event: e.event,
-        severity: e.severity,
-        machine_id: e.machine_id,
-        message: e.message,
-        data: e.data,
-      });
+      setFatigue({ data: e.data, at: Date.now() });
+      void publishCvEvent(
+        {
+          event: e.event,
+          severity: e.severity,
+          machine_id: e.machine_id,
+          message: e.message,
+          data: e.data,
+        },
+        // A microsleep is always news, even seconds after the last one.
+        { force: e.severity === "critical" },
+      );
     },
     [onDetection],
   );
@@ -252,8 +256,16 @@ export function FrontCameraPanel({
       onToggleCamera={onToggleCamera}
       statusIcon={alerting ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
       statusTone={alerting ? "critical" : "ok"}
-      statusLabel={alerting ? "Fatigue detected" : "Monitoring"}
-      statusDetail={alerting ? `Eyes closed ${fatigue?.eyesClosedS.toFixed(1)} s — take a break` : "Watching for microsleep"}
+      statusLabel={fatigue ? (fatigue.data.condition === "microsleep" ? "Microsleep detected" : "Drowsiness building") : "Monitoring"}
+      statusDetail={
+        !fatigue
+          ? "Watching for microsleep and drowsiness"
+          : fatigue.data.condition === "microsleep"
+            ? `Eyes closed ${fatigue.data.eyes_closed_s.toFixed(1)} s — stop and take a break`
+            : fatigue.data.perclos !== null
+              ? `Eyes closed ${Math.round(fatigue.data.perclos * 100)}% of the last minute — plan a break`
+              : `${fatigue.data.long_blinks_60s} long blinks in the last minute — plan a break`
+      }
       className={className}
     >
       <FatigueDetector machineId={machineId} onEvent={handleEvent} showVideo enabled={cameraOn} className="absolute inset-0 size-full" />
