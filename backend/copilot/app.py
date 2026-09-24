@@ -59,6 +59,12 @@ def create_app(settings: Settings | None = None, llm=None, ml=None, embedder_fac
         records = RecordStore(settings.db_path)
         await records.start()
         ml_port = ml or AutoML(settings.ml_mode)
+        # Fire-and-forget: the first anomalies/maintenance history read is otherwise slow enough to
+        # blow the tool's own timeout on a cold cache, so it happens now instead of on the first ask.
+        # `warm` only exists on AutoML (real mode); test doubles and the stub have no such cache to
+        # warm, so this is skipped rather than injected everywhere `ml=` is overridden.
+        if hasattr(ml_port, "warm"):
+            asyncio.create_task(ml_port.warm())
         jobs = WhatIfJobs(ml_port, settings.cache_dir)
         actions = ActionManager(hub)
         registry = build_registry()

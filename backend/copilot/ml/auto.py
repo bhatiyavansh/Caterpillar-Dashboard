@@ -42,6 +42,13 @@ class AutoML:
         except Exception as exc:
             self.real, self.reason = None, f"intelligence import failed: {exc!r}"
 
+    async def warm(self) -> None:
+        """Kick off `RealML`'s slow first history reads at startup. `RealML.warm()` existed to make
+        exactly this fast; nothing ever called it, so every first anomalies/maintenance request paid
+        the full pandas-over-history cost inline and usually hit the tool's own timeout."""
+        if self.real is not None:
+            await self.real.warm()
+
     def status(self) -> dict[str, Any]:
         from copilot.ml.real import TIMEOUT_S
 

@@ -52,12 +52,28 @@ class RealML:
             raise MLUnavailable(f"{kind} failed: {exc!r}") from exc
 
     async def warm(self) -> None:
-        """Start the slow history reads in the background so the first chat turn is fast."""
-        from intelligence import get_anomalies, get_maintenance_forecast
+        """Start the slow history reads in the background so the first real request is fast.
 
-        for kind, fn, args in (("anomalies", get_anomalies, (None, 24)), ("maintenance", get_maintenance_forecast, (None,))):
+        `predict_task_time` is a different kind of slow: not a history scan but a one-time
+        LightGBM Booster load from disk on the first call, after which the boosters stay in the
+        module's global cache for the process's life. A throwaway call with defaulted features
+        forces that load now; the result itself is discarded and never cached (unlike the anomaly
+        and maintenance reads, a bogus estimate is not worth remembering under any key)."""
+        from intelligence import get_anomalies, get_maintenance_forecast, owner_summary, predict_task_time
+
+        # owner_summary re-derives anomalies and the daily series itself (measured ~28s cold on a
+        # dev machine) rather than reusing the cache the line above just filled, so it gets its own
+        # slot - same call shape as `RealML.owner_summary(7)` uses, so the cache key matches and the
+        # weekly report's first real request lands on a warm result instead of its own timeout.
+        for kind, fn, args in (
+            ("anomalies", get_anomalies, (None, 24)),
+            ("maintenance", get_maintenance_forecast, (None,)),
+            ("owner", owner_summary, (7,)),
+        ):
             with contextlib.suppress(MLUnavailable):
-                await self._call(kind, fn, *args, ttl=60)
+                await self._call(kind, fn, *args, ttl=600 if kind == "owner" else 60)
+        with contextlib.suppress(Exception):
+            await asyncio.to_thread(predict_task_time, {})
 
     async def estimate_task(self, features: dict[str, Any]) -> dict[str, Any]:
         from intelligence import predict_task_time

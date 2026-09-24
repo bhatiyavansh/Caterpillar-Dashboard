@@ -12,7 +12,7 @@ from pydantic import BaseModel, ValidationError
 
 from copilot.agent.confirm import ActionError
 from copilot.agent.llm import LLMError
-from copilot.agent.tools.definitions import AnomaliesIn, TaskIn, WhatIfIn
+from copilot.agent.tools.definitions import AnomaliesIn, MaintenanceIn, TaskIn, WhatIfIn
 from copilot.contracts.assistant import SSE_EVENTS, AssistantRequest
 
 router = APIRouter()
@@ -92,6 +92,14 @@ async def anomalies(request: Request, machine_id: str | None = None, since_hours
         for a in out["data"]["anomalies"]:
             a["explanation"] = await reports.explain_anomaly(a)
     return out
+
+
+@router.get("/api/maintenance")
+async def maintenance(request: Request, machine_id: str | None = None) -> dict[str, Any]:
+    """`get_maintenance_forecast` had a tool but no REST route - it was reachable only by asking
+    the assistant, never by a dashboard fetching it directly. Same `_tool` pattern as anomalies."""
+    body = {"machine_id": machine_id} if machine_id else {}
+    return await _tool(request, "get_maintenance_forecast", MaintenanceIn, body)
 
 
 @router.post("/api/whatif")
