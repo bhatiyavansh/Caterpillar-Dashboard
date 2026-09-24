@@ -15,6 +15,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useVehicleControls } from "@/hooks/twin/useVehicleControls";
 import { useLiveLink } from "@/hooks/twin/useLiveLink";
+import { useLocalControl } from "@/hooks/twin/useLocalControl";
 import { CommandCenter } from "./CommandCenter";
 
 const SimulationScene = dynamic(
@@ -50,17 +51,33 @@ export interface TwinStageProps {
    * render at unreadable point sizes.
    */
   dense?: boolean;
+  /**
+   * Whether this stage may attach itself to the live simulator.
+   *
+   * Set `false` for training: a lesson has to own the machine. Live frames
+   * overwrite position and joint angles every frame, so the learner's
+   * keypresses would go nowhere and every step would time out. With this off
+   * the stage never probes for a simulator and holds the keyboard source for
+   * as long as it is mounted.
+   */
+  liveLink?: boolean;
 }
 
 /** Fills its positioned parent. */
-export function TwinStage({ active = true, dense = false }: TwinStageProps) {
+export function TwinStage({
+  active = true,
+  dense = false,
+  liveLink = true,
+}: TwinStageProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   // Keyboard lives here, outside the Canvas — never inside a 3D component.
   useVehicleControls(mounted && active);
   // Attach to the simulator if one is running; otherwise stay self-contained.
-  useLiveLink(mounted && active);
+  useLiveLink(mounted && active && liveLink);
+  // Training mode: hold the keyboard source so the learner actually drives.
+  useLocalControl(mounted && !liveLink);
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-ink-950">

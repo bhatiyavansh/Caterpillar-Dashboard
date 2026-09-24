@@ -24,12 +24,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
+import type { IconComponent } from "@/components/ui/icon";
 
 interface Hotspot {
   id: string;
   label: string;
   system: string;
-  icon: React.ElementType;
+  icon: IconComponent;
   /** Position on the machine diagram, as percentages. */
   x: number;
   y: number;

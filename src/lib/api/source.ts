@@ -6,6 +6,8 @@
  * picks whichever is available. No screen imports a concrete source.
  */
 import type {
+  AlertKind,
+  AlertSeverity,
   Anomaly,
   ConnectionState,
   DirectorResult,
@@ -37,6 +39,17 @@ export interface FleetSource {
 
   acknowledgeAlert(alertId: string): void;
   acknowledgeAll(): void;
+
+  /** Move a logged incident through review, optionally with a note. */
+  fileIncident(incidentId: string, status: Incident["status"], note?: string): void;
+  /** Log an incident a person witnessed, rather than one a rule caught. */
+  reportIncident(input: {
+    machineId: string;
+    kind: AlertKind;
+    severity: AlertSeverity;
+    title: string;
+    summary: string;
+  }): Incident;
 
   getIncidents(): Incident[];
   getMaintenance(): MaintenanceItem[];

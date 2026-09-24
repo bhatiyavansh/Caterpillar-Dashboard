@@ -14,6 +14,14 @@ import type {
   SiteTask,
   TrainingModule,
 } from "./contracts";
+import { dataset, getOperator, replays } from "@/lib/data/dataset";
+import { historicalAnomalies, type HistoricalAnomaly } from "@/lib/intel";
+import {
+  RESTING_CONDITIONS,
+  estimateTask,
+  type JobSpec,
+  type SiteConditions,
+} from "./estimate";
 
 export const SITE_NAME = "Perungudi Extension — Sector 4";
 export const SHIFT_LABEL = "Day shift · 06:00–14:00";
@@ -36,15 +44,17 @@ export const RATED_PAYLOAD: Record<MachineKind, number> = {
   grader: 2600,
 };
 
+// Experience is a feature of the task-time model, not decoration: the fitted
+// coefficient on it is worth several minutes on a long job.
 const operators: OperatorRef[] = [
-  { id: "OP-1042", name: "R. Subramanian", shift: "Day", skill: "expert" },
-  { id: "OP-1017", name: "K. Mehta", shift: "Day", skill: "intermediate" },
-  { id: "OP-1093", name: "A. Fernandes", shift: "Day", skill: "expert" },
-  { id: "OP-1128", name: "S. Bose", shift: "Day", skill: "novice" },
-  { id: "OP-1064", name: "D. Iyer", shift: "Day", skill: "intermediate" },
-  { id: "OP-1071", name: "M. Nair", shift: "Day", skill: "expert" },
-  { id: "OP-1150", name: "V. Chandra", shift: "Day", skill: "novice" },
-  { id: "OP-1009", name: "T. Rajan", shift: "Day", skill: "expert" },
+  { id: "OP-1042", name: "R. Subramanian", shift: "Day", skill: "expert", years: 14 },
+  { id: "OP-1017", name: "K. Mehta", shift: "Day", skill: "intermediate", years: 6 },
+  { id: "OP-1093", name: "A. Fernandes", shift: "Day", skill: "expert", years: 11 },
+  { id: "OP-1128", name: "S. Bose", shift: "Day", skill: "novice", years: 2 },
+  { id: "OP-1064", name: "D. Iyer", shift: "Day", skill: "intermediate", years: 7 },
+  { id: "OP-1071", name: "M. Nair", shift: "Day", skill: "expert", years: 16 },
+  { id: "OP-1150", name: "V. Chandra", shift: "Day", skill: "novice", years: 1 },
+  { id: "OP-1009", name: "T. Rajan", shift: "Day", skill: "expert", years: 12 },
 ];
 
 export function operatorById(id: string): OperatorRef | null {
@@ -176,76 +186,135 @@ export function seedMachines(): Machine[] {
 
 /* ------------------------------------------------------------------ tasks */
 
-export function seedTasks(): SiteTask[] {
-  return [
-    {
-      id: "T-EXC001", machineId: "EXC001", title: "Excavate Zone B trench", zone: "Zone B",
-      state: "active", progress: 68, etaMinutes: 32, etaRange: [26, 47], startsAt: "10:40",
-      reasons: ["Clay soil +8 min", "Operator experience −6 min", "Bucket 1.2 m³ baseline"],
-    },
-    {
-      id: "T-EXC001-2", machineId: "EXC001", title: "Load truck TRK004", zone: "Zone C",
-      state: "queued", progress: 0, etaMinutes: 48, etaRange: [40, 62], startsAt: "14:20",
-      reasons: ["4-truck rotation", "Haul distance 620 m"],
-    },
-    {
-      id: "T-EXC001-3", machineId: "EXC001", title: "Backfill service trench", zone: "Zone B",
-      state: "queued", progress: 0, etaMinutes: 75, etaRange: [62, 98], startsAt: "15:10",
-      reasons: ["Rain window after 15:00 +14 min", "Compaction pass required"],
-    },
-    {
-      id: "T-EXC001-0", machineId: "EXC001", title: "Pre-shift walkaround", zone: "Yard",
-      state: "done", progress: 100, etaMinutes: 0, etaRange: [0, 0], startsAt: "06:05",
-      reasons: [],
-    },
-    {
-      id: "T-DOZ001", machineId: "DOZ001", title: "Grade haul road north", zone: "Haul road",
-      state: "active", progress: 41, etaMinutes: 56, etaRange: [45, 73], startsAt: "09:50",
-      reasons: ["620 m run", "Second pass required"],
-    },
-    {
-      id: "T-WHL001", machineId: "WHL001", title: "Feed crusher hopper", zone: "Stockpile",
-      state: "active", progress: 77, etaMinutes: 19, etaRange: [15, 28], startsAt: "11:05",
-      reasons: ["Hopper draw steady", "Operator ramping up"],
-    },
-  ];
+/**
+ * The shift's work, stated as jobs rather than as durations.
+ *
+ * Nothing here says how long anything takes. The job — what kind of work, what
+ * ground, how much of it — is what a site office actually knows; the minutes
+ * come from the model, under whatever the conditions are when it is asked. That
+ * is the difference between a number that updates when it rains and one that
+ * does not.
+ */
+export const JOBS: JobSpec[] = [
+  {
+    id: "T-EXC001", machineId: "EXC001", title: "Excavate Zone B trench", zone: "Zone B",
+    taskType: "trenching", soil: "clay", volume: 140, state: "active", progress: 68,
+    startsAt: "10:40",
+  },
+  {
+    id: "T-EXC001-2", machineId: "EXC001", title: "Load truck TRK004", zone: "Zone C",
+    taskType: "loading", soil: "mixed", volume: 5, state: "queued", progress: 0,
+    startsAt: "14:20",
+  },
+  {
+    id: "T-EXC001-3", machineId: "EXC001", title: "Backfill service trench", zone: "Zone B",
+    taskType: "trenching", soil: "mixed", volume: 96, state: "queued", progress: 0,
+    startsAt: "15:10",
+  },
+  {
+    id: "T-EXC001-0", machineId: "EXC001", title: "Pre-shift walkaround", zone: "Yard",
+    taskType: "trenching", soil: "sand", volume: 4, state: "done", progress: 100,
+    startsAt: "06:05",
+  },
+  {
+    id: "T-DOZ001", machineId: "DOZ001", title: "Grade haul road north", zone: "Haul road",
+    taskType: "dozing", soil: "mixed", volume: 210, state: "active", progress: 41,
+    startsAt: "09:50",
+  },
+  {
+    id: "T-WHL001", machineId: "WHL001", title: "Feed crusher hopper", zone: "Stockpile",
+    taskType: "loading", soil: "rock", volume: 7, state: "active", progress: 77,
+    startsAt: "11:05",
+  },
+  {
+    id: "T-GRD001", machineId: "GRD001", title: "Finish grade Zone A pad", zone: "Zone A",
+    taskType: "grading", soil: "sand", volume: 2200, state: "active", progress: 23,
+    startsAt: "11:40",
+  },
+  {
+    id: "T-TRK001", machineId: "TRK001", title: "Haul spoil to north tip", zone: "Haul road",
+    taskType: "hauling", soil: "mixed", volume: 11, state: "active", progress: 55,
+    startsAt: "10:15",
+  },
+];
+
+/** The shift's tasks, estimated under whatever conditions are handed in. */
+export function seedTasks(
+  machines: Machine[] = seedMachines(),
+  site: SiteConditions = RESTING_CONDITIONS,
+): SiteTask[] {
+  const byId = new Map(machines.map((m) => [m.id, m]));
+  return JOBS.map((job) => {
+    const machine = byId.get(job.machineId);
+    return estimateTask(job, machine, machine?.operator ?? null, site);
+  });
 }
 
 /* -------------------------------------------------------------- incidents */
 
 const H = 3_600_000;
 
+/** The dataset's incident types, in the product's own vocabulary. */
+const INCIDENT_KIND: Record<string, Incident["kind"]> = {
+  seatbelt: "seatbelt",
+  proximity: "proximity",
+  v2v: "collision",
+  fatigue: "fatigue",
+  tip_over: "tip_over",
+};
+
+const INCIDENT_TITLE: Record<string, string> = {
+  seatbelt: "Seatbelt unfastened while operating",
+  proximity: "Worker inside the machine's envelope",
+  v2v: "Predicted machine-to-machine conflict",
+  fatigue: "Operator fatigue indicated",
+  tip_over: "Stability margin below limit",
+};
+
+/**
+ * The incident log, read from the 150 incidents in the generated record.
+ *
+ * These are not illustrative: each one has a timestamp, a machine, an operator,
+ * a position on site and the weather at the time, and four of them carry
+ * frame-by-frame tracks the twin can replay.
+ */
 export function seedIncidents(now: number): Incident[] {
-  return [
-    {
-      id: "INC-2418", machineId: "EXC001", title: "Worker in rear blind spot",
-      kind: "proximity", severity: "critical", at: now - 2.4 * H, zone: "Zone B",
-      summary:
-        "Spotter crossed 2.4 m behind EXC001 during a 180° swing. The swing was arrested 1.1 s after the alert fired.",
-      replayable: true, status: "filed",
-    },
-    {
-      id: "INC-2417", machineId: "DOZ001", title: "Reverse conflict with EXC001",
-      kind: "collision", severity: "warning", at: now - 5.1 * H, zone: "Haul road",
-      summary:
-        "V2V predicted a 3.2 s time-to-conflict while DOZ001 reversed toward the Zone B spur. Both operators were warned.",
-      replayable: true, status: "filed",
-    },
-    {
-      id: "INC-2415", machineId: "EXC002", title: "Seatbelt unfastened while tracking",
-      kind: "seatbelt", severity: "warning", at: now - 27 * H, zone: "Zone C",
-      summary:
-        "The machine travelled 14 m with the belt unfastened. Travel lock engaged; the belt was fastened 22 s later.",
-      replayable: true, status: "reviewed",
-    },
-    {
-      id: "INC-2411", machineId: "EXC001", title: "Tip-over margin below 1.2",
-      kind: "tip_over", severity: "critical", at: now - 51 * H, zone: "Zone B",
-      summary:
-        "A full-reach lift at 11° cross-slope drove the stability margin to 1.14. The operator retracted the stick on the alert.",
-      replayable: true, status: "reviewed",
-    },
-  ];
+  const replayable = new Set(replays.tracks.map((t) => t.incidentId));
+  // The history ends whenever the dataset was generated; anchoring it to the
+  // demo clock keeps "3 hours ago" meaningful on screen.
+  const latest = dataset.incidents.reduce(
+    (max, i) => Math.max(max, Date.parse(i.timestamp)),
+    0,
+  );
+
+  return dataset.incidents
+    .map((i) => {
+      const operator = getOperator(i.operatorId);
+      const at = now - (latest - Date.parse(i.timestamp));
+      return {
+        id: i.incidentId,
+        machineId: i.machineId,
+        title: INCIDENT_TITLE[i.type] ?? "Safety incident",
+        kind: INCIDENT_KIND[i.type] ?? "proximity",
+        severity: i.severity === "critical" ? ("critical" as const) : i.severity === "high" ? ("warning" as const) : ("info" as const),
+        at,
+        zone: i.zone,
+        summary: i.description,
+        replayable: replayable.has(i.incidentId),
+        // Anything older than the current shift has been through review.
+        status: now - at > 12 * H ? ("reviewed" as const) : ("filed" as const),
+        operatorId: i.operatorId,
+        operatorName: operator?.name ?? null,
+        weather: (["clear", "rain", "fog", "heat"].includes(i.weather)
+          ? i.weather
+          : "clear") as Incident["weather"],
+        position: { x: i.worldX, z: i.worldZ },
+        alertId: null,
+        note: null,
+        automatic: true,
+      };
+    })
+    .sort((a, b) => b.at - a.at);
 }
 
 /* ------------------------------------------------------------ maintenance */
@@ -282,30 +351,92 @@ export function seedMaintenance(): MaintenanceItem[] {
 
 /* -------------------------------------------------------------- anomalies */
 
+const ANOMALY_TITLE: Record<string, string> = {
+  excessive_idling: "Excessive idling",
+  seatbelt_violation: "Operating with the belt unfastened",
+  overload: "Payload above rated capacity",
+  harsh_operation: "Harsh operation",
+  temperature_anomaly: "Hydraulic temperature excursion",
+  low_productivity: "Output below this machine's norm",
+  unusual_pattern: "Unusual usage pattern",
+};
+
+/**
+ * Unusual usage, as found by the detector rather than written by hand.
+ *
+ * `historicalAnomalies()` runs the same rules and the same per-machine
+ * baselines the live detector uses across every machine-day in the record.
+ * What this returns is therefore a result, not a fixture — change the data and
+ * the list changes with it.
+ */
 export function seedAnomalies(now: number): Anomaly[] {
-  return [
-    {
-      id: "ANO-91", machineId: "EXC002", title: "Unusual idle behaviour",
-      explanation:
-        "EXC002 idled 74 minutes across three sittings this shift against a 54-minute baseline, and every stretch coincided with the seatbelt reading unfastened. The operator is leaving the seat with the engine running.",
-      deviation: "+37% vs 30-day baseline", costInr: 2840, detectedAt: now - 1.5 * H,
-      severity: "warning",
+  const found = historicalAnomalies();
+  const latest = dataset.telemetry.perDay.reduce(
+    (max, d) => (d.date && d.date > max ? d.date : max),
+    "",
+  );
+  const latestMs = Date.parse(`${latest}T12:00:00Z`) || now;
+
+  return found.slice(0, 12).map((a, index) => ({
+    id: `ANO-${String(index + 1).padStart(3, "0")}`,
+    machineId: a.machineId,
+    title: ANOMALY_TITLE[a.type] ?? "Unusual usage",
+    explanation: explainAnomaly(a),
+    deviation: a.deviation,
+    costInr: a.fuelCostInr,
+    detectedAt: now - (latestMs - Date.parse(`${a.date}T12:00:00Z`)),
+    severity: a.score >= 0.9 ? ("critical" as const) : a.score >= 0.7 ? ("warning" as const) : ("info" as const),
+    pattern: a.type,
+    related: a.related,
+    score: a.score,
+    detectedBy: a.detectedBy,
+    evidence: {
+      "Idle time": `${a.evidence.idleMinutes.toFixed(0)} min`,
+      "Baseline idle": `${a.evidence.baselineIdleMinutes.toFixed(0)} min`,
+      "Load cycles": String(a.evidence.cycles),
+      "Belt unfastened": `${a.evidence.seatbeltOffMinutes.toFixed(0)} min`,
+      "Peak payload": `${a.evidence.peakPayloadKg.toLocaleString("en-IN")} kg`,
+      "Hydraulic temp": `${a.evidence.peakHydraulicTempC.toFixed(0)} °C`,
     },
-    {
-      id: "ANO-88", machineId: "TRK003", title: "Queue time above plan",
-      explanation:
-        "TRK003 spent 88 minutes queued at the stockpile. The loader cycle is on target, so the rotation is over-trucked for the current dig rate.",
-      deviation: "+52 min vs plan", costInr: 4120, detectedAt: now - 3.2 * H,
-      severity: "warning",
-    },
-    {
-      id: "ANO-85", machineId: "EXC001", title: "Harsh swing events",
-      explanation:
-        "Nine swing reversals exceeded the smoothness threshold in the last hour, concentrated in the narrow trench section. A coaching module is recommended rather than a fault investigation.",
-      deviation: "9 events vs 2 typical", costInr: 760, detectedAt: now - 0.8 * H,
-      severity: "info",
-    },
-  ];
+    fuelWastedL: a.fuelWastedL,
+  }));
+}
+
+/**
+ * The sentence under the heading.
+ *
+ * Deliberately built from the detector's own numbers rather than written out:
+ * every clause here is a figure the model produced, so the explanation cannot
+ * drift away from what was actually detected.
+ */
+function explainAnomaly(a: HistoricalAnomaly): string {
+  const parts: string[] = [];
+  if (a.type === "excessive_idling" || a.related.includes("excessive_idling")) {
+    parts.push(
+      `${a.machineId} idled ${a.evidence.idleMinutes.toFixed(0)} minutes against a ` +
+        `${a.evidence.baselineIdleMinutes.toFixed(0)}-minute baseline while completing ` +
+        `${a.evidence.cycles} load cycles`,
+    );
+  }
+  if (a.type === "seatbelt_violation" || a.related.includes("seatbelt_violation")) {
+    parts.push(
+      `the belt read unfastened for ${a.evidence.seatbeltOffMinutes.toFixed(0)} of those minutes`,
+    );
+  }
+  if (a.type === "overload" || a.related.includes("overload")) {
+    parts.push(`payload peaked at ${a.evidence.peakPayloadKg.toLocaleString("en-IN")} kg`);
+  }
+  if (a.type === "temperature_anomaly") {
+    parts.push(`hydraulic oil reached ${a.evidence.peakHydraulicTempC.toFixed(0)} °C`);
+  }
+  if (!parts.length) parts.push(`${a.machineId} ran ${a.deviation}`);
+
+  const detector =
+    a.detectedBy === "rules"
+      ? "This matches a named pattern in the safety rules."
+      : "No single rule fired; it is the distance from this machine's own 30-day normal that flagged it.";
+
+  return `${parts.join(", and ")}. ${detector}`;
 }
 
 /* --------------------------------------------------------------- training */

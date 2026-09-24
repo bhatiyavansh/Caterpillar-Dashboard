@@ -18,8 +18,9 @@ import {
 import type { AlertSeverity, MachineStatus } from "@/lib/api/contracts";
 import { ALERT_SEVERITY, MACHINE_STATUS } from "@/lib/status";
 import { cn } from "@/lib/utils";
+import type { IconComponent } from "@/components/ui/icon";
 
-const STATUS_ICON: Record<MachineStatus, React.ElementType> = {
+const STATUS_ICON: Record<MachineStatus, IconComponent> = {
   operating: CheckCircle2,
   idle: PauseCircle,
   warning: AlertTriangle,
@@ -28,7 +29,7 @@ const STATUS_ICON: Record<MachineStatus, React.ElementType> = {
   offline: PowerOff,
 };
 
-const SEVERITY_ICON: Record<AlertSeverity, React.ElementType> = {
+const SEVERITY_ICON: Record<AlertSeverity, IconComponent> = {
   critical: OctagonAlert,
   warning: AlertTriangle,
   info: Info,

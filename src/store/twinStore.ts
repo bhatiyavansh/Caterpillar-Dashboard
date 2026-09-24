@@ -82,6 +82,12 @@ export interface TwinState {
   setSource: (source: TelemetrySource, opts?: { auto?: boolean }) => void;
   /** True once the operator has picked a source by hand. */
   sourceLocked: boolean;
+  /**
+   * Releases the operator's source choice so the live-link probe may attach
+   * again. Without this a single locked switch — a training session, say —
+   * would disable auto-connect for the rest of the browser session.
+   */
+  releaseSourceLock: () => void;
 
   /* --- director hazards --- */
   forceWorkerApproach: () => void;
@@ -202,6 +208,8 @@ export const useTwinStore = create<TwinState>()((set, get) => {
     },
 
     sourceLocked: false,
+
+    releaseSourceLock: () => set({ sourceLocked: false }),
 
     setSource: (source, opts) => {
       get().engine.setSource(source);

@@ -13,8 +13,9 @@ import { Button } from "@/components/ui/primitives";
 import { Hint } from "@/components/ui/tooltip";
 import { LoadingState } from "@/components/ui/states";
 import { cn } from "@/lib/utils";
+import type { IconComponent } from "@/components/ui/icon";
 
-const LAYER_CONTROLS: { key: keyof TwinLayers; label: string; icon: React.ElementType }[] = [
+const LAYER_CONTROLS: { key: keyof TwinLayers; label: string; icon: IconComponent }[] = [
   { key: "bubbles", label: "Safety bubbles", icon: Eye },
   { key: "v2v", label: "Machine-to-machine paths", icon: Radio },
   { key: "workers", label: "Ground workers", icon: Users },

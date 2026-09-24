@@ -22,8 +22,9 @@ import { thresholdStatus } from "@/lib/status";
 import { MACHINE_STATUS } from "@/lib/status";
 import type { WeatherMode } from "@/lib/api/contracts";
 import { cn } from "@/lib/utils";
+import type { IconComponent } from "@/components/ui/icon";
 
-const WEATHER: Record<WeatherMode, { icon: React.ElementType; label: string }> = {
+const WEATHER: Record<WeatherMode, { icon: IconComponent; label: string }> = {
   clear: { icon: Sun, label: "Clear" },
   rain: { icon: CloudRain, label: "Rain" },
   fog: { icon: Waves, label: "Fog" },

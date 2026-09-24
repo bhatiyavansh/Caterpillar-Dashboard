@@ -1,0 +1,595 @@
+{
+ "meta": {
+  "generatedAt": "2026-09-23T11:22:23Z",
+  "seed": 42,
+  "rowsTrain": 4080,
+  "rowsTest": 1020
+ },
+ "taskTime": {
+  "intercept": 0.28760826332465983,
+  "coefficients": {
+   "task_type=loading": 0.003252535106094186,
+   "task_type=grading": 0.00791004064840135,
+   "task_type=dozing": 0.004500371104967111,
+   "task_type=hauling": -0.0007158551491827763,
+   "machine_model=950": 0.0032525351060938698,
+   "machine_model=D6": 0.004500371104961109,
+   "machine_model=745": -0.0007158551491881517,
+   "machine_model=140": 0.00791004064838779,
+   "operator_skill=intermediate": -0.24348981874912387,
+   "operator_skill=expert": -0.3861453151289364,
+   "soil=mixed": 0.09663520529314693,
+   "soil=clay": 0.24679226702460083,
+   "soil=rock": 0.43775115017735516,
+   "weather=heat": 0.06581804726204331,
+   "weather=wind": 0.041224436579131676,
+   "weather=rain": 0.18183331341990197,
+   "weather=fog": 0.11159305821041758,
+   "volume_m3": -0.003390382137889562,
+   "operator_years": -0.018548670714618718,
+   "temperature_c": 8.305960263225456e-05,
+   "visibility_m": -0.0022029962323351655,
+   "site_congestion": 0.05026609004547608,
+   "time_of_day": -0.0018034665124820727,
+   "machine_health": -0.01755808287001808
+  },
+  "centres": {
+   "volume_m3": 40.0,
+   "operator_years": 6.75,
+   "temperature_c": 33.6,
+   "visibility_m": 6789.0,
+   "site_congestion": 0.31,
+   "time_of_day": 12.0,
+   "machine_health": 0.716
+  },
+  "scales": {
+   "volume_m3": 1243.8682489876292,
+   "operator_years": 4.307683653487252,
+   "temperature_c": 3.546387747013444,
+   "visibility_m": 3907.098630640247,
+   "site_congestion": 0.17824559835785175,
+   "time_of_day": 2.8603382699254953,
+   "machine_health": 0.12762470748505508
+  },
+  "categorical": {
+   "task_type": [
+    "trenching",
+    "loading",
+    "grading",
+    "dozing",
+    "hauling"
+   ],
+   "machine_model": [
+    "320",
+    "950",
+    "D6",
+    "745",
+    "140"
+   ],
+   "operator_skill": [
+    "novice",
+    "intermediate",
+    "expert"
+   ],
+   "soil": [
+    "sand",
+    "mixed",
+    "clay",
+    "rock"
+   ],
+   "weather": [
+    "clear",
+    "heat",
+    "wind",
+    "rain",
+    "fog"
+   ]
+  },
+  "numeric": [
+   "volume_m3",
+   "operator_years",
+   "temperature_c",
+   "visibility_m",
+   "site_congestion",
+   "time_of_day",
+   "machine_health"
+  ],
+  "residualQuantiles": {
+   "p10": -0.15201780102350126,
+   "p90": 0.15258819998551745
+  },
+  "baseRate": {
+   "trenching|320": 55.0,
+   "loading|950": 6.0,
+   "loading|320": 4.0,
+   "grading|140": 1400.0,
+   "dozing|D6": 90.0,
+   "hauling|745": 8.0
+  },
+  "defaultBaseRate": 50.0,
+  "plannerFactors": {
+   "weather": {
+    "clear": 1.0,
+    "heat": 1.08,
+    "wind": 1.05,
+    "rain": 1.2,
+    "fog": 1.12
+   },
+   "soil": {
+    "sand": 0.9,
+    "mixed": 1.0,
+    "clay": 1.15,
+    "rock": 1.4
+   },
+   "skill": {
+    "expert": 0.85,
+    "intermediate": 1.0,
+    "novice": 1.3
+   }
+  },
+  "metrics": {
+   "ridgeMapePct": 9.68,
+   "plannerMapePct": 28.47,
+   "coveragePct": 80.0,
+   "lightgbmMapePct": 9.7,
+   "lightgbmCoveragePct": 79.6
+  }
+ },
+ "anomaly": {
+  "windowMin": 120,
+  "thresholds": {
+   "idleRatioHigh": 0.45,
+   "productivityLowRatio": 0.5,
+   "cyclesPerHourFallback": 30.0,
+   "overloadRatio": 1.1,
+   "harshMultiplier": 3.0,
+   "tempHighC": 95.0,
+   "seatbeltOffRatio": 0.3
+  },
+  "baselines": {
+   "DOZ001": {
+    "idle_ratio": {
+     "mean": 0.15022222222222226,
+     "std": 0.13305321058931005
+    },
+    "fuel_per_cycle": {
+     "mean": 0.7171710427463011,
+     "std": 0.11677779121053537
+    },
+    "cycles_per_hour": {
+     "mean": 25.233333333333334,
+     "std": 5.215705073942019
+    },
+    "mean_payload": {
+     "mean": 0.0,
+     "std": 1e-06
+    },
+    "peak_payload": {
+     "mean": 0.0,
+     "std": 1e-06
+    },
+    "harsh_swing_rate": {
+     "mean": 0.04755555555555556,
+     "std": 0.02125242159879845
+    },
+    "mean_hydraulic_temp": {
+     "mean": 83.71804444444444,
+     "std": 2.4139020713704484
+    },
+    "peak_hydraulic_temp": {
+     "mean": 88.18733333333334,
+     "std": 0.6318202814162812
+    },
+    "seatbelt_off_ratio": {
+     "mean": 0.04894444444444444,
+     "std": 0.04650636284141943
+    }
+   },
+   "EXC001": {
+    "idle_ratio": {
+     "mean": 0.15881720430107527,
+     "std": 0.12323881480319339
+    },
+    "fuel_per_cycle": {
+     "mean": 0.19454454413459843,
+     "std": 0.8285158848186812
+    },
+    "cycles_per_hour": {
+     "mean": 129.1032258064516,
+     "std": 30.160431245312555
+    },
+    "mean_payload": {
+     "mean": 1470.5665591397849,
+     "std": 220.20816251163086
+    },
+    "peak_payload": {
+     "mean": 2022.2483870967742,
+     "std": 35.79143834871634
+    },
+    "harsh_swing_rate": {
+     "mean": 0.04913978494623656,
+     "std": 0.01987910324902
+    },
+    "mean_hydraulic_temp": {
+     "mean": 80.06777956989248,
+     "std": 2.6241079743852267
+    },
+    "peak_hydraulic_temp": {
+     "mean": 84.73025806451612,
+     "std": 0.8942332915540007
+    },
+    "seatbelt_off_ratio": {
+     "mean": 0.05811827956989247,
+     "std": 0.07349345704143419
+    }
+   },
+   "EXC002": {
+    "idle_ratio": {
+     "mean": 0.1376666666666667,
+     "std": 0.12388473389834954
+    },
+    "fuel_per_cycle": {
+     "mean": 0.09119218689685228,
+     "std": 0.006403606094961888
+    },
+    "cycles_per_hour": {
+     "mean": 157.90666666666667,
+     "std": 24.124007554553824
+    },
+    "mean_payload": {
+     "mean": 1506.843555555556,
+     "std": 215.66836835134825
+    },
+    "peak_payload": {
+     "mean": 2030.1733333333334,
+     "std": 28.913761305668313
+    },
+    "harsh_swing_rate": {
+     "mean": 0.01694444444444444,
+     "std": 0.012492229749979543
+    },
+    "mean_hydraulic_temp": {
+     "mean": 80.1447888888889,
+     "std": 2.1913835617006145
+    },
+    "peak_hydraulic_temp": {
+     "mean": 84.43706666666668,
+     "std": 0.4176838447719101
+    },
+    "seatbelt_off_ratio": {
+     "mean": 0.01938888888888889,
+     "std": 0.022090094711542132
+    }
+   },
+   "EXC003": {
+    "idle_ratio": {
+     "mean": 0.1753888888888889,
+     "std": 0.1180223908322395
+    },
+    "fuel_per_cycle": {
+     "mean": 0.141314645755403,
+     "std": 0.012553414381927211
+    },
+    "cycles_per_hour": {
+     "mean": 99.00666666666666,
+     "std": 16.204749766312787
+    },
+    "mean_payload": {
+     "mean": 1445.4991666666667,
+     "std": 205.39417600114248
+    },
+    "peak_payload": {
+     "mean": 2030.1406666666664,
+     "std": 29.33916020782161
+    },
+    "harsh_swing_rate": {
+     "mean": 0.15122222222222223,
+     "std": 0.04105691047906559
+    },
+    "mean_hydraulic_temp": {
+     "mean": 84.50876666666667,
+     "std": 2.300775417468131
+    },
+    "peak_hydraulic_temp": {
+     "mean": 89.51033333333334,
+     "std": 1.878236148380382
+    },
+    "seatbelt_off_ratio": {
+     "mean": 0.0971111111111111,
+     "std": 0.06554556983565545
+    }
+   },
+   "GRD001": {
+    "idle_ratio": {
+     "mean": 0.15449999999999997,
+     "std": 0.11525443597183443
+    },
+    "fuel_per_cycle": {
+     "mean": 0.12827091968282658,
+     "std": 0.011617193412341057
+    },
+    "cycles_per_hour": {
+     "mean": 97.13666666666667,
+     "std": 15.89351062822451
+    },
+    "mean_payload": {
+     "mean": 0.0,
+     "std": 1e-06
+    },
+    "peak_payload": {
+     "mean": 0.0,
+     "std": 1e-06
+    },
+    "harsh_swing_rate": {
+     "mean": 0.05311111111111111,
+     "std": 0.02170807149160568
+    },
+    "mean_hydraulic_temp": {
+     "mean": 79.08611666666667,
+     "std": 2.0756628902380223
+    },
+    "peak_hydraulic_temp": {
+     "mean": 83.6412,
+     "std": 0.4875991312048029
+    },
+    "seatbelt_off_ratio": {
+     "mean": 0.04772222222222222,
+     "std": 0.04043361941406189
+    }
+   },
+   "TRK001": {
+    "idle_ratio": {
+     "mean": 0.15,
+     "std": 0.1257898238777708
+    },
+    "fuel_per_cycle": {
+     "mean": 1.3158526342742538,
+     "std": 0.2989091866508713
+    },
+    "cycles_per_hour": {
+     "mean": 17.47,
+     "std": 3.891235203556317
+    },
+    "mean_payload": {
+     "mean": 24388.444055555556,
+     "std": 3625.1724640406205
+    },
+    "peak_payload": {
+     "mean": 33292.98466666666,
+     "std": 497.3194294052681
+    },
+    "harsh_swing_rate": {
+     "mean": 0.052222222222222225,
+     "std": 0.021386213358134534
+    },
+    "mean_hydraulic_temp": {
+     "mean": 84.8703111111111,
+     "std": 2.3119893223470527
+    },
+    "peak_hydraulic_temp": {
+     "mean": 89.35413333333334,
+     "std": 0.6407841113861376
+    },
+    "seatbelt_off_ratio": {
+     "mean": 0.048999999999999995,
+     "std": 0.045805818464688355
+    }
+   },
+   "TRK002": {
+    "idle_ratio": {
+     "mean": 0.16899999999999996,
+     "std": 0.1255900317603036
+    },
+    "fuel_per_cycle": {
+     "mean": 1.697877624579952,
+     "std": 0.33587824974823066
+    },
+    "cycles_per_hour": {
+     "mean": 13.256666666666666,
+     "std": 3.0913044675285493
+    },
+    "mean_payload": {
+     "mean": 23841.592,
+     "std": 3640.829795714014
+    },
+    "peak_payload": {
+     "mean": 33210.355333333326,
+     "std": 546.0079958035698
+    },
+    "harsh_swing_rate": {
+     "mean": 0.1528888888888889,
+     "std": 0.04084750321033733
+    },
+    "mean_hydraulic_temp": {
+     "mean": 84.61611666666667,
+     "std": 2.2723837949967014
+    },
+    "peak_hydraulic_temp": {
+     "mean": 89.41493333333334,
+     "std": 0.5647149862186714
+    },
+    "seatbelt_off_ratio": {
+     "mean": 0.09205555555555556,
+     "std": 0.0721289695102115
+    }
+   },
+   "TRK003": {
+    "idle_ratio": {
+     "mean": 0.14211111111111113,
+     "std": 0.13226567318190308
+    },
+    "fuel_per_cycle": {
+     "mean": 1.0808917082066625,
+     "std": 0.19408258602803005
+    },
+    "cycles_per_hour": {
+     "mean": 21.18,
+     "std": 4.528166880981025
+    },
+    "mean_payload": {
+     "mean": 24729.282055555555,
+     "std": 3975.743999548708
+    },
+    "peak_payload": {
+     "mean": 33430.666000000005,
+     "std": 1596.9642482047914
+    },
+    "harsh_swing_rate": {
+     "mean": 0.016888888888888887,
+     "std": 0.01201798718207529
+    },
+    "mean_hydraulic_temp": {
+     "mean": 83.51222777777778,
+     "std": 2.432450832694008
+    },
+    "peak_hydraulic_temp": {
+     "mean": 88.00546666666666,
+     "std": 2.034637176127171
+    },
+    "seatbelt_off_ratio": {
+     "mean": 0.02811111111111111,
+     "std": 0.06149961249117554
+    }
+   },
+   "TRK004": {
+    "idle_ratio": {
+     "mean": 0.18005555555555555,
+     "std": 0.1248858414830646
+    },
+    "fuel_per_cycle": {
+     "mean": 1.682639994550909,
+     "std": 0.365008594121868
+    },
+    "cycles_per_hour": {
+     "mean": 13.286666666666667,
+     "std": 3.189404999456683
+    },
+    "mean_payload": {
+     "mean": 23492.531333333336,
+     "std": 3574.9793836953304
+    },
+    "peak_payload": {
+     "mean": 33178.52333333333,
+     "std": 517.6418205847979
+    },
+    "harsh_swing_rate": {
+     "mean": 0.15044444444444444,
+     "std": 0.04582480769461635
+    },
+    "mean_hydraulic_temp": {
+     "mean": 80.67829444444445,
+     "std": 2.295371431540229
+    },
+    "peak_hydraulic_temp": {
+     "mean": 85.65946666666667,
+     "std": 0.7605277103500512
+    },
+    "seatbelt_off_ratio": {
+     "mean": 0.09722222222222221,
+     "std": 0.0676635937485288
+    }
+   },
+   "WHL001": {
+    "idle_ratio": {
+     "mean": 0.13499999999999998,
+     "std": 0.12463219564343041
+    },
+    "fuel_per_cycle": {
+     "mean": 0.24151037141217632,
+     "std": 0.023074848028785074
+    },
+    "cycles_per_hour": {
+     "mean": 67.67,
+     "std": 11.442419312870143
+    },
+    "mean_payload": {
+     "mean": 3634.335555555556,
+     "std": 531.2034811292028
+    },
+    "peak_payload": {
+     "mean": 4873.175333333334,
+     "std": 63.90260199580643
+    },
+    "harsh_swing_rate": {
+     "mean": 0.018555555555555554,
+     "std": 0.011908905212724112
+    },
+    "mean_hydraulic_temp": {
+     "mean": 80.02545,
+     "std": 2.2478803932588276
+    },
+    "peak_hydraulic_temp": {
+     "mean": 84.29133333333334,
+     "std": 0.5388163346684972
+    },
+    "seatbelt_off_ratio": {
+     "mean": 0.02077777777777778,
+     "std": 0.023286679683001445
+    }
+   }
+  },
+  "metrics": {
+   "windows": 1505,
+   "machines": 10,
+   "injected_shifts": 10,
+   "injected_shifts_detected": 8,
+   "injected_recall_pct": 80.0,
+   "flagged_windows": 95,
+   "flagged_shifts": 76,
+   "brief_sample": {
+    "rows": 4,
+    "expected_alerts": 2,
+    "detected": 2,
+    "false_alarms": 0
+   }
+  }
+ },
+ "specs": {
+  "320": {
+   "machineType": "excavator",
+   "maxPayloadKg": 2500,
+   "workingFuelLph": 16.0,
+   "idleFuelLph": 3.5,
+   "tankL": 410,
+   "bucketM3": 1.2,
+   "cycleS": 22.0
+  },
+  "950": {
+   "machineType": "wheel_loader",
+   "maxPayloadKg": 6000,
+   "workingFuelLph": 18.0,
+   "idleFuelLph": 4.0,
+   "tankL": 290,
+   "bucketM3": 3.5,
+   "cycleS": 35.0
+  },
+  "D6": {
+   "machineType": "dozer",
+   "maxPayloadKg": 0,
+   "workingFuelLph": 20.0,
+   "idleFuelLph": 4.0,
+   "tankL": 430,
+   "bucketM3": 3.0,
+   "cycleS": 45.0
+  },
+  "745": {
+   "machineType": "truck",
+   "maxPayloadKg": 41000,
+   "workingFuelLph": 25.0,
+   "idleFuelLph": 5.0,
+   "tankL": 620,
+   "bucketM3": 25.0,
+   "cycleS": 60.0
+  },
+  "140": {
+   "machineType": "grader",
+   "maxPayloadKg": 0,
+   "workingFuelLph": 14.0,
+   "idleFuelLph": 3.0,
+   "tankL": 340,
+   "bucketM3": 0.0,
+   "cycleS": 90.0
+  }
+ },
+ "dieselPriceInr": 90.0
+}

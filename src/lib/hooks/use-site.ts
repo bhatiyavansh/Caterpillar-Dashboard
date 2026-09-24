@@ -124,10 +124,40 @@ export function useTelemetry(machineId: string | null): Query<TelemetryPoint[]> 
   return { data, loading: false, error: null };
 }
 
-export function useIncidents(): Query<Incident[]> {
+/** What a person has to supply to log an incident by hand. */
+export interface ReportedIncident {
+  machineId: string;
+  kind: Incident["kind"];
+  severity: Incident["severity"];
+  title: string;
+  summary: string;
+}
+
+export function useIncidents(machineId?: string): Query<Incident[]> & {
+  /** Move an incident through review. */
+  file: (id: string, status: Incident["status"], note?: string) => void;
+  /** Log one a person witnessed. */
+  report: (input: ReportedIncident) => void;
+} {
   const snapshot = useSnapshot();
-  const data = React.useMemo(() => (onClient() ? getFleetSource().getIncidents() : []), [snapshot]);
-  return { data, loading: false, error: null };
+  const data = React.useMemo(() => {
+    const all = onClient() ? getFleetSource().getIncidents() : [];
+    return machineId ? all.filter((i) => i.machineId === machineId) : all;
+  }, [snapshot, machineId]);
+
+  return {
+    data,
+    loading: false,
+    error: null,
+    file: React.useCallback(
+      (id: string, status: Incident["status"], note?: string) =>
+        getFleetSource().fileIncident(id, status, note),
+      [],
+    ),
+    report: React.useCallback((input: ReportedIncident) => {
+      getFleetSource().reportIncident(input);
+    }, []),
+  };
 }
 
 export function useMaintenance(): Query<MaintenanceItem[]> {

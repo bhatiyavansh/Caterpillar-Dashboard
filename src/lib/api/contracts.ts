@@ -49,6 +49,8 @@ export interface OperatorRef {
   name: string;
   shift: string;
   skill: "novice" | "intermediate" | "expert";
+  /** Years on this machine class — a feature of the task-time model. */
+  years: number;
 }
 
 export interface SitePosition {
@@ -129,6 +131,13 @@ export interface SiteAlert {
 
 export type TaskState = "done" | "active" | "queued";
 
+/** One term of the estimate, in minutes — what moved the number and by how much. */
+export interface EstimateDriver {
+  feature: string;
+  label: string;
+  impactMin: number;
+}
+
 export interface SiteTask {
   id: string;
   machineId: string;
@@ -143,9 +152,27 @@ export interface SiteTask {
   etaRange: [number, number];
   /** Clock label for when it should start, e.g. "14:20". */
   startsAt: string;
-  /** Top SHAP-style drivers behind the estimate. */
+  /** The drivers above, rendered as short strings for compact surfaces. */
   reasons: string[];
+
+  /* ---- what the estimate was made from, and what it concluded ---- */
+
+  /** Model input: the job being done. */
+  taskType: TaskType;
+  /** Model input: ground being worked. */
+  soil: Soil;
+  /** Model input: job size in the task type's own unit. */
+  volume: number;
+  /** Minutes for the whole job, not just what is left. */
+  totalMinutes: number;
+  /** What the site office's own arithmetic said, for comparison. */
+  plannerMinutes: number;
+  /** Ranked terms behind the P50, in minutes. */
+  drivers: EstimateDriver[];
 }
+
+export type TaskType = "trenching" | "loading" | "grading" | "dozing" | "hauling";
+export type Soil = "sand" | "mixed" | "clay" | "rock";
 
 export interface TelemetryPoint {
   /** Epoch millis. */
@@ -172,6 +199,19 @@ export interface Incident {
   /** Set when the incident has a stored replay in the twin. */
   replayable: boolean;
   status: "draft" | "filed" | "reviewed";
+
+  /** Who was in the seat, where the machine was, what the weather was doing. */
+  operatorId: string | null;
+  operatorName: string | null;
+  weather: WeatherMode;
+  /** Machine position at the moment it was logged. */
+  position: SitePosition | null;
+  /** The alert that opened it, when one did. */
+  alertId: string | null;
+  /** Set by the supervisor when the incident is reviewed. */
+  note: string | null;
+  /** True when the log wrote itself rather than a person filing it. */
+  automatic: boolean;
 }
 
 export interface MaintenanceItem {
@@ -188,18 +228,40 @@ export interface MaintenanceItem {
   workOrder: string | null;
 }
 
+export type AnomalyPattern =
+  | "excessive_idling"
+  | "seatbelt_violation"
+  | "overload"
+  | "harsh_operation"
+  | "temperature_anomaly"
+  | "low_productivity"
+  | "unusual_pattern";
+
 export interface Anomaly {
   id: string;
   machineId: string;
   title: string;
   /** Plain-language explanation produced by the model + LLM. */
   explanation: string;
-  /** e.g. "+37% vs baseline". */
+  /** e.g. "idle 63 min against a 24 min norm". */
   deviation: string;
   /** Rupees. */
   costInr: number;
   detectedAt: number;
   severity: AlertSeverity;
+
+  /** Which named pattern fired. */
+  pattern: AnomalyPattern;
+  /** Patterns that fired alongside it — co-occurrence is the strong signal. */
+  related: AnomalyPattern[];
+  /** 0-1 from the detector. */
+  score: number;
+  /** Which layer caught it. */
+  detectedBy: "rules" | "baseline_deviation";
+  /** The window's own numbers, so a screen can show the working. */
+  evidence: Record<string, string>;
+  /** Diesel burnt producing nothing, litres. */
+  fuelWastedL: number;
 }
 
 export interface FleetKpis {

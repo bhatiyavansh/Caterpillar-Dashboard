@@ -31,6 +31,7 @@ import type {
 import type { FleetSource } from "./source";
 import { ownerKpisFrom, ownerSeries } from "./owner-report";
 import {
+  JOBS,
   PRIMARY_MACHINE_ID,
   RATED_PAYLOAD,
   SHIFT_LABEL,
@@ -41,10 +42,42 @@ import {
   seedTasks,
   seedTraining,
 } from "./seed";
+import {
+  congestionFrom,
+  estimateTask,
+  modelCode,
+  visibilityFor,
+  type SiteConditions,
+} from "./estimate";
+import {
+  ANOMALY_LABEL,
+  scoreWindow,
+  specFor,
+  type AnomalyFinding,
+  type TelemetrySample,
+} from "@/lib/intel";
 
 const TICK_MS = 1000;
 const TELEMETRY_WINDOW = 90;
 const CHANNEL = "cat-copilot-director";
+
+/**
+ * How much live telemetry the anomaly detector gets to look at.
+ *
+ * The trained model works on two-hour windows, which is the scale the brief
+ * states its patterns at. A demo cannot wait two hours, so the live window is
+ * ten minutes. The ratios the rules key off — idle time over elapsed time,
+ * cycles per hour, belt-off fraction — are scale-free, so the thresholds carry
+ * over unchanged; what shortens is only how long a machine has to misbehave
+ * before it is noticed. Ten rather than two because a truck waiting its turn at
+ * the loader should not read as an idling machine, and two minutes of queueing
+ * is normal.
+ */
+const ANOMALY_WINDOW_S = 600;
+/** Re-scoring every tick would be wasteful; nothing moves that fast. */
+const ANOMALY_EVERY_S = 10;
+/** Estimates are recomputed on this cadence, not every second. */
+const ESTIMATE_EVERY_S = 5;
 
 /** How long each scenario holds before it decays on its own. 0 = until reset. */
 const SCENARIO_HOLD: Record<DirectorScenarioId, number> = {
@@ -111,12 +144,36 @@ export class MockFleetSource implements FleetSource {
   private snapshot: SiteSnapshot;
   private startedAt = Date.now();
 
+  /** Raw per-second state, kept only as long as the detector needs it. */
+  private windows = new Map<string, TelemetrySample[]>();
+  /** Previous tick per machine, so harshness can be measured as a change. */
+  private lastSample = new Map<string, { speedKmh: number; payloadKg: number }>();
+  /** Live findings, keyed machine+pattern so one condition is one entry. */
+  private liveAnomalies = new Map<string, Anomaly>();
+  private ticks = 0;
+  /** Alert ids already written into the incident log. */
+  private logged = new Set<string>();
+
   constructor() {
     const now = Date.now();
     this.incidents = seedIncidents(now);
     this.anomalies = seedAnomalies(now);
     for (const m of this.machines) this.telemetry.set(m.id, this.primeTelemetry(m, now));
+    this.tasks = this.estimateTasks();
     this.snapshot = this.buildSnapshot(now);
+  }
+
+  /* ---------------------------------------------------------- conditions */
+
+  /** What the site currently looks like to the task-time model. */
+  private conditions(): SiteConditions {
+    return {
+      weather: this.weather,
+      temperatureC: this.temperatureC,
+      visibilityM: visibilityFor(this.weather),
+      congestion: congestionFrom(this.machines),
+      hour: new Date().getHours(),
+    };
   }
 
   /* ------------------------------------------------------------ lifecycle */
@@ -171,8 +228,16 @@ export class MockFleetSource implements FleetSource {
     return this.maintenance;
   }
 
+  /**
+   * What the detector has found, live findings first.
+   *
+   * The live ones are this shift; the rest are the same detector's output over
+   * the 30-day record. They are the same shape because they come from the same
+   * code, which is the point.
+   */
   getAnomalies(): Anomaly[] {
-    return this.anomalies;
+    const live = [...this.liveAnomalies.values()].sort((a, b) => b.score - a.score);
+    return [...live, ...this.anomalies];
   }
 
   getTrainingModules(): TrainingModule[] {
@@ -251,7 +316,12 @@ export class MockFleetSource implements FleetSource {
       this.weather = "clear";
       this.temperatureC = 34;
       this.anomalies = seedAnomalies(now);
+      this.liveAnomalies.clear();
+      this.windows.clear();
+      this.lastSample.clear();
+      this.logged.clear();
       for (const m of this.machines) this.telemetry.set(m.id, this.primeTelemetry(m, now));
+      this.tasks = this.estimateTasks();
       this.publish(now);
       return;
     }
@@ -265,24 +335,49 @@ export class MockFleetSource implements FleetSource {
       this.reorderTasksForRain();
     }
 
-    if (id === "idle_anomaly" && !this.anomalies.some((a) => a.id === "ANO-LIVE")) {
-      this.anomalies = [
-        {
-          id: "ANO-LIVE",
-          machineId: "EXC002",
-          title: "Idle spike with belt unfastened",
-          explanation:
-            "EXC002 has idled for 19 consecutive minutes with the seatbelt reading unfastened and zero load cycles. This is the same correlated pattern seen in the historic telemetry: the operator is off the seat with the engine running.",
-          deviation: "+41% idle vs baseline",
-          costInr: 3_260,
-          detectedAt: now,
-          severity: "warning",
-        },
-        ...this.anomalies,
-      ];
+    if (id === "idle_anomaly") {
+      // Scripted first, real later: rather than posting a finished anomaly to
+      // the screen, this puts EXC002 into the state the pattern describes —
+      // engine running, operator off the seat, nothing being moved — and lets
+      // the detector find it on its next pass. What appears on screen is a
+      // detection, which is the only version worth demonstrating.
+      this.machines = this.machines.map((m) =>
+        m.id === "EXC002"
+          ? { ...m, status: "idle", utilization: 6, load: 0, speedKmh: 0, seatbelt: "unfastened" }
+          : m,
+      );
+      // Prime the window so the two minutes of idling the rule needs are
+      // already on the record; otherwise the demo waits.
+      this.windows.set("EXC002", this.primeIdleWindow(now));
     }
 
     this.publish(now);
+  }
+
+  /**
+   * Two minutes of "sat there with the engine running", as the detector would
+   * have recorded it.
+   *
+   * The counters are cumulative and the detector differences them, so idling
+   * has to be written as a rising idle count against a flat cycle count — the
+   * same shape a real two minutes of it would leave behind.
+   */
+  private primeIdleWindow(now: number): TelemetrySample[] {
+    const m = this.machines.find((x) => x.id === "EXC002");
+    if (!m) return [];
+    return Array.from({ length: ANOMALY_WINDOW_S }, (_, i) => {
+      const age = ANOMALY_WINDOW_S - i;
+      return {
+        t: now - age * 1000,
+        idleMin: m.idleMinutes - age / 60,
+        loadCycles: m.loadCycles,
+        fuelUsedL: m.fuelUsedL - age * 0.0009,
+        payloadKg: 0,
+        hydraulicTemperatureC: m.hydraulicTemperature,
+        seatbeltOff: true,
+        harshSwing: false,
+      };
+    });
   }
 
   private activeScenarios(now: number): Set<DirectorScenarioId> {
@@ -297,16 +392,20 @@ export class MockFleetSource implements FleetSource {
     return live;
   }
 
+  /**
+   * Rain resequences the shift.
+   *
+   * Only the order changes here. The minutes are left alone deliberately —
+   * `weather` is a model feature, so every estimate on site is repriced on the
+   * next pass by the model itself. Adding a penalty here as well would be
+   * counting the rain twice.
+   */
   private reorderTasksForRain(): void {
-    // Rain pushes the open trench to the front and defers the backfill, which
-    // is what the planner service will do for real once it is connected.
-    const backfill = this.tasks.find((t) => t.id === "T-EXC001-3");
-    if (!backfill) return;
     this.tasks = this.tasks.map((t) =>
       t.id === "T-EXC001-3"
-        ? { ...t, startsAt: "16:30", etaMinutes: t.etaMinutes + 14, reasons: ["Deferred: rain after 15:00", ...t.reasons] }
+        ? { ...t, startsAt: "16:30" }
         : t.id === "T-EXC001-2"
-          ? { ...t, startsAt: "13:40", reasons: ["Pulled forward ahead of rain", ...t.reasons.slice(0, 1)] }
+          ? { ...t, startsAt: "13:40" }
           : t,
     );
   }
@@ -316,11 +415,172 @@ export class MockFleetSource implements FleetSource {
   private tick(): void {
     const now = Date.now();
     const active = this.activeScenarios(now);
+    this.ticks += 1;
 
     this.machines = this.machines.map((m) => this.advance(m, active, now));
     this.runRules(active, now);
     this.recordTelemetry(now);
+    this.sampleForDetector(now);
+
+    // The detector and the estimator are the expensive parts of the loop, so
+    // they run on their own cadence rather than sixty times a minute.
+    if (this.ticks % ANOMALY_EVERY_S === 0) this.detectAnomalies(now);
+    if (this.ticks % ESTIMATE_EVERY_S === 0) this.tasks = this.estimateTasks();
+
+    this.advanceProgress();
     this.publish(now);
+  }
+
+  /* ----------------------------------------------------------- estimates */
+
+  /** Every task re-estimated against the conditions holding right now. */
+  private estimateTasks(): SiteTask[] {
+    const site = this.conditions();
+    const byId = new Map(this.machines.map((m) => [m.id, m]));
+    // Progress lives on the running tasks, not on the job definitions.
+    const progressById = new Map(this.tasks.map((t) => [t.id, t.progress]));
+    const stateById = new Map(this.tasks.map((t) => [t.id, t.state]));
+    const startById = new Map(this.tasks.map((t) => [t.id, t.startsAt]));
+
+    return JOBS.map((job) => {
+      const machine = byId.get(job.machineId);
+      return estimateTask(
+        {
+          ...job,
+          progress: progressById.get(job.id) ?? job.progress,
+          state: stateById.get(job.id) ?? job.state,
+          startsAt: startById.get(job.id) ?? job.startsAt,
+        },
+        machine,
+        machine?.operator ?? null,
+        site,
+      );
+    });
+  }
+
+  /**
+   * Move active work along.
+   *
+   * Progress is driven by the estimate itself — a task with 40 minutes left
+   * advances by one minute's worth each minute — so the bar and the countdown
+   * can never disagree, which is the thing an operator notices immediately.
+   */
+  private advanceProgress(): void {
+    this.tasks = this.tasks.map((t) => {
+      if (t.state !== "active" || t.progress >= 100) return t;
+      const machine = this.machines.find((m) => m.id === t.machineId);
+      // Nothing progresses while the machine is stopped or alarming.
+      if (!machine || machine.status === "offline" || machine.status === "maintenance") return t;
+
+      const remainingMin = Math.max(t.etaMinutes, 0.5);
+      const step = (TICK_MS / 60000 / remainingMin) * (100 - t.progress);
+      return { ...t, progress: Math.min(100, Number((t.progress + step).toFixed(2))) };
+    });
+  }
+
+  /* ------------------------------------------------------------ detector */
+
+  /** One second of state per machine, trimmed to the detector's window. */
+  private sampleForDetector(now: number): void {
+    for (const m of this.machines) {
+      if (m.status === "offline") continue;
+      const window = this.windows.get(m.id) ?? [];
+      const previous = this.lastSample.get(m.id);
+      this.lastSample.set(m.id, { speedKmh: m.speedKmh, payloadKg: m.payloadKg });
+      window.push({
+        t: now,
+        idleMin: m.idleMinutes,
+        loadCycles: m.loadCycles,
+        fuelUsedL: m.fuelUsedL,
+        payloadKg: m.payloadKg,
+        hydraulicTemperatureC: m.hydraulicTemperature,
+        seatbeltOff: m.seatbelt === "unfastened",
+        // Harshness is a change, not a state. A machine moving fast under load
+        // is a machine working; what marks an operator as rough is the jerk
+        // between one moment and the next, so this compares against the
+        // previous sample rather than against a speed threshold.
+        harshSwing: previous
+          ? Math.abs(m.speedKmh - previous.speedKmh) > 2.5 ||
+            Math.abs(m.payloadKg - previous.payloadKg) > RATED_PAYLOAD[m.kind] * 0.6
+          : false,
+      });
+      if (window.length > ANOMALY_WINDOW_S) window.splice(0, window.length - ANOMALY_WINDOW_S);
+      this.windows.set(m.id, window);
+    }
+  }
+
+  /**
+   * Score every machine's recent window and keep what the detector returns.
+   *
+   * A finding that stops firing is dropped rather than left on screen: the
+   * point of the second layer is that it tracks what is true now, and an
+   * anomaly list that only grows is one nobody reads.
+   */
+  private detectAnomalies(now: number): void {
+    const seen = new Set<string>();
+
+    for (const m of this.machines) {
+      const window = this.windows.get(m.id);
+      if (!window || m.status === "offline") continue;
+
+      // Rules only: see `ScoreOptions.useBaselines` — the historical baselines
+      // describe the generated record, not this simulated shift.
+      const finding = scoreWindow(m.id, modelCode(m), window, {
+        useBaselines: false,
+        // Half a window, matching what the Python detector will score.
+        minSamples: ANOMALY_WINDOW_S / 2,
+      });
+      if (!finding) continue;
+
+      const key = `${m.id}:${finding.type}`;
+      seen.add(key);
+      const existing = this.liveAnomalies.get(key);
+      this.liveAnomalies.set(key, {
+        ...this.toAnomaly(finding, m, existing?.detectedAt ?? now),
+        id: existing?.id ?? `ANO-LIVE-${this.liveAnomalies.size + 1}`,
+      });
+    }
+
+    for (const key of [...this.liveAnomalies.keys()]) {
+      if (!seen.has(key)) this.liveAnomalies.delete(key);
+    }
+  }
+
+  /** A detector finding in the product's own contract. */
+  private toAnomaly(finding: AnomalyFinding, m: Machine, detectedAt: number): Anomaly {
+    const spec = specFor(modelCode(m));
+    const co = finding.related.length
+      ? ` Alongside it: ${finding.related.map((r) => ANOMALY_LABEL[r].toLowerCase()).join(", ")}.`
+      : "";
+
+    return {
+      id: `ANO-LIVE-${m.id}-${finding.type}`,
+      machineId: m.id,
+      title: ANOMALY_LABEL[finding.type],
+      explanation:
+        `${m.id} is ${finding.deviation} over the last ` +
+        `${Math.round(finding.features.minutes)} minutes.${co}` +
+        (finding.detectedBy === "rules"
+          ? " This matches a named pattern in the safety rules."
+          : " No single rule fired; the distance from this machine's own normal is what flagged it."),
+      deviation: finding.deviation,
+      costInr: finding.fuelCostInr,
+      detectedAt,
+      severity: finding.score >= 0.9 ? "critical" : finding.score >= 0.7 ? "warning" : "info",
+      pattern: finding.type,
+      related: finding.related,
+      score: finding.score,
+      detectedBy: finding.detectedBy,
+      evidence: {
+        Window: `${Math.round(finding.features.minutes)} min`,
+        "Idle time": `${finding.evidence.idleMinutes.toFixed(1)} min`,
+        "Load cycles": String(finding.evidence.cycles),
+        "Belt unfastened": `${finding.evidence.seatbeltOffMinutes.toFixed(1)} min`,
+        "Peak payload": `${finding.evidence.peakPayloadKg.toLocaleString("en-IN")} kg`,
+        Rated: spec ? `${spec.maxPayloadKg.toLocaleString("en-IN")} kg` : "—",
+      },
+      fuelWastedL: finding.fuelWastedL,
+    };
   }
 
   private advance(m: Machine, active: Set<DirectorScenarioId>, now: number): Machine {
@@ -353,8 +613,15 @@ export class MockFleetSource implements FleetSource {
     const reversing = m.id === "DOZ001" && active.has("dozer_reversing");
     const speedTarget = reversing ? -3.4 : m.status === "maintenance" ? 0 : working ? Math.abs(m.speedKmh) || 2 : 0;
 
-    const idleGrowth = working ? 0 : m.status === "maintenance" ? 0 : TICK_MS / 60000;
+    const idling = !working && m.status !== "maintenance";
+    const idleGrowth = idling ? TICK_MS / 60000 : 0;
     const burn = working ? 0.004 : 0.0009;
+
+    // Cycles are what the productivity rules divide by, so they have to accrue
+    // at the machine's real rate rather than sit at their seeded value. The
+    // cycle time comes from the same spec table the simulator uses.
+    const cycleSeconds = specFor(modelCode(m))?.cycleS ?? 30;
+    const cycleGrowth = working && !idling ? TICK_MS / 1000 / cycleSeconds : 0;
 
     const hydraulicTemperature = Number(drift(m.hydraulicTemperature, hydraulicTarget, 0.05, 0.25).toFixed(1));
     const utilization = Math.round(clamp(drift(m.utilization, working ? m.utilization : 40, 0.02, 1.2), 0, 100));
@@ -372,7 +639,8 @@ export class MockFleetSource implements FleetSource {
       payloadKg: Math.round((load / 100) * RATED_PAYLOAD[m.kind]),
       speedKmh: Number(drift(m.speedKmh, speedTarget, 0.14, 0.18).toFixed(1)),
       engineHours: Number((m.engineHours + (working ? TICK_MS / 3_600_000 : 0)).toFixed(3)),
-      idleMinutes: Number((m.idleMinutes + idleGrowth).toFixed(1)),
+      idleMinutes: Number((m.idleMinutes + idleGrowth).toFixed(2)),
+      loadCycles: Number((m.loadCycles + cycleGrowth).toFixed(2)),
       seatbelt,
       proximity: { nearestPersonM: nearest, level: proximityLevelFor(nearest), zone: proxZone },
     };
@@ -520,13 +788,15 @@ export class MockFleetSource implements FleetSource {
     // and drop alerts whose condition has cleared.
     for (const [id, next] of wanted) {
       const existing = this.alerts.get(id);
-      this.alerts.set(id, {
+      const alert: SiteAlert = {
         ...next,
         createdAt: existing?.createdAt ?? now,
         // Re-arm acknowledgement when an alert escalates in severity.
         acknowledged: existing && existing.severity === next.severity ? existing.acknowledged : false,
         resolvedAt: null,
-      });
+      };
+      this.alerts.set(id, alert);
+      this.logIncident(alert, now);
     }
     for (const id of [...this.alerts.keys()]) {
       if (!wanted.has(id)) this.alerts.delete(id);
@@ -551,6 +821,102 @@ export class MockFleetSource implements FleetSource {
                 : "operating";
       return { ...m, alertIds: ids, status };
     });
+  }
+
+  /* ------------------------------------------------------ incident log */
+
+  /** Alert kinds that constitute a reportable incident when they go critical. */
+  private static readonly REPORTABLE: SiteAlert["kind"][] = [
+    "proximity",
+    "collision",
+    "seatbelt",
+    "tip_over",
+    "fatigue",
+  ];
+
+  /**
+   * Write a critical safety alert into the incident log.
+   *
+   * Logging happens once per alert, at the moment it becomes critical — not
+   * when it clears. An incident that is only recorded after the fact is the
+   * failure mode this is meant to fix: the operator moves on, nobody files
+   * anything, and the near miss never existed. The record captures who was in
+   * the seat, where the machine was and what the weather was doing, because
+   * that is what a review asks for and what nobody remembers an hour later.
+   */
+  private logIncident(alert: SiteAlert, now: number): void {
+    if (alert.severity !== "critical") return;
+    if (!MockFleetSource.REPORTABLE.includes(alert.kind)) return;
+    if (this.logged.has(alert.id)) return;
+
+    const machine = this.machines.find((m) => m.id === alert.machineId);
+    this.logged.add(alert.id);
+
+    this.incidents = [
+      {
+        id: `INC-${String(now % 100000).padStart(5, "0")}`,
+        machineId: alert.machineId,
+        title: alert.title,
+        kind: alert.kind,
+        severity: alert.severity,
+        at: now,
+        zone: machine?.zone ?? "Site",
+        summary: `${alert.message} ${alert.cause}`,
+        replayable: false,
+        // Filed, not reviewed: a supervisor still has to look at it.
+        status: "draft",
+        operatorId: machine?.operator?.id ?? null,
+        operatorName: machine?.operator?.name ?? null,
+        weather: this.weather,
+        position: machine ? machine.position : null,
+        alertId: alert.id,
+        note: null,
+        automatic: true,
+      },
+      ...this.incidents,
+    ];
+  }
+
+  /** A supervisor's note and status change on a logged incident. */
+  fileIncident(incidentId: string, status: Incident["status"], note?: string): void {
+    this.incidents = this.incidents.map((i) =>
+      i.id === incidentId ? { ...i, status, note: note ?? i.note } : i,
+    );
+    this.publish(Date.now());
+  }
+
+  /** An incident raised by a person rather than by a rule. */
+  reportIncident(input: {
+    machineId: string;
+    kind: SiteAlert["kind"];
+    severity: SiteAlert["severity"];
+    title: string;
+    summary: string;
+  }): Incident {
+    const now = Date.now();
+    const machine = this.machines.find((m) => m.id === input.machineId);
+    const incident: Incident = {
+      id: `INC-${String(now % 100000).padStart(5, "0")}`,
+      machineId: input.machineId,
+      title: input.title,
+      kind: input.kind,
+      severity: input.severity,
+      at: now,
+      zone: machine?.zone ?? "Site",
+      summary: input.summary,
+      replayable: false,
+      status: "draft",
+      operatorId: machine?.operator?.id ?? null,
+      operatorName: machine?.operator?.name ?? null,
+      weather: this.weather,
+      position: machine ? machine.position : null,
+      alertId: null,
+      note: null,
+      automatic: false,
+    };
+    this.incidents = [incident, ...this.incidents];
+    this.publish(now);
+    return incident;
   }
 
   /* ----------------------------------------------------------- telemetry */

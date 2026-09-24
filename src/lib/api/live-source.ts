@@ -191,6 +191,14 @@ export class LiveFleetSource implements FleetSource {
   getIncidents() {
     return this.fallback.getIncidents();
   }
+  // The hub has no incident-log endpoint yet, so the log is kept locally and
+  // the two merge the day it grows one.
+  fileIncident(incidentId: string, status: Parameters<FleetSource["fileIncident"]>[1], note?: string) {
+    this.fallback.fileIncident(incidentId, status, note);
+  }
+  reportIncident(input: Parameters<FleetSource["reportIncident"]>[0]) {
+    return this.fallback.reportIncident(input);
+  }
   getMaintenance() {
     return this.fallback.getMaintenance();
   }
