@@ -54,6 +54,12 @@ def _texts(draft: BaseModel) -> str:
     return json.dumps(draft.model_dump())
 
 
+def _view(a: Any) -> dict[str, Any] | None:
+    """The twin view a document was raised from (X-ray machine + component), for reopening it later."""
+    view = getattr(a, "view", None)
+    return view.model_dump() if view is not None else None
+
+
 class Reports:
     def __init__(self, hub: Any, llm: Any, fast_model: str, protocols: Any, records: Any, ml: Any,
                  cache_dir: Path, first_token_s: float = 5.0, total_s: float = 15.0) -> None:
@@ -152,6 +158,9 @@ class Reports:
     async def file_incident(self, ctx: Any, a: Any, facts_hint: dict[str, Any] | None = None) -> dict[str, Any]:
         facts = await self.incident_facts(a.machine_id, a.event_id)
         facts["reported_by_user"] = a.summary
+        component = getattr(a, "component", None)
+        if component:
+            facts["component"] = component
         draft, source, problems = await self._draft(
             IncidentDraft, "You write concise construction-site incident reports from machine data.", facts)
         if draft is None:
@@ -160,15 +169,19 @@ class Reports:
             "machine_id": a.machine_id, "operator_id": facts.get("operator_id"), "event_id": a.event_id,
             "user_narrative": a.summary, "draft": draft.model_dump(), "draft_source": source,
             "draft_problems": problems, "facts": facts, "protocol": facts.get("protocol"),
-            "snapshot_url": facts.get("snapshot_url")}, status="confirmed")
+            "snapshot_url": facts.get("snapshot_url"), "component": component,
+            "source_view": _view(a)}, status="confirmed")
 
     # ------------------------------------------------------------------ work orders
 
     async def create_work_order(self, ctx: Any, a: Any, preview: dict[str, Any]) -> dict[str, Any]:
         forecast = preview.get("forecast") or []
         allowed_parts = sorted({p for f in forecast for p in f.get("recommended_parts", [])})
+        component = getattr(a, "component", None)
         facts = {"machine_id": a.machine_id, "issue": a.issue, "fault_codes": preview.get("fault_codes", []),
                  "forecast": forecast, "allowed_parts": allowed_parts}
+        if component:
+            facts["component"] = component
 
         def parts_ok(d: WorkOrderDraft) -> list[str]:
             return [f"part not in forecast recommendations: {p}" for p in d.suggested_parts if p not in allowed_parts]
@@ -180,7 +193,8 @@ class Reports:
             priority = "high" if hours < 100 or facts["fault_codes"] else ("medium" if hours < 500 else "low")
             lines = [f"{f['component']}: health {f.get('health_pct')}%, service in {f.get('hours_to_service')} h"
                      for f in forecast[:3]]
-            draft = WorkOrderDraft(title=f"Service request {a.machine_id}"[:120],
+            what = f" — {component.replace('_', ' ')}" if component else ""
+            draft = WorkOrderDraft(title=f"Service request {a.machine_id}{what}"[:120],
                                    description=(a.issue + (". Fault codes: " + ", ".join(facts["fault_codes"])
                                                            if facts["fault_codes"] else "") +
                                                 (". Forecast: " + "; ".join(lines) if lines else ""))[:800],
@@ -188,7 +202,8 @@ class Reports:
                                    suggested_parts=(forecast[0].get("recommended_parts", []) if forecast else [])[:6])
         return await self.records.create("work_order", {
             "machine_id": a.machine_id, "issue": a.issue, "draft": draft.model_dump(), "draft_source": source,
-            "draft_problems": problems, "facts": facts}, status="draft")
+            "draft_problems": problems, "facts": facts, "component": component,
+            "source_view": _view(a)}, status="draft")
 
     # ------------------------------------------------------------------ weekly owner report
 

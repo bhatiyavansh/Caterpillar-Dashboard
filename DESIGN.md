@@ -1,3 +1,60 @@
+# Design
+
+## 1. Palette and tokens (`src/app/globals.css` `@theme`)
+
+- **Ink surfaces:** `ink-950` to `ink-600`. Panels use the `panel` and `panel-raised` glass utilities.
+- **Brand:** `cat-500` #FFCD11 is used for the selected, primary and brand states only. `cat-400` is its hover and `cat-600` its pressed state.
+- **Status:** `status-ok` #3DDC84, `status-warn` #FFB020, `status-crit` #FF4D4F, `status-info` #4AA8FF. Use them only when something needs attention.
+- **Text:** `zinc-50`/`100` for primary text, `muted` #9AA3AD for labels.
+- **Radius:** plain `rounded` resolves to `--radius`, 0.625rem. Cards use `rounded-2xl`, and pills and chips use `rounded-full`.
+- **HMI:** the in-cab HMI uses the same tokens. `C` in `hmi-ui.tsx` mirrors them for SVG and motion colours.
+
+## 2. Type
+
+- **UI:** Inter.
+- **Readouts:** JetBrains Mono for tabular numbers.
+- **Case:** headings, tabs and buttons are sentence case. `label-xs` (small uppercase) is kept for section eyebrows.
+
+## 3. Components
+
+- **Primitives:** `src/components/ui/*` provides Button, Card, Badge, Progress, Select and Input (rounded-xl with a focus colour), Tabs (sentence case), and EmptyState.
+- **In-cab HMI:**
+  - Glass cards float over the live machine.
+  - The status bar has a clock, a weather chip and the lamp pill.
+  - Cluster: speed gauge, segmented gear selector, and icon meter rows.
+  - The dock has large touch targets.
+  - The test bench is split into four tabs.
+- **X-ray:** a fresnel shell with the flagged assembly lit in amber. The component card sits beside the component.
+
+## 4. Site and fleet inventory
+
+The site is 360 m square, with valley walls beyond the fence at ±152 m.
+
+- **Benched pit (Zone B):**
+  - Floor at −4.6 m, benches at −3.1 m and −1.6 m.
+  - An 11.5% embankment ramp, with berms and guardrails on both sides.
+  - Spoil on the floor for the dozer.
+- **Waste dump:** a +6 m tip head with a crest berm, reached by a 20% loose-spoil ramp that has berms and guardrails.
+- **Bench face C:** a 5.5 m over-steep cut that fails under load, with a floor and an exit slope.
+- **Sidehill bench:** a 13° cross-slope on the east spoil bank.
+- **Trenches:** two service trenches, each with a spoil ridge.
+- **Windrows:** along the haul roads, with gaps at every junction.
+- **Stockpile:** a mound and spoil heaps.
+- **Loading pad, maintenance pad and fuel bay.**
+- **Settling pond:** with a wet-clay ring.
+- **Crusher:** hopper walls, the crusher house and a conveyor.
+- **Site office and containers, and light masts.**
+- **Perimeter fence:** with a gate where the haul road leaves site.
+
+The fleet in the twin is four machines. All are rigid bodies; see `PHYSICS.md`.
+
+| Machine         | Role                           |
+| --------------- | ------------------------------ |
+| EXC001, CAT 320 | operator-driven                |
+| DOZ001, D6      | works the pit floor            |
+| WHL001, 950     | stockpile to loading           |
+| TRK001, 745     | reverses in to load and to tip |
+
 # CAT Copilot — Design Reference
 
 What the product looks like and is built of, as of this snapshot. This is a
@@ -16,20 +73,20 @@ borders, no gradients, no glassmorphism, no decorative illustration.
 
 ### Palette
 
-| Token | Hex | Use |
-|---|---|---|
-| `catYellow` | `#FFCD11` | Primary action, active selection, CAT paint |
-| `catYellowDark` | `#D9A800` | Pressed/secondary yellow, worn paint |
-| Surface 950 | `#0B0C0E` | App background |
-| Surface 900 | `#15171A` | Panels |
-| Surface 800 | `#1E2125` | Cards, raised panels |
-| Border | `#2A2E33` | 1px hairlines |
-| `steel` / `steelDark` / `steelLight` | `#2B3036` / `#1A1D21` / `#454D55` | Machine frames, structural metal |
-| `glass` | `#8FC4E8` | Cab glazing |
-| `safe` | `#3DDC84` | Green — normal / safe |
-| `warn` | `#FFB020` | Amber — caution |
-| `crit` | `#FF3B30` | Red — critical |
-| info blue | `#5AA0D6` | Informational |
+| Token                                | Hex                               | Use                                         |
+| ------------------------------------ | --------------------------------- | ------------------------------------------- |
+| `catYellow`                          | `#FFCD11`                         | Primary action, active selection, CAT paint |
+| `catYellowDark`                      | `#D9A800`                         | Pressed/secondary yellow, worn paint        |
+| Surface 950                          | `#0B0C0E`                         | App background                              |
+| Surface 900                          | `#15171A`                         | Panels                                      |
+| Surface 800                          | `#1E2125`                         | Cards, raised panels                        |
+| Border                               | `#2A2E33`                         | 1px hairlines                               |
+| `steel` / `steelDark` / `steelLight` | `#2B3036` / `#1A1D21` / `#454D55` | Machine frames, structural metal            |
+| `glass`                              | `#8FC4E8`                         | Cab glazing                                 |
+| `safe`                               | `#3DDC84`                         | Green — normal / safe                       |
+| `warn`                               | `#FFB020`                         | Amber — caution                             |
+| `crit`                               | `#FF3B30`                         | Red — critical                              |
+| info blue                            | `#5AA0D6`                         | Informational                               |
 
 Terrain/material palette (3D twin only — see §4):
 `gravel #A29682`, `topsoil #6E5236`, `scrub #5C6532`, `clay #54402E`,
@@ -55,12 +112,12 @@ Terrain/material palette (3D twin only — see §4):
 
 ## 2. Two products, one state
 
-| | **Dashboard** | **Machine application** |
-|---|---|---|
-| Audience | Supervisors, fleet managers, service engineers | The operator in the cab |
-| Density | Information-dense, tables and charts | Minimal, read-at-a-glance |
-| Input | Mouse/keyboard, desktop widths | Touch, 48–56px+ targets, landscape |
-| Route | `/dashboard` | `/machine`, `/cab`, or inside the simulator |
+|          | **Dashboard**                                  | **Machine application**                     |
+| -------- | ---------------------------------------------- | ------------------------------------------- |
+| Audience | Supervisors, fleet managers, service engineers | The operator in the cab                     |
+| Density  | Information-dense, tables and charts           | Minimal, read-at-a-glance                   |
+| Input    | Mouse/keyboard, desktop widths                 | Touch, 48–56px+ targets, landscape          |
+| Route    | `/dashboard`                                   | `/machine`, `/cab`, or inside the simulator |
 
 Both read the same Zustand-backed machine state (`src/store/machine-store.ts`
 for the legacy mock model; `web/lib/stream` + `src/lib/api` for the
@@ -129,14 +186,14 @@ end (terrain, fleet, machine models — see `src/lib/twin/` and
 Nine machines, matching the backend roster exactly
 (`simulator/config.py` FLEET):
 
-| ID | Kind | Role |
-|---|---|---|
-| EXC001 | Excavator (CAT 320) | Operator-controlled ("hero" machine) |
-| EXC002 | Excavator (CAT 320) | Autonomous pit excavation |
-| WHL001 | Wheel loader (CAT 950) | Digs stockpile, loads trucks |
-| DOZ001 | Dozer (CAT D6) | Pushes lanes across the pit floor |
-| GRD001 | Grader (CAT 140) | Passes across zone C |
-| TRK001–004 | Haul truck (CAT 745) | Queue → load → haul → tip → return |
+| ID         | Kind                   | Role                                 |
+| ---------- | ---------------------- | ------------------------------------ |
+| EXC001     | Excavator (CAT 320)    | Operator-controlled ("hero" machine) |
+| EXC002     | Excavator (CAT 320)    | Autonomous pit excavation            |
+| WHL001     | Wheel loader (CAT 950) | Digs stockpile, loads trucks         |
+| DOZ001     | Dozer (CAT D6)         | Pushes lanes across the pit floor    |
+| GRD001     | Grader (CAT 140)       | Passes across zone C                 |
+| TRK001–004 | Haul truck (CAT 745)   | Queue → load → haul → tip → return   |
 
 When no backend is attached, `src/lib/twin/fleet.ts` drives all of this
 locally: dig-cycle keyframes for the excavator, a Z-bar loader linkage that

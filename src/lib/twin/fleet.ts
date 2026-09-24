@@ -60,6 +60,11 @@ export interface Agent {
 export interface FleetWorld {
   agents: Agent[];
   ctx: StepContext;
+  /**
+   * Last say over every input an agent issues — the engine's physical V2V
+   * braking plugs in here. Absent, input goes straight to the model.
+   */
+  filter?: (agent: Agent, input: VehicleInput, dt: number) => VehicleInput;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -118,7 +123,8 @@ function followLimit(agent: Agent, world: FleetWorld, throttle: number): number 
 
 function drive(agent: Agent, input: VehicleInput, world: FleetWorld, dt: number): void {
   if (agent.role === "haul") input.throttle = followLimit(agent, world, input.throttle);
-  agent.model.step(input, dt, { ...world.ctx, emergencyStopped: false });
+  const final = world.filter ? world.filter(agent, input, dt) : input;
+  agent.model.step(final, dt, { ...world.ctx, emergencyStopped: false });
 }
 
 function hold(agent: Agent, world: FleetWorld, dt: number): void {

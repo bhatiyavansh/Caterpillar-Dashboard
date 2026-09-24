@@ -11,6 +11,8 @@ import { maintenanceFrequencySeries, maintenanceTasks, machines } from "@/lib/mo
 import { CHART_COLORS, MultiBarChart } from "@/components/charts/charts";
 import { cn } from "@/lib/utils";
 import { MaintenanceTimeline } from "@/components/dashboard/maintenance-timeline";
+import { XrayLink } from "@/components/shared/xray-link";
+import { DraftedReports } from "@/components/reports/drafted-reports";
 
 type Bucket = "upcoming" | "overdue" | "completed";
 
@@ -136,6 +138,7 @@ export default function MaintenancePage() {
                     <CalendarClock className="size-3.5" aria-hidden />
                     {t.date}
                   </span>
+                  <XrayLink machineId={t.machineId} issue={{ text: t.title }} compact />
                 </div>
 
                 <p className="mt-2 text-xs text-muted">
@@ -208,6 +211,8 @@ export default function MaintenancePage() {
             );
           })}
         </ul>
+
+        <DraftedReports kind="work_order" />
       </div>
     </div>
   );

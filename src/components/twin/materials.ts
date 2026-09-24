@@ -38,6 +38,20 @@ export const PALETTE = {
   vest: "#f5f24a",
 } as const;
 
+/**
+ * Ground colour per running surface. Keyed by the same classes as the
+ * friction table (lib/twin/surface.ts), so colour and grip always agree.
+ */
+export const SURFACE_COLORS = {
+  road: "#34373c",
+  packed: "#7a6a52",
+  natural: "#6b5a42",
+  rock_face: "#5d544a",
+  gravel_windrow: "#8f8778",
+  loose_spoil: "#80613f",
+  wet_clay: "#4d4234",
+} as const;
+
 const cache = new Map<string, THREE.Texture>();
 
 function fromCanvas(

@@ -1,17 +1,25 @@
 /**
- * Lightweight heavy-vehicle model.
+ * Heavy-vehicle model.
  *
- * Not a physics engine — an integrator tuned so the machine *feels* like forty
- * tonnes: it takes seconds to reach speed, carries momentum through a stop,
- * leans into turns, squats under acceleration and loses power up a grade.
+ * Travel and attitude come from the Rapier physics world when one is attached
+ * (`attachPhysics`): the operator's input becomes tractive force, braking and
+ * steering on a rigid body, and the body's pose is written back into
+ * telemetry. That is the normal path for the local fleet.
  *
- * The model owns the intermediate state (yaw rate, smoothed hydraulic rates,
- * suspension phase) that does not belong on the wire format, and writes its
- * results into a `MachineTelemetry` object it mutates in place.
+ * Until the physics WASM has loaded — a fraction of a second — and for the
+ * mock-IoT generator, the original kinematic integrator below stands in: tuned
+ * so the machine *feels* like forty tonnes, but with no mass, contact or
+ * friction of its own.
+ *
+ * Either way the model owns the intermediate state that does not belong on
+ * the wire format (smoothed hydraulic rates, track travel) and mutates one
+ * `MachineTelemetry` object in place. Hydraulics, engine, fuel and payload
+ * logic are the same in both modes.
  */
 
 import type { MachineTelemetry, VehicleInput } from "@/types/twin";
-import { SITE_HALF, clamp, headingVector, normalizeHeading } from "./site";
+import type { PhysicsMachine } from "./physics/machine";
+import { SITE_HALF, angleDelta, clamp, headingTo, headingVector, normalizeHeading } from "./site";
 import { sampleAttitude } from "./terrain";
 import {
   ARM_LIMITS,
@@ -21,6 +29,7 @@ import {
   MAX_PAYLOAD,
   computeTipOverMargin,
   detectActivity,
+  emptyInput,
 } from "./telemetry";
 
 /** Frame-rate independent exponential smoothing. */
@@ -138,11 +147,24 @@ export class VehicleModel {
   private dynRoll = 0;
   private bobPhase = Math.random() * Math.PI * 2;
   private lastAccel = 0;
+  /** The rigid body driving travel and attitude, once physics is up. */
+  physics: PhysicsMachine | null = null;
+  /** Kilograms the bucket has let go of since material was last poured. */
+  dumped = 0;
 
   constructor(
     public telemetry: MachineTelemetry,
     public tuning: VehicleTuning,
   ) {}
+
+  attachPhysics(body: PhysicsMachine | null): void {
+    this.physics = body;
+  }
+
+  /** True when travel comes from the rigid body rather than the integrator. */
+  get physical(): boolean {
+    return this.physics !== null && !this.physics.kinematic;
+  }
 
   /** Integrates one frame. Mutates `this.telemetry` in place. */
   step(input: VehicleInput, dt: number, ctx: StepContext = DEFAULT_CONTEXT): void {
@@ -163,8 +185,16 @@ export class VehicleModel {
         }
       : input;
 
-    this.integrateDrive(cmd, dt, ctx, stopped);
-    this.integrateAttitude(dt, ctx);
+    if (this.physical && this.physics) {
+      // Travel is the rigid body's job: hand it the operator's intent. Pose,
+      // speed and attitude are written back after the world steps.
+      this.physics.setCommand(cmd, stopped);
+      this.yawRate = this.physics.yawRate;
+      this.trackTravel += t.speed * dt;
+    } else {
+      this.integrateDrive(cmd, dt, ctx, stopped);
+      this.integrateAttitude(dt, ctx);
+    }
     if (tune.hasArm) this.integrateArm(cmd, dt);
     this.integrateEngine(cmd, dt, ctx, stopped);
 
@@ -297,7 +327,9 @@ export class VehicleModel {
     if (r.bucket > 0.15 && bucketDown && t.payload < MAX_PAYLOAD) {
       t.payload = Math.min(MAX_PAYLOAD, t.payload + 900 * r.bucket * dt);
     } else if (r.bucket < -0.15 && t.payload > 0) {
+      const before = t.payload;
       t.payload = Math.max(0, t.payload + 1600 * r.bucket * dt);
+      this.dumped += before - t.payload;
     }
   }
 
@@ -359,11 +391,15 @@ export class VehicleModel {
     this.dynRoll = 0;
     this.trackTravel = 0;
 
+    this.dumped = 0;
+
     const att = sampleAttitude(x, z, heading, this.tuning.wheelbase, this.tuning.trackWidth);
     t.y = att.y;
     t.pitch = att.pitch;
     t.roll = att.roll;
     t.tipOverMargin = computeTipOverMargin(t);
+    // Put the rigid body back on its wheels at the same spot.
+    this.physics?.placeAt(x, z, heading);
   }
 }
 
@@ -401,5 +437,21 @@ export function steerToward(
     stick: 0,
     bucket: 0,
     emergencyStop: false,
+  };
+}
+
+/**
+ * Waypoint -> operator input for a leg driven in reverse: the machine backs
+ * its tail toward the target. Front-steered machines steer the opposite way
+ * when reversing; skid-steered ones do not.
+ */
+export function steerReverse(t: MachineTelemetry, tx: number, tz: number, cruise: number, skid: boolean): VehicleInput {
+  const turn = angleDelta(t.heading + Math.PI, headingTo(t.x, t.z, tx, tz));
+  const dist = Math.hypot(tx - t.x, tz - t.z);
+  const steer = clamp(turn * 1.6, -1, 1);
+  return {
+    ...emptyInput(),
+    throttle: -cruise * (1 - Math.min(Math.abs(turn) / (Math.PI * 0.6), 0.7)) * Math.min(dist / 5, 1),
+    steer: skid ? steer : -steer,
   };
 }

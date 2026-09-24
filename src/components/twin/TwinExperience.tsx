@@ -10,8 +10,10 @@
  * never asked for during SSR.
  */
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
+import { getEngine, useTwinStore } from "@/store/twinStore";
 import { useVehicleControls } from "@/hooks/twin/useVehicleControls";
 import { useLiveLink } from "@/hooks/twin/useLiveLink";
 import { useLocalControl } from "@/hooks/twin/useLocalControl";
@@ -65,6 +67,11 @@ export interface TwinStageProps {
    * Off for the guided lesson, which brings its own focused overlay.
    */
   hud?: boolean;
+  /**
+   * Whether the Rapier rigid-body world runs while this stage is mounted.
+   * Off for the guided lesson, which drives on the kinematic model only.
+   */
+  physics?: boolean;
 }
 
 /** Fills its positioned parent. */
@@ -73,6 +80,7 @@ export function TwinStage({
   dense = false,
   liveLink = true,
   hud = true,
+  physics = true,
 }: TwinStageProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -83,6 +91,13 @@ export function TwinStage({
   useLiveLink(mounted && active && liveLink);
   // Training mode: hold the keyboard source so the learner actually drives.
   useLocalControl(mounted && !liveLink);
+
+  useEffect(() => {
+    if (physics) return;
+    const engine = getEngine();
+    engine.setPhysicsSuspended(true);
+    return () => engine.setPhysicsSuspended(false);
+  }, [physics]);
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-ink-950">
@@ -112,6 +127,22 @@ export function TwinStage({
 }
 
 /**
+ * `/twin?xray=<machine>&c=<component>` opens the X-ray inspection on arrival.
+ * Every anomaly and alert surface in the product links here (use-xray.ts).
+ */
+function XrayDeepLink() {
+  const params = useSearchParams();
+  const machine = params.get("xray");
+  const component = params.get("c");
+  useEffect(() => {
+    if (machine && /^[A-Z0-9-]{3,24}$/.test(machine)) {
+      useTwinStore.getState().openXray(machine, component && /^[a-z_]{2,40}$/.test(component) ? component : null);
+    }
+  }, [machine, component]);
+  return null;
+}
+
+/**
  * The /twin route.
  *
  * It fills the app shell's content area rather than covering the viewport, so
@@ -122,6 +153,9 @@ export function TwinExperience() {
   return (
     <div className="relative h-full min-h-0 overflow-hidden bg-ink-950">
       <TwinStage />
+      <Suspense fallback={null}>
+        <XrayDeepLink />
+      </Suspense>
     </div>
   );
 }

@@ -10,7 +10,7 @@
  * bench face, wet pit floor, pond mud, windrow, tyre-rutted track, scrub.
  */
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import {
@@ -27,9 +27,15 @@ import {
   smoothstep,
   zoneAt,
 } from "@/lib/twin/site";
-import { distanceOutsideSite, fbm, pitCut, terrainHeight, valueNoise } from "@/lib/twin/terrain";
+import {
+  distanceOutsideSite,
+  fbm,
+  pitCut,
+  terrainHeight,
+  valueNoise,
+} from "@/lib/twin/terrain";
 import { useTwinStore } from "@/store/twinStore";
-import { PALETTE } from "./materials";
+import { PALETTE, SURFACE_COLORS } from "./materials";
 
 /** 350x350 quads across 700m — 2m resolution over the site and the valley walls. */
 const SEGMENTS = 350;
@@ -64,11 +70,18 @@ const RUT_SEGMENTS = Object.values(MACHINE_ROUTES).flatMap((route) =>
   }),
 );
 
-function distanceToSegment(x: number, z: number, s: (typeof RUT_SEGMENTS)[number]): number {
+function distanceToSegment(
+  x: number,
+  z: number,
+  s: (typeof RUT_SEGMENTS)[number],
+): number {
   const dx = s.x2 - s.x1;
   const dz = s.z2 - s.z1;
   const len2 = dx * dx + dz * dz || 1;
-  const t = Math.min(1, Math.max(0, ((x - s.x1) * dx + (z - s.z1) * dz) / len2));
+  const t = Math.min(
+    1,
+    Math.max(0, ((x - s.x1) * dx + (z - s.z1) * dz) / len2),
+  );
   return Math.hypot(x - (s.x1 + dx * t), z - (s.z1 + dz * t));
 }
 
@@ -81,7 +94,9 @@ function padInfluence(x: number, z: number): number {
       const dz = Math.max(p.z - p.rz - z, 0, z - p.z - p.rz);
       d = Math.hypot(dx, dz);
     } else {
-      d = (Math.hypot((x - p.x) / p.rx, (z - p.z) / p.rz) - 1) * Math.min(p.rx, p.rz);
+      d =
+        (Math.hypot((x - p.x) / p.rx, (z - p.z) / p.rz) - 1) *
+        Math.min(p.rx, p.rz);
     }
     if (d < 6) best = Math.max(best, 1 - smoothstep(-2, 5, d));
   }
@@ -89,7 +104,10 @@ function padInfluence(x: number, z: number): number {
 }
 
 /** Which heap (if any) this point is on, for its material colour. */
-function heapAt(x: number, z: number): { colour: THREE.Color; k: number } | null {
+function heapAt(
+  x: number,
+  z: number,
+): { colour: THREE.Color; k: number } | null {
   for (let i = 0; i < MOUNDS.length; i++) {
     const m = MOUNDS[i];
     if (!m.cone) continue;
@@ -102,7 +120,13 @@ function heapAt(x: number, z: number): { colour: THREE.Color; k: number } | null
 }
 
 /** Colour of the ground at one vertex. `steep` is 0 flat .. 1 vertical. */
-function surfaceColor(x: number, z: number, h: number, steep: number, out: THREE.Color) {
+function surfaceColor(
+  x: number,
+  z: number,
+  h: number,
+  steep: number,
+  out: THREE.Color,
+) {
   // Natural ground: topsoil drifting toward dry grass and scrub.
   out.copy(C.topsoil);
   const patch = fbm(x * 0.028 + 3, z * 0.028 - 5, 3) * 0.5 + 0.5;
@@ -127,30 +151,40 @@ function surfaceColor(x: number, z: number, h: number, steep: number, out: THREE
   const growth = smoothstep(-0.15, 0.45, fbm(x * 0.045 - 11, z * 0.045 + 4, 3));
   const wild = Math.min(1, growth * 0.6 + smoothstep(0, 60, outside) * 0.8);
   out.lerp(C.scrub, wild * (1 - disturbed) * 0.75);
-  if (outside > 25) out.lerp(C.forest, smoothstep(25, 120, outside) * 0.45 * growth);
+  if (outside > 25)
+    out.lerp(C.forest, smoothstep(25, 120, outside) * 0.45 * growth);
 
   // Exposed rock on steep natural slopes.
-  if (outside > 0 && steep > 0.25) out.lerp(C.rock, smoothstep(0.25, 0.6, steep) * 0.7);
+  if (outside > 0 && steep > 0.25)
+    out.lerp(C.rock, smoothstep(0.25, 0.6, steep) * 0.7);
 
   // Worked ground is bare, compacted and paler than the topsoil around it.
   out.lerp(C.dirtLight, disturbed * 0.45);
 
   // Pit: banded strata on the cut faces, compacted bench tops, wet clay floor.
   if (pit.into > 0) {
-    const band = Math.sin(h * 3.1 + valueNoise(x * 0.06, z * 0.06) * 1.6) * 0.5 + 0.5;
+    const band =
+      Math.sin(h * 3.1 + valueNoise(x * 0.06, z * 0.06) * 1.6) * 0.5 + 0.5;
     const face = C.strataDark.clone().lerp(C.strataLight, band);
     const faceWeight = smoothstep(0.12, 0.4, steep);
     out.lerp(C.bench, (1 - faceWeight) * 0.55);
     out.lerp(face, faceWeight);
     const floor = smoothstep(-PIT.depth + 0.7, -PIT.depth + 0.15, h);
-    out.lerp(C.wetClay, floor * 0.6 * (0.6 + 0.4 * (valueNoise(x * 0.09, z * 0.09) * 0.5 + 0.5)));
+    out.lerp(
+      C.wetClay,
+      floor * 0.6 * (0.6 + 0.4 * (valueNoise(x * 0.09, z * 0.09) * 0.5 + 0.5)),
+    );
   }
 
   // The tip head: loose spoil streaking down its faces.
   const dumpD = Math.hypot(x - DUMP.x, z - DUMP.z);
   if (dumpD < DUMP.r + 12) {
-    const faces = smoothstep(DUMP.r - 2, DUMP.r + 3, dumpD) * (1 - smoothstep(DUMP.r + 6, DUMP.r + 12, dumpD));
-    const streak = valueNoise(Math.atan2(z - DUMP.z, x - DUMP.x) * 14, dumpD * 0.2) * 0.5 + 0.5;
+    const faces =
+      smoothstep(DUMP.r - 2, DUMP.r + 3, dumpD) *
+      (1 - smoothstep(DUMP.r + 6, DUMP.r + 12, dumpD));
+    const streak =
+      valueNoise(Math.atan2(z - DUMP.z, x - DUMP.x) * 14, dumpD * 0.2) * 0.5 +
+      0.5;
     out.lerp(C.spoil, faces * (0.55 + streak * 0.35));
   }
 
@@ -184,7 +218,8 @@ function surfaceColor(x: number, z: number, h: number, steep: number, out: THREE
   }
 
   // Pond margins are mud.
-  if (pondDist < 1.5) out.lerp(C.clay, (1 - smoothstep(0.7, 1.5, pondDist)) * 0.8);
+  if (pondDist < 1.5)
+    out.lerp(C.clay, (1 - smoothstep(0.7, 1.5, pondDist)) * 0.8);
 
   // Graded pads read as packed fill.
   out.lerp(C.gravelDark, pad * 0.5);
@@ -199,12 +234,19 @@ function surfaceColor(x: number, z: number, h: number, steep: number, out: THREE
       rut = Math.min(rut, distanceToSegment(x, z, s));
       if (rut < 0.5) break;
     }
-    if (rut < 3) out.lerp(C.dirtDark, (1 - smoothstep(0.6, 3, rut)) * 0.4 * (1 - road.influence));
+    if (rut < 3)
+      out.lerp(
+        C.dirtDark,
+        (1 - smoothstep(0.6, 3, rut)) * 0.4 * (1 - road.influence),
+      );
   }
 
   // A light wash of the zone colour keeps the layout legible from above.
   if (zone && road.influence < 0.4) {
-    out.lerp(new THREE.Color(zone.color), zone.kind === "restricted" ? 0.1 : 0.05);
+    out.lerp(
+      new THREE.Color(zone.color),
+      zone.kind === "restricted" ? 0.1 : 0.05,
+    );
   }
 
   // Fine grain, at a frequency the 2m grid can actually resolve (no moiré).
@@ -212,7 +254,12 @@ function surfaceColor(x: number, z: number, h: number, steep: number, out: THREE
 }
 
 function buildGround(): THREE.BufferGeometry {
-  const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS);
+  const geo = new THREE.PlaneGeometry(
+    TERRAIN_SIZE,
+    TERRAIN_SIZE,
+    SEGMENTS,
+    SEGMENTS,
+  );
   geo.rotateX(-Math.PI / 2);
 
   const position = geo.attributes.position as THREE.BufferAttribute;
@@ -227,7 +274,13 @@ function buildGround(): THREE.BufferGeometry {
   const scratch = new THREE.Color();
   for (let i = 0; i < position.count; i++) {
     const steep = 1 - Math.abs(normal.getY(i));
-    surfaceColor(position.getX(i), position.getZ(i), position.getY(i), steep * 2.2, scratch);
+    surfaceColor(
+      position.getX(i),
+      position.getZ(i),
+      position.getY(i),
+      steep * 2.2,
+      scratch,
+    );
     scratch.toArray(colors, i * 3);
   }
   geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
@@ -265,7 +318,9 @@ function buildBackdrop(): THREE.BufferGeometry {
     const y = backdropHeight(x, z, r) - 1.6;
     position.setY(i, y);
 
-    scratch.copy(C.scrub).lerp(C.forest, smoothstep(0, 1, fbm(x * 0.01, z * 0.01, 3) * 0.5 + 0.5));
+    scratch
+      .copy(C.scrub)
+      .lerp(C.forest, smoothstep(0, 1, fbm(x * 0.01, z * 0.01, 3) * 0.5 + 0.5));
     scratch.lerp(C.mountain, smoothstep(700, 1300, r) * 0.8);
     scratch.lerp(C.rock, smoothstep(140, 260, y) * 0.5);
     scratch.lerp(C.mountainHaze, smoothstep(1300, 2200, r) * 0.6);
@@ -281,7 +336,12 @@ function Backdrop() {
   const geometry = useMemo(buildBackdrop, []);
   return (
     <mesh geometry={geometry} receiveShadow={false}>
-      <meshStandardMaterial vertexColors roughness={1} metalness={0} flatShading />
+      <meshStandardMaterial
+        vertexColors
+        roughness={1}
+        metalness={0}
+        flatShading
+      />
     </mesh>
   );
 }

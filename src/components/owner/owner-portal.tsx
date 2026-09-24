@@ -27,6 +27,7 @@ import {
 import type { Anomaly, MaintenanceItem, SeriesPoint } from "@/lib/api/contracts";
 import { ALERT_SEVERITY } from "@/lib/status";
 import { useAnomalies, useFleet, useMaintenance, useOwnerReport } from "@/lib/hooks/use-site";
+import { XrayLink } from "@/components/shared/xray-link";
 import { KpiRail, type KpiItem } from "@/components/ui/data";
 import { PageShell, Panel } from "@/components/ui/page";
 import { Button } from "@/components/ui/primitives";
@@ -195,6 +196,7 @@ function MaintenanceList({ items }: { items: MaintenanceItem[] }) {
             <span className={cn("shrink-0 text-right text-[11px] font-bold", overdue ? "text-status-crit" : token.text)}>
               {m.dueLabel}
             </span>
+            <XrayLink machineId={m.machineId} issue={{ text: m.component }} compact />
           </li>
         );
       })}
@@ -225,12 +227,15 @@ function AnomalyCard({ anomaly }: { anomaly: Anomaly }) {
             {anomaly.costInr.toLocaleString("en-IN")}
           </span>
         </span>
+        <span className="flex items-center gap-1.5">
+        <XrayLink machineId={anomaly.machineId} issue={{ pattern: anomaly.pattern, text: anomaly.title }} />
         <Button variant="outline" size="sm" asChild>
           <Link href={`/command?machine=${anomaly.machineId}`}>
             Investigate
             <ArrowUpRight className="size-3.5" aria-hidden />
           </Link>
         </Button>
+        </span>
       </div>
     </article>
   );

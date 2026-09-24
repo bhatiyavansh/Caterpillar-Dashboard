@@ -74,6 +74,9 @@ const SUGGESTIONS: Record<AssistantSurface, string[]> = {
   ar: ["What does fault code HYD-118 mean?", "What daily care does the machine need?", "How do I shut down the machine safely?"],
 };
 
+/** Where the one site conversation is kept between visits. */
+const ASSISTANT_STORAGE = { key: "cat.assistant.v1", maxMessages: 100 };
+
 const LABEL: Record<AssistantSurface, string> = {
   cab: "Cab",
   command: "Command centre",
@@ -147,6 +150,8 @@ export function AssistantProvider({ children }: { children: React.ReactNode }) {
     alert: scope.alert,
     lang,
     getContext,
+    // The conversation survives reloads and is shared by every tab (browser storage only).
+    persist: ASSISTANT_STORAGE,
   });
 
   const hasInlineView = inline.length > 0;

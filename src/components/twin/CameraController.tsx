@@ -21,10 +21,18 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { MACHINES } from "@/lib/twin/simulation";
+import { componentSpec } from "@/lib/twin/components";
 import type { MachineKind } from "@/types/twin";
 
 /** Operator eye point per machine type, in machine space (forward is -Z). */
-const EYE: Record<MachineKind, { eye: [number, number, number]; look: [number, number, number]; swings: boolean }> = {
+const EYE: Record<
+  MachineKind,
+  {
+    eye: [number, number, number];
+    look: [number, number, number];
+    swings: boolean;
+  }
+> = {
   excavator: { eye: [-0.72, 2.45, -1.0], look: [0, -2.2, -26], swings: true },
   bulldozer: { eye: [0, 2.55, 0.8], look: [0, -1.4, -26], swings: false },
   loader: { eye: [0, 2.85, 0.8], look: [0, -1.6, -26], swings: false },
@@ -61,6 +69,17 @@ export function CameraController() {
   // Follow whatever machine is selected, not always EXC001 — otherwise an
   // incident replay on another machine happens off-screen.
   const subjectId = useTwinStore((s) => s.selectedMachine);
+  const xray = useTwinStore((s) => s.xray);
+  const xrayFocus = useMemo(() => {
+    if (!xray?.shownOn) return null;
+    const kind = MACHINES.find((m) => m.id === xray.shownOn)?.kind;
+    const spec = kind ? componentSpec(kind, xray.componentId) : undefined;
+    return {
+      machine: xray.shownOn,
+      focus: spec?.focus ?? { x: 0, y: 1.8, z: 0 },
+      close: Boolean(spec),
+    };
+  }, [xray]);
 
   const { camera } = useThree();
   const controls = useThree((s) => s.controls) as unknown as Controls | null;
@@ -100,7 +119,8 @@ export function CameraController() {
         // Frame the centroid of the fleet from a three-quarter vantage.
         const machines = engine.allTelemetry();
         outTarget.set(0, 0, 0);
-        for (const m of machines) outTarget.add(scratch.delta.set(m.x, m.y, m.z));
+        for (const m of machines)
+          outTarget.add(scratch.delta.set(m.x, m.y, m.z));
         outTarget.divideScalar(machines.length);
         outPosition.set(outTarget.x + 96, 74, outTarget.z + 118);
         return;
@@ -121,14 +141,33 @@ export function CameraController() {
       }
       case "orbit": {
         outTarget.set(p.x, p.y + 2.5, p.z);
-        const around = new THREE.Vector3(0, 9, 22).applyAxisAngle(UP, orbitAngle.current);
+        const around = new THREE.Vector3(0, 9, 22).applyAxisAngle(
+          UP,
+          orbitAngle.current,
+        );
         outPosition.copy(outTarget).add(around);
         return;
       }
       default: {
+        if (xrayFocus && xrayFocus.machine === p.machineId) {
+          // X-ray: look at the component, from the front-right three-quarter.
+          const f = xrayFocus.focus;
+          outTarget
+            .set(f.x, f.y, f.z)
+            .applyAxisAngle(UP, -p.heading)
+            .add(scratch.delta.set(p.x, p.y, p.z));
+          const eye = xrayFocus.close
+            ? new THREE.Vector3(7, 5, -6)
+            : new THREE.Vector3(11, 8, -10);
+          outPosition.copy(outTarget).add(eye.applyAxisAngle(UP, -p.heading));
+          return;
+        }
         // Behind and above the machine, looking down the boom.
         outTarget.set(p.x, p.y + 2.4, p.z);
-        const back = new THREE.Vector3(0, 13, 25).applyAxisAngle(UP, -p.heading);
+        const back = new THREE.Vector3(0, 13, 25).applyAxisAngle(
+          UP,
+          -p.heading,
+        );
         outPosition.copy(outTarget).add(back);
         return;
       }
@@ -171,10 +210,10 @@ export function CameraController() {
     controls.enabled = !locked;
     controls.enableRotate = !locked;
     controls.enablePan = mode === "top" || mode === "site";
-    controls.minDistance = mode === "top" ? 40 : 8;
+    controls.minDistance = mode === "top" ? 40 : xrayFocus ? 3 : 8;
     controls.maxDistance = mode === "top" ? 420 : 240;
     controls.maxPolarAngle = Math.PI * 0.495;
-  }, [controls, mode]);
+  }, [controls, mode, xrayFocus]);
 
   useFrame((_, delta) => {
     const { target, position, delta: diff } = scratch;
@@ -184,14 +223,20 @@ export function CameraController() {
       chaseHeading.current === null
         ? subject.heading
         : chaseHeading.current +
-          Math.atan2(Math.sin(subject.heading - chaseHeading.current), Math.cos(subject.heading - chaseHeading.current)) *
+          Math.atan2(
+            Math.sin(subject.heading - chaseHeading.current),
+            Math.cos(subject.heading - chaseHeading.current),
+          ) *
             (1 - Math.exp(-2.2 * delta));
     desiredPose(position, target);
 
     // --- chase and orbit are camera-driven: they own the pose ---------
     if (mode === "chase" || mode === "orbit") {
       if (transition.current < 1) {
-        transition.current = Math.min(1, transition.current + delta / TRANSITION);
+        transition.current = Math.min(
+          1,
+          transition.current + delta / TRANSITION,
+        );
       }
       const k = easeInOut(transition.current);
       if (k < 1) {
@@ -210,7 +255,10 @@ export function CameraController() {
     // --- driver view is rigidly attached, no orbiting ------------------
     if (mode === "driver") {
       if (transition.current < 1) {
-        transition.current = Math.min(1, transition.current + delta / TRANSITION);
+        transition.current = Math.min(
+          1,
+          transition.current + delta / TRANSITION,
+        );
         const k = easeInOut(transition.current);
         camera.position.lerpVectors(fromPosition.current, position, k);
       } else {

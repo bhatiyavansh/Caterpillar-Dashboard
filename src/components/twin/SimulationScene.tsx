@@ -28,6 +28,8 @@ import { PredictedPaths } from "./PredictedPath";
 import { LabelProjector } from "./MachineLabel";
 import { IncidentMarkers } from "./IncidentMarkers";
 import { CameraController } from "./CameraController";
+import { PhysicsDebris } from "./PhysicsDebris";
+import { XrayAnchor } from "./XrayInspector";
 import { SiteLighting, Weather } from "./Weather";
 
 const FLEET_IDS = MACHINES.map((m) => m.id);
@@ -83,7 +85,7 @@ export function SimulationScene() {
     <Canvas
       // PCFSoftShadowMap was removed in three 0.186 — plain PCF is the default.
       shadows
-      dpr={[1, 1.75]}
+      dpr={[1, 1.25]}
       gl={{
         antialias: true,
         powerPreference: "high-performance",
@@ -109,6 +111,8 @@ export function SimulationScene() {
         <Weather />
         <Site />
         <Fleet />
+        <PhysicsDebris />
+        <XrayAnchor />
         <WorkerCrew />
         <SafetyLayer />
         <IncidentMarkers />

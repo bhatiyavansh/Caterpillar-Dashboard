@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { TwinExperience } from "@/components/twin/TwinExperience";
+import { TwinAssistantScope } from "@/components/assistant/page-scopes";
 
 export const metadata: Metadata = {
   title: "Live Digital Twin",
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function TwinPage() {
-  return <TwinExperience />;
+  return (
+    <>
+      <TwinAssistantScope />
+      <TwinExperience />
+    </>
+  );
 }

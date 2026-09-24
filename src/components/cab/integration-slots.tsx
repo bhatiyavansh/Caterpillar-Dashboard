@@ -82,7 +82,7 @@ function CameraPanel({
   return (
     <section
       className={cn(
-        "flex flex-col overflow-hidden rounded border bg-ink-850",
+        "flex flex-col overflow-hidden rounded-2xl border bg-ink-850",
         alerting ? token.border : "border-white/10",
         className,
       )}
@@ -101,7 +101,9 @@ function CameraPanel({
 
       <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-ink-950">
         {cameraOn ? (
-          children
+          // Centred and inset so the detector's own status chip ("camera
+          // unavailable") never sits under the camera badge.
+          <div className="absolute inset-0 flex items-center justify-center px-2 pb-2 pt-7 [&>*]:w-full">{children}</div>
         ) : (
           <div className="absolute inset-0 grid place-items-center">
             <span className="text-[11px] text-muted">Camera off</span>

@@ -12,6 +12,7 @@ import { SectionHeader } from "@/components/ui/data";
 import { StatusLabel } from "@/components/ui/status";
 import { EmptyPanel, SkeletonRows } from "@/components/ui/states";
 import { cn } from "@/lib/utils";
+import { XrayLink } from "@/components/shared/xray-link";
 
 /** Attention first, then hardest-working, then the rest. */
 const ORDER: Record<MachineStatus, number> = {
@@ -48,22 +49,41 @@ export function FleetList({
 
   const rows = React.useMemo(() => {
     const filtered = machines.filter((m) => {
-      if (filter === "attention") return m.status === "critical" || m.status === "warning";
-      if (filter === "active") return m.status === "operating" || m.status === "warning" || m.status === "critical";
+      if (filter === "attention")
+        return m.status === "critical" || m.status === "warning";
+      if (filter === "active")
+        return (
+          m.status === "operating" ||
+          m.status === "warning" ||
+          m.status === "critical"
+        );
       return true;
     });
-    return [...filtered].sort((a, b) => ORDER[a.status] - ORDER[b.status] || a.id.localeCompare(b.id));
+    return [...filtered].sort(
+      (a, b) => ORDER[a.status] - ORDER[b.status] || a.id.localeCompare(b.id),
+    );
   }, [machines, filter]);
 
-  const attention = machines.filter((m) => m.status === "critical" || m.status === "warning").length;
+  const attention = machines.filter(
+    (m) => m.status === "critical" || m.status === "warning",
+  ).length;
 
   return (
-    <section className={cn("flex min-h-0 flex-col border-r border-white/10 bg-ink-900", className)}>
+    <section
+      className={cn(
+        "flex min-h-0 flex-col border-r border-white/10 bg-ink-900",
+        className,
+      )}
+    >
       <SectionHeader
         title="Fleet"
         meta={attention ? `${attention} need attention` : "All nominal"}
         actions={
-          <div className="flex items-center gap-0.5" role="group" aria-label="Filter the fleet list">
+          <div
+            className="flex items-center gap-0.5"
+            role="group"
+            aria-label="Filter the fleet list"
+          >
             <Filter className="mr-1 size-3 text-muted" aria-hidden />
             {FILTERS.map((f) => (
               <button
@@ -72,7 +92,9 @@ export function FleetList({
                 aria-pressed={filter === f.key}
                 className={cn(
                   "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors",
-                  filter === f.key ? "bg-cat-500 text-ink-950" : "text-muted hover:text-zinc-200",
+                  filter === f.key
+                    ? "bg-cat-500 text-ink-950"
+                    : "text-muted hover:text-zinc-200",
                 )}
               >
                 {f.label}
@@ -90,19 +112,26 @@ export function FleetList({
             {rows.map((m) => {
               const token = MACHINE_STATUS[m.status];
               const selected = m.id === selectedId;
-              const attentionRow = m.status === "critical" || m.status === "warning";
+              const attentionRow =
+                m.status === "critical" || m.status === "warning";
               return (
-                <li key={m.id}>
+                <li
+                  key={m.id}
+                  className="flex items-stretch border-b border-white/5"
+                >
                   <button
                     onClick={() => onSelect(m.id)}
                     aria-current={selected ? "true" : undefined}
                     className={cn(
-                      "relative flex w-full items-center gap-3 border-b border-white/5 px-3.5 py-3 text-left transition-colors",
+                      "relative flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left transition-colors",
                       selected ? "bg-cat-500/10" : "hover:bg-white/[0.04]",
                     )}
                   >
                     <span
-                      className={cn("absolute inset-y-0 left-0 w-0.5", attentionRow ? token.dot : "bg-transparent")}
+                      className={cn(
+                        "absolute inset-y-0 left-0 w-0.5",
+                        attentionRow ? token.dot : "bg-transparent",
+                      )}
                       aria-hidden
                     />
 
@@ -120,20 +149,47 @@ export function FleetList({
 
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline justify-between gap-2">
-                        <span className="truncate text-sm font-bold text-zinc-50">{m.id}</span>
+                        <span className="truncate text-sm font-bold text-zinc-50">
+                          {m.id}
+                        </span>
                         <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted">
-                          {m.status === "offline" ? "—" : `${Math.round(m.utilization)}%`}
+                          {m.status === "offline"
+                            ? "—"
+                            : `${Math.round(m.utilization)}%`}
                         </span>
                       </span>
                       <span className="flex items-baseline justify-between gap-2">
-                        <span className="truncate text-[11px] text-muted">{m.kindLabel}</span>
-                        <StatusLabel status={m.status} pulse={m.status === "critical"} soundKey={m.id} />
+                        <span className="truncate text-[11px] text-muted">
+                          {m.kindLabel}
+                        </span>
+                        <StatusLabel
+                          status={m.status}
+                          pulse={m.status === "critical"}
+                          soundKey={m.id}
+                        />
                       </span>
                       <span className="mt-0.5 block truncate text-[11px] text-zinc-400">
-                        {m.taskLabel ?? (m.status === "offline" ? "No telemetry" : "No task assigned")}
+                        {m.taskLabel ??
+                          (m.status === "offline"
+                            ? "No telemetry"
+                            : "No task assigned")}
                       </span>
                     </span>
                   </button>
+                  {attentionRow ? (
+                    <span
+                      className={cn(
+                        "flex items-center pr-2",
+                        selected && "bg-cat-500/10",
+                      )}
+                    >
+                      <XrayLink
+                        machineId={m.id}
+                        issue={{ text: m.taskLabel ?? null }}
+                        compact
+                      />
+                    </span>
+                  ) : null}
                 </li>
               );
             })}

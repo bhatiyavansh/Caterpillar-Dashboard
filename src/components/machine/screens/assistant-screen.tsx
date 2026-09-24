@@ -4,6 +4,7 @@ import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { AlertTriangle, Check, Circle, Mic, Send, Sparkles } from "lucide-react";
 import { useAssistantScope, useGlobalAssistant } from "@/components/assistant/assistant-provider";
+import { withContextDivider } from "@/components/assistant/assistant-panel";
 import { assistantChecks } from "@/lib/mock-data";
 import { deriveAdvice } from "@/lib/advice";
 import { PRIMARY_MACHINE_ID } from "@/lib/api/seed";
@@ -171,7 +172,7 @@ export function AssistantScreen({ navigate }: { navigate: (s: MachineScreen) => 
 
           <div ref={logRef} className="mt-4 max-h-[280px] min-h-[120px] space-y-2 overflow-y-auto">
             <AnimatePresence initial={false}>
-              {voice.messages.map((m) => (
+              {withContextDivider(voice.messages, voice.contextFrom, (m) => (
                 <motion.div
                   key={m.id}
                   initial={{ opacity: 0, y: 8 }}

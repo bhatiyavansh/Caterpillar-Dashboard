@@ -20,6 +20,7 @@ import { TelemetryPanel } from "./TelemetryPanel";
 import { EventFeed } from "./EventFeed";
 import { AlertOverlay } from "./AlertOverlay";
 import { DirectorPanel } from "./DirectorPanel";
+import { XrayPanel, XrayPopoverLayer } from "./XrayInspector";
 import { MachineLabels } from "./MachineLabel";
 
 /* ------------------------------- brand -------------------------------- */
@@ -486,6 +487,7 @@ export function CommandCenter({ dense = false }: { dense?: boolean }) {
       >
         {/* machine tags project onto this layer from inside the Canvas */}
         <MachineLabels />
+        <XrayPopoverLayer />
 
         {/* ---------------- left ---------------- */}
         <div
@@ -513,6 +515,7 @@ export function CommandCenter({ dense = false }: { dense?: boolean }) {
         >
           <SafetyStatus compact={compact} />
           <AlertOverlay compact={compact} />
+          <XrayPanel compact={compact} />
           <div className="mt-auto flex w-full max-w-full flex-col items-center gap-2">
             <StartHint />
             <CameraBar compact={compact} />

@@ -476,10 +476,24 @@ async def reorder_execute(ctx: ToolContext, a: ReorderIn) -> ToolResult:
     return ToolResult(True, res, "simulator", f"reordered {a.operator_id}")
 
 
+ComponentId = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z_]{1,39}$"),
+                        Field(description="Machine component, e.g. hydraulic_pump, undercarriage, boom_ram")]
+
+
+class SourceView(_In):
+    """The 3D twin view a report was raised from, so it can be reopened exactly there."""
+    kind: Literal["xray"] = "xray"
+    machine_id: MachineId = Field(description="Machine the X-ray was opened on")
+    shown_on: MachineId | None = Field(None, description="Twin model used when the machine has no model of its own")
+    component: ComponentId | None = None
+
+
 class IncidentIn(_In):
     machine_id: MachineId
     summary: str = Field(min_length=5, max_length=600, description="What happened, in the user's words")
     event_id: str | None = Field(None, description="Hub event id the incident is about, if any")
+    component: ComponentId | None = Field(None, description="Component the incident concerns, if known")
+    view: SourceView | None = Field(None, description="Twin X-ray view the report was raised from")
 
 
 def _incident_facts(ctx: ToolContext, a: IncidentIn) -> dict[str, Any]:
@@ -487,6 +501,7 @@ def _incident_facts(ctx: ToolContext, a: IncidentIn) -> dict[str, Any]:
     events = [e for e in ctx.hub.ring if e.get("type") == "event" and e.get("machine_id") == a.machine_id][-10:]
     ref = next((e for e in ctx.hub.ring if a.event_id and e.get("id") == a.event_id), None)
     return {"machine_state": _slim(m) if m else None,
+            "component": a.component,
             "trigger_event": ref,
             "recent_events": [{k: e.get(k) for k in ("id", "ts", "event", "severity", "message", "data")} for e in events],
             "environment": dict(ctx.hub.world.environment), "captured_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
@@ -505,7 +520,8 @@ async def incident_execute(ctx: ToolContext, a: IncidentIn) -> ToolResult:
         rec = await ctx.records.create("incident", {
             "machine_id": a.machine_id, "operator_id": _operator_for(ctx, a.machine_id),
             "narrative": a.summary, "narrative_source": "user/assistant, confirmed by operator",
-            "facts": _incident_facts(ctx, a), "event_id": a.event_id}, status="confirmed")
+            "facts": _incident_facts(ctx, a), "event_id": a.event_id, "component": a.component,
+            "source_view": a.view.model_dump() if a.view else None}, status="confirmed")
     ctx.hub.hub_event("incident_created", "medium", f"Incident {rec['id']} filed for {a.machine_id}",
                       {"incident_id": rec["id"]}, machine_id=a.machine_id)
     return ToolResult(True, {"incident_id": rec["id"], "record": rec}, "records", f"incident {rec['id']}")
@@ -514,6 +530,8 @@ async def incident_execute(ctx: ToolContext, a: IncidentIn) -> ToolResult:
 class WorkOrderIn(_In):
     machine_id: MachineId
     issue: str = Field(min_length=3, max_length=400)
+    component: ComponentId | None = Field(None, description="Component to service, if known")
+    view: SourceView | None = Field(None, description="Twin X-ray view the work order was raised from")
 
 
 async def wo_prepare(ctx: ToolContext, a: WorkOrderIn) -> tuple[str, dict[str, Any]]:
@@ -522,8 +540,12 @@ async def wo_prepare(ctx: ToolContext, a: WorkOrderIn) -> tuple[str, dict[str, A
         forecast = (await ctx.ml.maintenance(a.machine_id))["forecast"]
     except MLUnavailable:
         forecast = []
-    return (f"Raise a work order for {a.machine_id}: {a.issue}",
-            {"fault_codes": m.get("fault_codes", []), "forecast": forecast[:3]})
+    # A component-specific order leads with that component's forecast line.
+    if a.component:
+        forecast = sorted(forecast, key=lambda f: f.get("component") != a.component)
+    return (f"Raise a work order for {a.machine_id}" + (f" ({a.component.replace('_', ' ')})" if a.component else "")
+            + f": {a.issue}",
+            {"fault_codes": m.get("fault_codes", []), "forecast": forecast[:3], "component": a.component})
 
 
 async def wo_execute(ctx: ToolContext, a: WorkOrderIn) -> ToolResult:
@@ -532,7 +554,8 @@ async def wo_execute(ctx: ToolContext, a: WorkOrderIn) -> ToolResult:
     if reports is not None:
         rec = await reports.create_work_order(ctx, a, preview)
     else:
-        rec = await ctx.records.create("work_order", {"machine_id": a.machine_id, "issue": a.issue, **preview},
+        rec = await ctx.records.create("work_order", {"machine_id": a.machine_id, "issue": a.issue, **preview,
+                                                      "source_view": a.view.model_dump() if a.view else None},
                                        status="draft")
     ctx.hub.hub_event("work_order_created", "info", f"Work order {rec['id']} drafted for {a.machine_id}",
                       {"work_order_id": rec["id"]}, machine_id=a.machine_id)

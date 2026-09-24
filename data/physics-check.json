@@ -1,0 +1,150 @@
+{
+  "generatedAt": "2026-09-24T07:32:23.209Z",
+  "terrain": {
+    "samples": 5000,
+    "misses": 0,
+    "colliderVsRenderMeshMaxM": 0.000023,
+    "colliderVsContinuousFnMaxM": 4.896,
+    "colliderVsContinuousFnMeanM": 0.0077
+  },
+  "fleet": {
+    "simulatedSeconds": 180,
+    "machines": 9,
+    "materialParcels": 18,
+    "deepestHullPenetrationM": 0,
+    "deepestPair": null,
+    "physicsStepMs": {
+      "p50": 2.887,
+      "p95": 3.639,
+      "max": 10.032
+    },
+    "engineStepMs": {
+      "p50": 7.212,
+      "p95": 9.417,
+      "max": 65.63
+    }
+  },
+  "scenarios": [
+    {
+      "id": "slope-failure",
+      "ranSeconds": 20,
+      "outcomes": [
+        {
+          "label": "Face fails under load",
+          "observedAtS": 10
+        },
+        {
+          "label": "Excavator pitched past 10°",
+          "observedAtS": 11.8
+        }
+      ],
+      "physicsStepMs": {
+        "p50": 1.46,
+        "p95": 5.835,
+        "max": 8.56
+      },
+      "peakAwakeBodies": 69
+    },
+    {
+      "id": "load-shift-tipover",
+      "ranSeconds": 11.9,
+      "outcomes": [
+        {
+          "label": "Stability alert before the tip",
+          "observedAtS": 1.5
+        },
+        {
+          "label": "Holds with the arm tucked in",
+          "observedAtS": 4.3
+        },
+        {
+          "label": "Machine overturns",
+          "observedAtS": 5.9
+        }
+      ],
+      "physicsStepMs": {
+        "p50": 2.928,
+        "p95": 3.653,
+        "max": 7.074
+      },
+      "peakAwakeBodies": 9
+    },
+    {
+      "id": "wet-ramp-slip",
+      "ranSeconds": 15.4,
+      "outcomes": [
+        {
+          "label": "Traction lost on the grade",
+          "observedAtS": 5.4
+        },
+        {
+          "label": "Truck slides back 2 m",
+          "observedAtS": 12
+        }
+      ],
+      "physicsStepMs": {
+        "p50": 3,
+        "p95": 3.743,
+        "max": 8.049
+      },
+      "peakAwakeBodies": 9
+    },
+    {
+      "id": "near-miss-v2v",
+      "ranSeconds": 18.4,
+      "outcomes": [
+        {
+          "label": "Dozer brought to a stop",
+          "observedAtS": 14.4
+        },
+        {
+          "label": "Contact (should not happen)",
+          "observedAtS": null
+        }
+      ],
+      "physicsStepMs": {
+        "p50": 2.972,
+        "p95": 3.503,
+        "max": 12.632
+      },
+      "peakAwakeBodies": 9
+    },
+    {
+      "id": "dozer-intercept",
+      "ranSeconds": 17.7,
+      "outcomes": [
+        {
+          "label": "Machines make contact",
+          "observedAtS": 11.2
+        }
+      ],
+      "physicsStepMs": {
+        "p50": 0.989,
+        "p95": 3.166,
+        "max": 4.382
+      },
+      "peakAwakeBodies": 9
+    }
+  ],
+  "control": {
+    "id": "dry-ramp-control",
+    "ranSeconds": 40,
+    "outcomes": [
+      {
+        "label": "Traction lost on the grade",
+        "observedAtS": null
+      },
+      {
+        "label": "Truck slides back 2 m",
+        "observedAtS": null
+      }
+    ],
+    "physicsStepMs": {
+      "p50": 3.102,
+      "p95": 5.284,
+      "max": 29.706
+    },
+    "peakAwakeBodies": 9
+  },
+  "failures": []
+}

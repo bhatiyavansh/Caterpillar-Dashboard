@@ -133,6 +133,35 @@ function CitationChip({ citation }: { citation: Citation }) {
   );
 }
 
+/**
+ * Marks where the assistant's memory starts. The history is kept in the browser, but the hub forgets
+ * a conversation 30 minutes after its last answer: messages above this line are no longer context.
+ */
+export function ContextDivider() {
+  return (
+    <div role="separator" className="flex items-center gap-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
+      <span className="h-px flex-1 bg-white/10" />
+      Earlier messages — no longer in the assistant&apos;s context
+      <span className="h-px flex-1 bg-white/10" />
+    </div>
+  );
+}
+
+/** Messages in order, with the context divider where the assistant's memory starts. */
+export function withContextDivider<T extends { id: string }>(
+  messages: T[],
+  contextFrom: number,
+  render: (m: T) => React.ReactNode,
+): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  messages.forEach((m, i) => {
+    if (i > 0 && i === contextFrom) out.push(<ContextDivider key="context-divider" />);
+    out.push(render(m));
+  });
+  if (contextFrom > 0 && contextFrom === messages.length) out.push(<ContextDivider key="context-divider" />);
+  return out;
+}
+
 function Bubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
   return (
@@ -291,7 +320,7 @@ export function AssistantPanel({
           </div>
         ) : (
           <AnimatePresence initial={false}>
-            {voice.messages.map((m) => (
+            {withContextDivider(voice.messages, voice.contextFrom, (m) => (
               <motion.div key={m.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
                 <Bubble message={m} />
               </motion.div>

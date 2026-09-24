@@ -29,7 +29,13 @@ import {
 } from "@/lib/twin/site";
 import { distanceOutsideSite, pitCut, terrainHeight } from "@/lib/twin/terrain";
 import { useTwinStore } from "@/store/twinStore";
-import { PALETTE, beltTexture, chainLinkTexture, hazardTexture, signTexture } from "./materials";
+import {
+  PALETTE,
+  beltTexture,
+  chainLinkTexture,
+  hazardTexture,
+  signTexture,
+} from "./materials";
 
 /* ------------------------------------------------------------------------ */
 /*  Helpers                                                                 */
@@ -48,10 +54,15 @@ function isWorkedGround(x: number, z: number, margin = 0): boolean {
   if (projectRoads(x, z).influence > 0.02) return true;
   if (zoneAt(x, z)) return true;
   for (const p of PADS) {
-    if (Math.abs(x - p.x) < p.rx + margin + 4 && Math.abs(z - p.z) < p.rz + margin + 4) return true;
+    if (
+      Math.abs(x - p.x) < p.rx + margin + 4 &&
+      Math.abs(z - p.z) < p.rz + margin + 4
+    )
+      return true;
   }
   if (pitCut(x, z).into > 0) return true;
-  if (Math.hypot((x - POND.x) / POND.rx, (z - POND.z) / POND.rz) < 1.6) return true;
+  if (Math.hypot((x - POND.x) / POND.rx, (z - POND.z) / POND.rz) < 1.6)
+    return true;
   if (Math.hypot(x - DUMP.x, z - DUMP.z) < DUMP.r + 14) return true;
   for (const m of MOUNDS) {
     if (m.cone && Math.hypot(x - m.x, z - m.z) < m.r + margin) return true;
@@ -107,20 +118,35 @@ function Rocks() {
       const outside = distanceOutsideSite(x, z);
       if (outside === 0 && !onPitCrest(x, z) && rand() > 0.35) continue;
 
-      const s = (0.35 + rand() * rand() * (outside > 20 ? 2.6 : 1.3));
+      const s = 0.35 + rand() * rand() * (outside > 20 ? 2.6 : 1.3);
       dummy.position.set(x, terrainHeight(x, z) + s * 0.25, z);
       dummy.rotation.set(rand() * Math.PI, rand() * Math.PI, rand() * Math.PI);
-      dummy.scale.set(s * (0.8 + rand() * 0.6), s * (0.55 + rand() * 0.4), s * (0.8 + rand() * 0.6));
+      dummy.scale.set(
+        s * (0.8 + rand() * 0.6),
+        s * (0.55 + rand() * 0.4),
+        s * (0.8 + rand() * 0.6),
+      );
       dummy.updateMatrix();
       matrices.push(dummy.matrix.clone());
-      colors.push(new THREE.Color().setHSL(0.08 + rand() * 0.04, 0.12 + rand() * 0.1, 0.34 + rand() * 0.14));
+      colors.push(
+        new THREE.Color().setHSL(
+          0.08 + rand() * 0.04,
+          0.12 + rand() * 0.1,
+          0.34 + rand() * 0.14,
+        ),
+      );
     }
     return { matrices, colors };
   }, []);
   useInstances(ref, matrices, colors);
 
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, matrices.length]} castShadow receiveShadow>
+    <instancedMesh
+      ref={ref}
+      args={[undefined, undefined, matrices.length]}
+      castShadow
+      receiveShadow
+    >
       <dodecahedronGeometry args={[1, 0]} />
       <meshStandardMaterial roughness={0.95} flatShading />
     </instancedMesh>
@@ -150,7 +176,13 @@ function Scrub() {
         dummy.scale.set(s * 1.3, s * 0.75, s * 1.3);
         dummy.updateMatrix();
         matrices.push(dummy.matrix.clone());
-        colors.push(new THREE.Color().setHSL(0.14 + rand() * 0.07, 0.28 + rand() * 0.15, 0.24 + rand() * 0.12));
+        colors.push(
+          new THREE.Color().setHSL(
+            0.14 + rand() * 0.07,
+            0.28 + rand() * 0.15,
+            0.24 + rand() * 0.12,
+          ),
+        );
       }
     }
     return { matrices, colors };
@@ -158,7 +190,12 @@ function Scrub() {
   useInstances(ref, matrices, colors);
 
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, matrices.length]} castShadow receiveShadow>
+    <instancedMesh
+      ref={ref}
+      args={[undefined, undefined, matrices.length]}
+      castShadow
+      receiveShadow
+    >
       <icosahedronGeometry args={[1, 0]} />
       <meshStandardMaterial roughness={1} flatShading />
     </instancedMesh>
@@ -197,7 +234,13 @@ function Trees() {
       dummy.scale.set(w, h * 0.7, w);
       dummy.updateMatrix();
       crowns.push(dummy.matrix.clone());
-      crownColors.push(new THREE.Color().setHSL(0.2 + rand() * 0.07, 0.3 + rand() * 0.15, 0.2 + rand() * 0.1));
+      crownColors.push(
+        new THREE.Color().setHSL(
+          0.2 + rand() * 0.07,
+          0.3 + rand() * 0.15,
+          0.2 + rand() * 0.1,
+        ),
+      );
     }
     return { trunks, crowns, crownColors };
   }, []);
@@ -206,11 +249,20 @@ function Trees() {
 
   return (
     <group>
-      <instancedMesh ref={trunkRef} args={[undefined, undefined, trunks.length]} castShadow>
+      <instancedMesh
+        ref={trunkRef}
+        args={[undefined, undefined, trunks.length]}
+        castShadow
+      >
         <cylinderGeometry args={[0.12, 0.2, 1, 5]} />
         <meshStandardMaterial color="#4a3a2a" roughness={1} />
       </instancedMesh>
-      <instancedMesh ref={crownRef} args={[undefined, undefined, crowns.length]} castShadow receiveShadow>
+      <instancedMesh
+        ref={crownRef}
+        args={[undefined, undefined, crowns.length]}
+        castShadow
+        receiveShadow
+      >
         <coneGeometry args={[1, 1, 7]} />
         <meshStandardMaterial roughness={1} flatShading />
       </instancedMesh>
@@ -279,12 +331,16 @@ function PerimeterFence() {
         const base = positions.length / 3;
         positions.push(x, y + 0.08, z, x, y + FENCE_HEIGHT - 0.1, z);
         uvs.push((t * len) / 1.6, 0, (t * len) / 1.6, FENCE_HEIGHT / 1.6);
-        if (i < n) indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
+        if (i < n)
+          indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
       }
     }
 
     const panels = new THREE.BufferGeometry();
-    panels.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    panels.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(positions, 3),
+    );
     panels.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
     panels.setIndex(indices);
     panels.computeVertexNormals();
@@ -294,7 +350,11 @@ function PerimeterFence() {
 
   return (
     <group>
-      <instancedMesh ref={postRef} args={[undefined, undefined, posts.length]} castShadow>
+      <instancedMesh
+        ref={postRef}
+        args={[undefined, undefined, posts.length]}
+        castShadow
+      >
         <cylinderGeometry args={[0.05, 0.05, FENCE_HEIGHT, 5]} />
         <meshStandardMaterial color="#8d949a" metalness={0.6} roughness={0.5} />
       </instancedMesh>
@@ -323,7 +383,15 @@ function SiteGate() {
     t.repeat.set(6, 1);
     return t;
   }, []);
-  const sign = useMemo(() => signTexture("SITE 07 · AUTHORISED ENTRY", "PPE · HI-VIS · HARD HAT", PALETTE.catYellow), []);
+  const sign = useMemo(
+    () =>
+      signTexture(
+        "SITE 07 · AUTHORISED ENTRY",
+        "PPE · HI-VIS · HARD HAT",
+        PALETTE.catYellow,
+      ),
+    [],
+  );
   const boom = useRef<THREE.Group>(null);
   const engine = useTwinStore((s) => s.engine);
 
@@ -352,7 +420,12 @@ function SiteGate() {
         </mesh>
         <mesh position={[0, 1.7, 1.61]}>
           <planeGeometry args={[3, 1]} />
-          <meshStandardMaterial color={PALETTE.glass} emissive="#2a3f52" emissiveIntensity={0.5} roughness={0.2} />
+          <meshStandardMaterial
+            color={PALETTE.glass}
+            emissive="#2a3f52"
+            emissiveIntensity={0.5}
+            roughness={0.2}
+          />
         </mesh>
       </group>
 
@@ -362,7 +435,11 @@ function SiteGate() {
           <boxGeometry args={[0.5, 1.2, 0.5]} />
           <meshStandardMaterial color="#e0453c" roughness={0.6} />
         </mesh>
-        <group ref={boom} position={[0, 1.05, 0]} rotation={[0, -Math.PI / 2, 0]}>
+        <group
+          ref={boom}
+          position={[0, 1.05, 0]}
+          rotation={[0, -Math.PI / 2, 0]}
+        >
           <mesh position={[6.5, 0, 0]} castShadow>
             <boxGeometry args={[13, 0.14, 0.14]} />
             <meshStandardMaterial map={stripes} roughness={0.6} />
@@ -371,7 +448,10 @@ function SiteGate() {
       </group>
 
       {/* entry sign */}
-      <group position={[x + 16, terrainHeight(x + 16, z + 11), z + 11]} rotation={[0, -Math.PI / 2, 0]}>
+      <group
+        position={[x + 16, terrainHeight(x + 16, z + 11), z + 11]}
+        rotation={[0, -Math.PI / 2, 0]}
+      >
         {[-1.5, 1.5].map((px) => (
           <mesh key={px} position={[px, 1.2, 0]} castShadow>
             <cylinderGeometry args={[0.08, 0.08, 2.4, 6]} />
@@ -379,7 +459,11 @@ function SiteGate() {
           </mesh>
         ))}
         {[0, Math.PI].map((r) => (
-          <mesh key={r} position={[0, 2.3, r ? -0.02 : 0.02]} rotation={[0, r, 0]}>
+          <mesh
+            key={r}
+            position={[0, 2.3, r ? -0.02 : 0.02]}
+            rotation={[0, r, 0]}
+          >
             <planeGeometry args={[4.4, 1.4]} />
             <meshStandardMaterial map={sign} roughness={0.7} />
           </mesh>
@@ -404,9 +488,20 @@ function Crusher() {
   const screen = useRef<THREE.Mesh>(null);
 
   const { mid, length, yaw, pitch, legs } = useMemo(() => {
-    const ground = terrainHeight(CRUSHER.conveyorFrom.x, CRUSHER.conveyorFrom.z);
-    const from = new THREE.Vector3(CRUSHER.conveyorFrom.x, ground + CRUSHER.conveyorFrom.y, CRUSHER.conveyorFrom.z);
-    const to = new THREE.Vector3(CRUSHER.conveyorTo.x, ground + CRUSHER.conveyorTo.y, CRUSHER.conveyorTo.z);
+    const ground = terrainHeight(
+      CRUSHER.conveyorFrom.x,
+      CRUSHER.conveyorFrom.z,
+    );
+    const from = new THREE.Vector3(
+      CRUSHER.conveyorFrom.x,
+      ground + CRUSHER.conveyorFrom.y,
+      CRUSHER.conveyorFrom.z,
+    );
+    const to = new THREE.Vector3(
+      CRUSHER.conveyorTo.x,
+      ground + CRUSHER.conveyorTo.y,
+      CRUSHER.conveyorTo.z,
+    );
     const dir = to.clone().sub(from);
     const length = dir.length();
     const legs = [1, 2, 3, 4].map((i) => from.clone().lerp(to, i / 5));
@@ -425,17 +520,26 @@ function Crusher() {
   useFrame((state, delta) => {
     belt.offset.y -= delta * 0.9;
     if (screen.current) {
-      screen.current.position.y = 5.1 + Math.sin(state.clock.elapsedTime * 38) * 0.025;
+      screen.current.position.y =
+        5.1 + Math.sin(state.clock.elapsedTime * 38) * 0.025;
     }
   });
 
   return (
     <group>
-      <group position={[CRUSHER.x, y, CRUSHER.z]} rotation={[0, CRUSHER.rot, 0]}>
+      <group
+        position={[CRUSHER.x, y, CRUSHER.z]}
+        rotation={[0, CRUSHER.rot, 0]}
+      >
         {/* feed hopper */}
         <mesh position={[-5, 4.2, 0]} castShadow receiveShadow>
           <cylinderGeometry args={[3.2, 1.4, 3, 4, 1, true]} />
-          <meshStandardMaterial color={PALETTE.catYellowDark} side={THREE.DoubleSide} roughness={0.7} metalness={0.3} />
+          <meshStandardMaterial
+            color={PALETTE.catYellowDark}
+            side={THREE.DoubleSide}
+            roughness={0.7}
+            metalness={0.3}
+          />
         </mesh>
         {/* hopper frame */}
         {[
@@ -446,13 +550,21 @@ function Crusher() {
         ].map(([lx, lz], i) => (
           <mesh key={i} position={[lx, 1.4, lz]} castShadow>
             <boxGeometry args={[0.3, 2.8, 0.3]} />
-            <meshStandardMaterial color={PALETTE.steel} metalness={0.5} roughness={0.6} />
+            <meshStandardMaterial
+              color={PALETTE.steel}
+              metalness={0.5}
+              roughness={0.6}
+            />
           </mesh>
         ))}
         {/* jaw crusher body */}
         <mesh position={[0, 2.2, 0]} castShadow receiveShadow>
           <boxGeometry args={[4.2, 4.4, 3.4]} />
-          <meshStandardMaterial color={PALETTE.catYellow} roughness={0.6} metalness={0.25} />
+          <meshStandardMaterial
+            color={PALETTE.catYellow}
+            roughness={0.6}
+            metalness={0.25}
+          />
         </mesh>
         <mesh position={[0, 4.6, 0]} castShadow>
           <boxGeometry args={[4.6, 0.3, 3.8]} />
@@ -460,15 +572,33 @@ function Crusher() {
         </mesh>
         {/* flywheels */}
         {[-1.85, 1.85].map((fz) => (
-          <mesh key={fz} position={[0.6, 2.8, fz]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <mesh
+            key={fz}
+            position={[0.6, 2.8, fz]}
+            rotation={[Math.PI / 2, 0, 0]}
+            castShadow
+          >
             <cylinderGeometry args={[1.3, 1.3, 0.3, 20]} />
-            <meshStandardMaterial color={PALETTE.steelDark} metalness={0.7} roughness={0.4} />
+            <meshStandardMaterial
+              color={PALETTE.steelDark}
+              metalness={0.7}
+              roughness={0.4}
+            />
           </mesh>
         ))}
         {/* vibrating screen deck */}
-        <mesh ref={screen} position={[5.5, 5.1, 0]} rotation={[0, 0, -0.18]} castShadow>
+        <mesh
+          ref={screen}
+          position={[5.5, 5.1, 0]}
+          rotation={[0, 0, -0.18]}
+          castShadow
+        >
           <boxGeometry args={[5, 0.6, 3]} />
-          <meshStandardMaterial color="#5f6b73" metalness={0.5} roughness={0.5} />
+          <meshStandardMaterial
+            color="#5f6b73"
+            metalness={0.5}
+            roughness={0.5}
+          />
         </mesh>
         {[
           [3.6, -1.3],
@@ -478,7 +608,11 @@ function Crusher() {
         ].map(([lx, lz], i) => (
           <mesh key={i} position={[lx, 2.4, lz]} castShadow>
             <boxGeometry args={[0.3, 4.8, 0.3]} />
-            <meshStandardMaterial color={PALETTE.steel} metalness={0.5} roughness={0.6} />
+            <meshStandardMaterial
+              color={PALETTE.steel}
+              metalness={0.5}
+              roughness={0.6}
+            />
           </mesh>
         ))}
         {/* control cabin */}
@@ -488,7 +622,12 @@ function Crusher() {
         </mesh>
         <mesh position={[-1, 1.6, -3.39]}>
           <planeGeometry args={[1.8, 0.8]} />
-          <meshStandardMaterial color={PALETTE.glass} emissive="#2a3f52" emissiveIntensity={0.5} roughness={0.2} />
+          <meshStandardMaterial
+            color={PALETTE.glass}
+            emissive="#2a3f52"
+            emissiveIntensity={0.5}
+            roughness={0.2}
+          />
         </mesh>
       </group>
 
@@ -502,7 +641,11 @@ function Crusher() {
           {[-0.65, 0.65].map((sx) => (
             <mesh key={sx} position={[sx, 0.05, 0]} castShadow>
               <boxGeometry args={[0.12, 0.35, length]} />
-              <meshStandardMaterial color={PALETTE.catYellowDark} metalness={0.3} roughness={0.6} />
+              <meshStandardMaterial
+                color={PALETTE.catYellowDark}
+                metalness={0.3}
+                roughness={0.6}
+              />
             </mesh>
           ))}
         </group>
@@ -513,7 +656,11 @@ function Crusher() {
         return (
           <mesh key={i} position={[p.x, gy + h / 2, p.z]} castShadow>
             <boxGeometry args={[0.18, h, 1.3]} />
-            <meshStandardMaterial color={PALETTE.steel} metalness={0.5} roughness={0.6} />
+            <meshStandardMaterial
+              color={PALETTE.steel}
+              metalness={0.5}
+              roughness={0.6}
+            />
           </mesh>
         );
       })}
@@ -533,7 +680,10 @@ function SedimentPond() {
     const m = water.current;
     if (!m) return;
     // Rain roughens the surface; still water mirrors the sky.
-    m.roughness = 0.08 + engine.wetness * 0.35 + Math.sin(state.clock.elapsedTime * 0.7) * 0.02;
+    m.roughness =
+      0.08 +
+      engine.wetness * 0.35 +
+      Math.sin(state.clock.elapsedTime * 0.7) * 0.02;
   });
 
   return (
@@ -561,7 +711,11 @@ function SedimentPond() {
         </mesh>
         <mesh position={[0, 0.55, 0]} castShadow>
           <boxGeometry args={[1.2, 0.7, 0.9]} />
-          <meshStandardMaterial color={PALETTE.steelDark} roughness={0.6} metalness={0.4} />
+          <meshStandardMaterial
+            color={PALETTE.steelDark}
+            roughness={0.6}
+            metalness={0.4}
+          />
         </mesh>
       </group>
       <mesh
@@ -605,16 +759,29 @@ function Pickup({ color }: { color: string }) {
       </mesh>
       <mesh position={[0.6, 1.55, 0]} castShadow>
         <boxGeometry args={[2.2, 0.75, 1.8]} />
-        <meshStandardMaterial color={PALETTE.glass} roughness={0.15} metalness={0.3} />
+        <meshStandardMaterial
+          color={PALETTE.glass}
+          roughness={0.15}
+          metalness={0.3}
+        />
       </mesh>
       {/* beacon, mandatory on site vehicles */}
       <mesh position={[1.1, 2.0, 0]}>
         <boxGeometry args={[0.3, 0.14, 0.3]} />
-        <meshStandardMaterial color="#ff9d00" emissive="#ff9d00" emissiveIntensity={1.4} toneMapped={false} />
+        <meshStandardMaterial
+          color="#ff9d00"
+          emissive="#ff9d00"
+          emissiveIntensity={1.4}
+          toneMapped={false}
+        />
       </mesh>
       {[-1.7, 1.7].flatMap((wx) =>
         [-0.95, 0.95].map((wz) => (
-          <mesh key={`${wx}${wz}`} position={[wx, 0.42, wz]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh
+            key={`${wx}${wz}`}
+            position={[wx, 0.42, wz]}
+            rotation={[Math.PI / 2, 0, 0]}
+          >
             <cylinderGeometry args={[0.42, 0.42, 0.3, 12]} />
             <meshStandardMaterial color="#141517" roughness={0.9} />
           </mesh>
@@ -627,7 +794,9 @@ function Pickup({ color }: { color: string }) {
 function Windsock() {
   const sock = useRef<THREE.Group>(null);
   useFrame((state) => {
-    if (sock.current) sock.current.rotation.y = 0.6 + Math.sin(state.clock.elapsedTime * 0.4) * 0.35;
+    if (sock.current)
+      sock.current.rotation.y =
+        0.6 + Math.sin(state.clock.elapsedTime * 0.4) * 0.35;
   });
   const x = -200;
   const z = 104;
@@ -641,7 +810,11 @@ function Windsock() {
       <group ref={sock} position={[0, 6.8, 0]}>
         <mesh position={[0, 0, 1.1]} rotation={[Math.PI / 2 + 0.2, 0, 0]}>
           <cylinderGeometry args={[0.35, 0.18, 2.2, 10, 1, true]} />
-          <meshStandardMaterial color="#ff6a1a" side={THREE.DoubleSide} roughness={0.8} />
+          <meshStandardMaterial
+            color="#ff6a1a"
+            side={THREE.DoubleSide}
+            roughness={0.8}
+          />
         </mesh>
       </group>
     </group>
@@ -649,7 +822,10 @@ function Windsock() {
 }
 
 function Compound() {
-  const muster = useMemo(() => signTexture("MUSTER POINT", "EMERGENCY ASSEMBLY", "#3ddc84"), []);
+  const muster = useMemo(
+    () => signTexture("MUSTER POINT", "EMERGENCY ASSEMBLY", "#3ddc84"),
+    [],
+  );
   return (
     <group>
       {PORTACABINS.map(([x, z, rot, storey], i) => {
@@ -658,12 +834,20 @@ function Compound() {
           <group key={i} position={[x, y, z]} rotation={[0, rot, 0]}>
             <mesh position={[0, 1.45, 0]} castShadow receiveShadow>
               <boxGeometry args={[10, 2.9, 3]} />
-              <meshStandardMaterial color={storey ? "#cfd6dc" : "#dcd6c8"} roughness={0.85} />
+              <meshStandardMaterial
+                color={storey ? "#cfd6dc" : "#dcd6c8"}
+                roughness={0.85}
+              />
             </mesh>
             {[-3, 0, 3].map((wx) => (
               <mesh key={wx} position={[wx, 1.7, 1.51]}>
                 <planeGeometry args={[1.5, 0.9]} />
-                <meshStandardMaterial color={PALETTE.glass} emissive="#2a3f52" emissiveIntensity={0.5} roughness={0.2} />
+                <meshStandardMaterial
+                  color={PALETTE.glass}
+                  emissive="#2a3f52"
+                  emissiveIntensity={0.5}
+                  roughness={0.2}
+                />
               </mesh>
             ))}
             <mesh position={[0, 2.95, 0]} castShadow>
@@ -674,20 +858,36 @@ function Compound() {
         );
       })}
       {/* external stair to the upper cabins */}
-      <mesh position={[-196.2, terrainHeight(-196.2, 110) + 1.45, 110]} rotation={[0.55, 0, 0]} castShadow>
+      <mesh
+        position={[-196.2, terrainHeight(-196.2, 110) + 1.45, 110]}
+        rotation={[0.55, 0, 0]}
+        castShadow
+      >
         <boxGeometry args={[1.2, 0.15, 6]} />
-        <meshStandardMaterial color={PALETTE.catYellowDark} metalness={0.4} roughness={0.6} />
+        <meshStandardMaterial
+          color={PALETTE.catYellowDark}
+          metalness={0.4}
+          roughness={0.6}
+        />
       </mesh>
 
       {PICKUPS.map(([x, z, rot, color], i) => (
-        <group key={i} position={[x, terrainHeight(x, z), z]} rotation={[0, rot + Math.PI / 2, 0]}>
+        <group
+          key={i}
+          position={[x, terrainHeight(x, z), z]}
+          rotation={[0, rot + Math.PI / 2, 0]}
+        >
           <Pickup color={color} />
         </group>
       ))}
 
       {/* parking bay lines */}
       {[-186.5, -183.5, -180.5, -177.5, -174.5, -171.5].map((px) => (
-        <mesh key={px} position={[px, terrainHeight(px, 142) + 0.06, 142]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh
+          key={px}
+          position={[px, terrainHeight(px, 142) + 0.06, 142]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
           <planeGeometry args={[0.15, 6]} />
           <meshStandardMaterial color="#e8e4d4" />
         </mesh>
@@ -700,7 +900,11 @@ function Compound() {
           <meshStandardMaterial color={PALETTE.steel} />
         </mesh>
         {[0, Math.PI].map((r) => (
-          <mesh key={r} position={[0, 2.5, r ? -0.02 : 0.02]} rotation={[0, r, 0]}>
+          <mesh
+            key={r}
+            position={[0, 2.5, r ? -0.02 : 0.02]}
+            rotation={[0, r, 0]}
+          >
             <planeGeometry args={[2.8, 0.9]} />
             <meshStandardMaterial map={muster} />
           </mesh>
@@ -752,13 +956,20 @@ function PowerLine() {
         for (let s = 0; s < steps; s++) {
           for (const t of [s / steps, (s + 1) / steps]) {
             const sag = Math.sin(t * Math.PI) * 1.6;
-            positions.push(ax + (bx - ax) * t, ay + (by - ay) * t + 10.2 - sag, az + off);
+            positions.push(
+              ax + (bx - ax) * t,
+              ay + (by - ay) * t + 10.2 - sag,
+              az + off,
+            );
           }
         }
       }
     }
     const wires = new THREE.BufferGeometry();
-    wires.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    wires.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(positions, 3),
+    );
     return { poles, wires };
   }, []);
 
@@ -805,7 +1016,11 @@ function StoresYard() {
     const rows = [4, 3, 2];
     rows.forEach((count, row) => {
       for (let i = 0; i < count; i++) {
-        dummy.position.set(px, gy + 0.6 + row * 1.04, pz + (i - (count - 1) / 2) * 1.22);
+        dummy.position.set(
+          px,
+          gy + 0.6 + row * 1.04,
+          pz + (i - (count - 1) / 2) * 1.22,
+        );
         dummy.rotation.set(0, 0, Math.PI / 2);
         dummy.updateMatrix();
         pipes.push(dummy.matrix.clone());
@@ -839,15 +1054,34 @@ function StoresYard() {
 
   return (
     <group>
-      <instancedMesh ref={pipeRef} args={[undefined, undefined, pipes.length]} castShadow receiveShadow>
+      <instancedMesh
+        ref={pipeRef}
+        args={[undefined, undefined, pipes.length]}
+        castShadow
+        receiveShadow
+      >
         <cylinderGeometry args={[0.6, 0.6, 2.4, 16, 1, true]} />
-        <meshStandardMaterial color={PALETTE.concrete} roughness={0.95} side={THREE.DoubleSide} />
+        <meshStandardMaterial
+          color={PALETTE.concrete}
+          roughness={0.95}
+          side={THREE.DoubleSide}
+        />
       </instancedMesh>
-      <instancedMesh ref={palletRef} args={[undefined, undefined, pallets.length]} castShadow receiveShadow>
+      <instancedMesh
+        ref={palletRef}
+        args={[undefined, undefined, pallets.length]}
+        castShadow
+        receiveShadow
+      >
         <boxGeometry args={[1.8, 1, 1.8]} />
         <meshStandardMaterial color="#9a8a6a" roughness={0.9} />
       </instancedMesh>
-      <instancedMesh ref={barrierRef} args={[undefined, undefined, barriers.length]} castShadow receiveShadow>
+      <instancedMesh
+        ref={barrierRef}
+        args={[undefined, undefined, barriers.length]}
+        castShadow
+        receiveShadow
+      >
         <boxGeometry args={[3.6, 0.84, 0.6]} />
         <meshStandardMaterial color={PALETTE.concrete} roughness={0.95} />
       </instancedMesh>
