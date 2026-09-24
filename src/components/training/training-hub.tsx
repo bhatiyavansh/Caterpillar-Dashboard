@@ -6,6 +6,10 @@
  * This is the one surface that should not feel like monitoring. It is about a
  * person getting better, so it leads with their progress, and the incidents
  * below are framed as lessons drawn from this site rather than as a fault log.
+ *
+ * The instructor section is the global site assistant, routed to its training
+ * specialist: it answers from the site's documents (with the synthetic training
+ * notes labelled as such) and knows which levels the learner has passed.
  */
 import * as React from "react";
 import Link from "next/link";
@@ -29,6 +33,16 @@ import { Button } from "@/components/ui/primitives";
 import { PageShell, Panel } from "@/components/ui/page";
 import { SeverityChip } from "@/components/ui/status";
 import { EmptyPanel, LoadingState } from "@/components/ui/states";
+import { AssistantPanel } from "@/components/assistant/assistant-panel";
+import { useAssistantScope } from "@/components/assistant/assistant-provider";
+import { CURRICULUM } from "@/lib/training/curriculum";
+import { progressContext } from "@/lib/training/assistant-context";
+import {
+  getProgressSnapshot,
+  getServerProgressSnapshot,
+  subscribeProgress,
+  type TrainingProgress,
+} from "@/lib/training/progress";
 import { cn } from "@/lib/utils";
 
 function ProgressRing({ value, size = 64 }: { value: number; size?: number }) {
@@ -164,9 +178,58 @@ function IncidentLesson({ incident }: { incident: Incident }) {
   );
 }
 
+const HUB_SUGGESTIONS = [
+  "What should I check before starting?",
+  "Why do I need to wear the seatbelt?",
+  "What does the next lesson teach?",
+  "How should I work near people on foot?",
+];
+
+/** Talk to the instructor: the global assistant, with the learner's banked lesson progress as context. */
+function InstructorSection({ progress }: { progress: TrainingProgress }) {
+  const progressRef = React.useRef(progress);
+  React.useLayoutEffect(() => {
+    progressRef.current = progress;
+  });
+  useAssistantScope({
+    surface: "training",
+    label: "Training instructor",
+    suggestions: HUB_SUGGESTIONS,
+    getContext: () => ({ training: { lesson_active: false, ...progressContext(progressRef.current) } }),
+  });
+  const passed = CURRICULUM.filter((m) => progress[m.id]?.passed);
+  const next = CURRICULUM.find((m) => !progress[m.id]?.passed);
+
+  return (
+    <Panel title="Ask the instructor" meta="Answers from the site's documents, with citations">
+      <div className="grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_260px]">
+        <AssistantPanel variant="inline" surface="training" persistentSuggestions className="h-[420px]" />
+        <aside className="space-y-3 text-[11px] leading-relaxed text-zinc-400" aria-label="What the instructor knows">
+          <div className="rounded border border-white/10 bg-ink-900 p-3">
+            <p className="label-xs">Guided lesson progress</p>
+            <p className="mt-1 font-mono text-lg font-bold tabular-nums text-zinc-50">
+              {passed.length}/{CURRICULUM.length} <span className="text-xs font-normal text-muted">levels passed</span>
+            </p>
+            <p className="mt-1">{next ? <>Next: <span className="text-zinc-200">{next.title}</span></> : "Every level passed."}</p>
+          </div>
+          <div className="rounded border border-white/10 bg-ink-900 p-3">
+            <p className="label-xs">How it answers</p>
+            <ul className="mt-1.5 list-disc space-y-1 pl-4">
+              <li>Quotes site protocols word for word and cites the regulation or manual page.</li>
+              <li>Training notes are synthetic demo knowledge and are labelled that way.</li>
+              <li>In a lesson, only the machine&apos;s sensors decide whether a step passed.</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </Panel>
+  );
+}
+
 export function TrainingHub() {
   const { data: modules, loading } = useTraining();
   const { data: incidents } = useIncidents();
+  const lessonProgress = React.useSyncExternalStore(subscribeProgress, getProgressSnapshot, getServerProgressSnapshot);
 
   if (loading) return <LoadingState label="Loading your training record…" className="h-full" />;
 
@@ -226,6 +289,8 @@ export function TrainingHub() {
             Start <ArrowRight className="size-4 transition group-hover:translate-x-1" aria-hidden />
           </span>
         </Link>
+
+        <InstructorSection progress={lessonProgress} />
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           {/* Skill path */}

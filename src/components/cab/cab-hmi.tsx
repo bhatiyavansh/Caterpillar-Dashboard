@@ -15,7 +15,7 @@ import { TaskPanel } from "./task-panel";
 import { FrontCameraPanel, RearCameraPanel } from "./integration-slots";
 import { AssistantPanel } from "@/components/assistant/assistant-panel";
 import { AlertRibbon, levelFor } from "@/components/alerts/alert-ribbon";
-import { ArcGauge, Readout } from "@/components/ui/data";
+import { MeterRow, Readout } from "@/components/ui/data";
 import { MachineStatusChip } from "@/components/ui/status";
 import { LoadingState, ErrorState } from "@/components/ui/states";
 import { LIMITS, MACHINE_STATUS, thresholdStatus } from "@/lib/status";
@@ -126,31 +126,24 @@ export function CabHmi() {
             <span className={cn("text-[10px] font-bold uppercase tracking-wider", token.text)}>{token.label}</span>
           </div>
 
-          <div className="grid grid-cols-3 gap-1 px-2 py-3">
-            <ArcGauge label="Fuel" value={machine.fuel} min={0} max={100} unit="%" status={fuelStatus} limit={LIMITS.fuel.warn} size={104} />
-            <ArcGauge
-              label="Hydraulic"
-              value={machine.hydraulicTemperature}
-              min={40}
-              max={120}
-              unit="°C"
+          <div className="space-y-2.5 px-4 py-3">
+            <MeterRow label="Fuel" value={machine.fuel} status={fuelStatus} valueLabel={`${Math.round(machine.fuel)}%`} />
+            <MeterRow
+              label="Hydraulic temp"
+              value={((machine.hydraulicTemperature - 40) / (120 - 40)) * 100}
               status={tempStatus}
-              limit={LIMITS.hydraulicTemperature.warn}
-              size={104}
+              valueLabel={`${Math.round(machine.hydraulicTemperature)}°C`}
             />
-            <ArcGauge
-              label="Tip-over"
-              value={machine.tipOverMargin}
-              min={1}
-              max={3}
+            <Readout
+              label="Tip-over margin"
+              value={machine.tipOverMargin.toFixed(2)}
               status={tipStatus}
-              decimals={2}
-              limit={LIMITS.tipOverMargin.crit}
-              size={104}
+              hint={MACHINE_STATUS[tipStatus].label}
             />
           </div>
 
-          <dl className="mt-auto divide-y divide-white/5 border-t border-white/10 px-4 py-1">
+          <p className="label-xs border-t border-white/10 px-4 pt-2">Live telemetry</p>
+          <dl className="divide-y divide-white/5 px-4 py-1">
             <Readout label="Engine hours" value={machine.engineHours.toFixed(1)} unit="h" />
             <Readout label="Load" value={machine.load} unit="%" hint={`${machine.payloadKg.toLocaleString("en-IN")} kg`} />
             <Readout
@@ -162,8 +155,10 @@ export function CabHmi() {
             <Readout label="Load cycles" value={machine.loadCycles} />
           </dl>
 
-          {/* Glanceable icon strip for the things that stop work */}
-          <div className="grid grid-cols-4 border-t border-white/10 text-center">
+          {/* Glanceable icon strip for the things that stop work — anchored to
+              the bottom, so any leftover height in a taller column becomes a
+              quiet footer gap rather than a gap between the readouts. */}
+          <div className="mt-auto grid grid-cols-4 border-t border-white/10 text-center">
             {[
               { icon: Fuel, label: "Fuel", status: fuelStatus },
               { icon: Thermometer, label: "Temp", status: tempStatus },

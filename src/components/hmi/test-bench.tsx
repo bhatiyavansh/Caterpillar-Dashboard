@@ -47,14 +47,29 @@ import { CAMERA_CHECKS, cameraActive, useHmiStore } from "@/lib/hmi/hmi-store";
 import { useLiveMachine, type Side } from "@/lib/hmi/use-machine";
 import type { WeatherMode } from "@/types/twin";
 import { cn } from "@/lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/overlays";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/overlays";
 import type { VehicleDisplayHandle } from "./vehicle-display";
 import { getScenario, SCENARIO_IDS } from "@/lib/scenarios/generate";
 import { useScenarioPlayer } from "@/lib/scenarios/player";
 
 /* ------------------------------------------------------------ building blocks */
 
-function Section({ title, icon: Icon, status, children }: { title: string; icon: LucideIcon; status?: React.ReactNode; children: React.ReactNode }) {
+function Section({
+  title,
+  icon: Icon,
+  status,
+  children,
+}: {
+  title: string;
+  icon: LucideIcon;
+  status?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <section className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
       <header className="mb-3 flex items-center gap-2.5">
@@ -76,7 +91,11 @@ function Btn({
   tone,
   className,
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { icon?: LucideIcon; active?: boolean; tone?: "danger" }) {
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  icon?: LucideIcon;
+  active?: boolean;
+  tone?: "danger";
+}) {
   return (
     <button
       {...props}
@@ -116,7 +135,9 @@ function Segmented<T extends string>({
       role="radiogroup"
       aria-label={label}
       className="grid gap-1 rounded-xl bg-white/[0.04] p-1"
-      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+      style={{
+        gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))`,
+      }}
     >
       {options.map((o) => {
         const Icon = o.icon;
@@ -141,7 +162,13 @@ function Segmented<T extends string>({
   );
 }
 
-const Pill = ({ tone, children }: { tone: "ok" | "warn" | "crit" | "off"; children: React.ReactNode }) => (
+const Pill = ({
+  tone,
+  children,
+}: {
+  tone: "ok" | "warn" | "crit" | "off";
+  children: React.ReactNode;
+}) => (
   <span
     className={cn(
       "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold",
@@ -207,7 +234,11 @@ const TABS: [Tab, string][] = [
   ["operator", "Operator"],
 ];
 
-export function TestBench({ display }: { display: React.RefObject<VehicleDisplayHandle | null> }) {
+export function TestBench({
+  display,
+}: {
+  display: React.RefObject<VehicleDisplayHandle | null>;
+}) {
   const live = useLiveMachine();
   const twin = useTwinStore();
   const hmi = useHmiStore();
@@ -236,9 +267,11 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
 
   // A dot on a tab says "something here is active right now".
   const busy: Record<Tab, boolean> = {
-    scenarios: Boolean(player.id) || Boolean(physicsScenario && !physicsScenario.done),
+    scenarios:
+      Boolean(player.id) || Boolean(physicsScenario && !physicsScenario.done),
     safety: hmi.seatbelt === "unfastened" || live.proximity.level !== "safe",
-    conditions: live.weather !== "clear" || hmi.harshEvents > 0 || live.tipOver < 1.5,
+    conditions:
+      live.weather !== "clear" || hmi.harshEvents > 0 || live.tipOver < 1.5,
     operator: Object.values(hmi.camera.simulated).some(Boolean),
   };
 
@@ -247,19 +280,37 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
       className="flex h-full min-h-0 flex-col overflow-hidden rounded-3xl border border-white/8 bg-ink-900/70 backdrop-blur-xl"
       aria-label="Test bench"
     >
-      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="flex min-h-0 flex-1 flex-col">
+      <Tabs
+        value={tab}
+        onValueChange={(v) => setTab(v as Tab)}
+        className="flex min-h-0 flex-1 flex-col"
+      >
         <header className="shrink-0 border-b border-white/8 px-4 pb-3 pt-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cat-500">Test bench</p>
-              <h2 className="text-lg font-semibold text-zinc-50">Simulate every feature</h2>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cat-500">
+                Test bench
+              </p>
+              <h2 className="text-lg font-semibold text-zinc-50">
+                Simulate every feature
+              </h2>
             </div>
             <span
               className="mt-1 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/6 px-2.5 py-1 text-[11px] text-zinc-300"
               title="Rapier rigid-body physics"
             >
-              <Atom className={cn("size-3.5", physics?.active ? "text-status-ok" : "text-zinc-500")} aria-hidden />
-              {physics ? (physics.active ? `Physics · ${physics.avgStepMs.toFixed(1)} ms` : "Physics paused (live)") : "Physics loading"}
+              <Atom
+                className={cn(
+                  "size-3.5",
+                  physics?.active ? "text-status-ok" : "text-zinc-500",
+                )}
+                aria-hidden
+              />
+              {physics
+                ? physics.active
+                  ? `Physics · ${physics.avgStepMs.toFixed(1)} ms`
+                  : "Physics paused (live)"
+                : "Physics loading"}
             </span>
           </div>
           <details className="mt-2">
@@ -267,14 +318,17 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
               <Keyboard className="size-3.5" aria-hidden /> Keyboard controls
             </summary>
             <p className="mt-1.5 text-[12px] leading-relaxed text-zinc-400">
-              Arrow keys drive the machine. Shift + ←/→ slews, W/S/A/D/Q/E work the arm, Space is e-stop.
+              Arrow keys drive the machine. Shift + ←/→ slews, W/S/A/D/Q/E work
+              the arm, Space is e-stop.
             </p>
           </details>
           <TabsList className="mt-3 grid w-full grid-cols-4">
             {TABS.map(([id, label]) => (
               <TabsTrigger key={id} value={id} className="relative">
                 {label}
-                {busy[id] ? <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-status-crit" /> : null}
+                {busy[id] ? (
+                  <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-status-crit" />
+                ) : null}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -296,19 +350,38 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
             >
               {physicsScenario && !physicsScenario.done ? (
                 <div className="rounded-xl border border-cat-500/30 bg-cat-500/8 p-3">
-                  <p className="text-[13px] font-semibold text-zinc-100">{physicsScenario.title}</p>
-                  <p className="text-[12px] text-cat-500">{physicsScenario.step}</p>
+                  <p className="text-[13px] font-semibold text-zinc-100">
+                    {physicsScenario.title}
+                  </p>
+                  <p className="text-[12px] text-cat-500">
+                    {physicsScenario.step}
+                  </p>
                   <ul className="mt-2 space-y-1">
                     {physicsScenario.met.map((m) => (
-                      <li key={m.label} className="flex items-center justify-between text-[12px]">
-                        <span className={m.at === null ? "text-zinc-500" : "text-zinc-100"}>
+                      <li
+                        key={m.label}
+                        className="flex items-center justify-between text-[12px]"
+                      >
+                        <span
+                          className={
+                            m.at === null ? "text-zinc-500" : "text-zinc-100"
+                          }
+                        >
                           {m.at === null ? "○" : "●"} {m.label}
                         </span>
-                        {m.at !== null ? <span className="font-mono text-zinc-400">{m.at.toFixed(1)} s</span> : null}
+                        {m.at !== null ? (
+                          <span className="font-mono text-zinc-400">
+                            {m.at.toFixed(1)} s
+                          </span>
+                        ) : null}
                       </li>
                     ))}
                   </ul>
-                  <Btn icon={Square} onClick={() => twin.stopScenario()} className="mt-2 w-full">
+                  <Btn
+                    icon={Square}
+                    onClick={() => twin.stopScenario()}
+                    className="mt-2 w-full"
+                  >
                     Stop and restore
                   </Btn>
                 </div>
@@ -321,10 +394,17 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
                       disabled={!physics?.active}
                       className="flex w-full items-start gap-3 rounded-xl bg-white/5 px-3 py-2.5 text-left transition hover:bg-white/9 disabled:opacity-50"
                     >
-                      <Play className="mt-0.5 size-4 shrink-0 text-cat-500" aria-hidden />
+                      <Play
+                        className="mt-0.5 size-4 shrink-0 text-cat-500"
+                        aria-hidden
+                      />
                       <span className="min-w-0">
-                        <span className="block text-[13px] font-semibold text-zinc-100">{s.title}</span>
-                        <span className="line-clamp-2 block text-[11px] leading-snug text-muted">{s.summary}</span>
+                        <span className="block text-[13px] font-semibold text-zinc-100">
+                          {s.title}
+                        </span>
+                        <span className="line-clamp-2 block text-[11px] leading-snug text-muted">
+                          {s.summary}
+                        </span>
                       </span>
                     </button>
                   ))}
@@ -332,7 +412,8 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
               )}
               {physicsScenario?.done ? (
                 <Hint>
-                  Last run: {physicsScenario.title} — {physicsScenario.met.filter((m) => m.at !== null).length}/
+                  Last run: {physicsScenario.title} —{" "}
+                  {physicsScenario.met.filter((m) => m.at !== null).length}/
                   {physicsScenario.met.length} outcomes observed.
                 </Hint>
               ) : null}
@@ -343,7 +424,15 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
               icon={Clapperboard}
               status={
                 player.id ? (
-                  <Pill tone={player.phase === "intervention" ? "crit" : player.phase === "hazard" ? "warn" : "ok"}>
+                  <Pill
+                    tone={
+                      player.phase === "intervention"
+                        ? "crit"
+                        : player.phase === "hazard"
+                          ? "warn"
+                          : "ok"
+                    }
+                  >
                     {player.t.toFixed(1)} s · {player.phase}
                   </Pill>
                 ) : (
@@ -362,19 +451,31 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
                       onClick={() => (on ? player.stop() : player.start(id))}
                       className="h-auto w-full min-w-0 justify-start py-2.5 text-left"
                     >
-                      <span className="font-mono text-[11px] opacity-60">{i + 1}</span>
+                      <span className="font-mono text-[11px] opacity-60">
+                        {i + 1}
+                      </span>
                       <span className="min-w-0 flex-1">
                         <span className="block">{s.title}</span>
-                        <span className={cn("block truncate text-[11px] font-normal", on ? "text-ink-950/70" : "text-muted")}>
+                        <span
+                          className={cn(
+                            "block truncate text-[11px] font-normal",
+                            on ? "text-ink-950/70" : "text-muted",
+                          )}
+                        >
                           {s.subtitle}
                         </span>
                       </span>
-                      <span className="text-[11px]">{on ? "Stop" : "Play"}</span>
+                      <span className="text-[11px]">
+                        {on ? "Stop" : "Play"}
+                      </span>
                     </Btn>
                   );
                 })}
               </div>
-              <Hint>Data: data/scenarios/*.csv · regenerate with npm run scenarios:export</Hint>
+              <Hint>
+                Data: data/scenarios/*.csv · regenerate with npm run
+                scenarios:export
+              </Hint>
             </Section>
           </TabsContent>
 
@@ -383,18 +484,32 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
             <Section
               title="Seatbelt compliance"
               icon={Armchair}
-              status={hmi.seatbelt === "fastened" ? <Pill tone="ok">Fastened</Pill> : <Pill tone="crit">Locked out</Pill>}
+              status={
+                hmi.seatbelt === "fastened" ? (
+                  <Pill tone="ok">Fastened</Pill>
+                ) : (
+                  <Pill tone="crit">Locked out</Pill>
+                )
+              }
             >
               <div className="grid grid-cols-2 gap-2">
-                <Btn active={hmi.seatbelt === "fastened"} onClick={() => hmi.setSeatbelt("fastened")}>
+                <Btn
+                  active={hmi.seatbelt === "fastened"}
+                  onClick={() => hmi.setSeatbelt("fastened")}
+                >
                   Fasten
                 </Btn>
-                <Btn tone="danger" active={hmi.seatbelt === "unfastened"} onClick={() => hmi.setSeatbelt("unfastened")}>
+                <Btn
+                  tone="danger"
+                  active={hmi.seatbelt === "unfastened"}
+                  onClick={() => hmi.setSeatbelt("unfastened")}
+                >
                   Unbuckle
                 </Btn>
               </div>
               <Hint>
-                Unbuckling engages a real hydraulic lockout: try driving. {Math.round(hmi.beltOffSeconds)} s unbelted so far.
+                Unbuckling engages a real hydraulic lockout: try driving.{" "}
+                {Math.round(hmi.beltOffSeconds)} s unbelted so far.
               </Hint>
             </Section>
 
@@ -402,8 +517,18 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
               title="Proximity hazards"
               icon={ShieldAlert}
               status={
-                <Pill tone={live.proximity.level === "critical" ? "crit" : live.proximity.level === "warning" ? "warn" : "ok"}>
-                  {live.proximity.level === "safe" ? "Clear" : `${live.proximity.side} · ${live.proximity.distance?.toFixed(1)} m`}
+                <Pill
+                  tone={
+                    live.proximity.level === "critical"
+                      ? "crit"
+                      : live.proximity.level === "warning"
+                        ? "warn"
+                        : "ok"
+                  }
+                >
+                  {live.proximity.level === "safe"
+                    ? "Clear"
+                    : `${live.proximity.side} · ${live.proximity.distance?.toFixed(1)} m`}
                 </Pill>
               }
             >
@@ -411,9 +536,19 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
                 label="Worker side"
                 value={side}
                 onChange={setSide}
-                options={(["front", "rear", "left", "right"] as Side[]).map((s) => ({ value: s, label: s }))}
+                options={(["front", "rear", "left", "right"] as Side[]).map(
+                  (s) => ({ value: s, label: s }),
+                )}
               />
-              <RangeRow label="Distance" value={distance} unit="m" min={2} max={14} step={0.5} onChange={setDistance} />
+              <RangeRow
+                label="Distance"
+                value={distance}
+                unit="m"
+                min={2}
+                max={14}
+                step={0.5}
+                onChange={setDistance}
+              />
               <div className="grid grid-cols-2 gap-2">
                 <Btn
                   icon={Footprints}
@@ -424,7 +559,10 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
                 >
                   Place worker
                 </Btn>
-                <Btn icon={Footprints} onClick={() => twin.forceWorkerApproach()}>
+                <Btn
+                  icon={Footprints}
+                  onClick={() => twin.forceWorkerApproach()}
+                >
                   Walk-in approach
                 </Btn>
                 <Btn icon={Truck} onClick={() => twin.forceCollisionRisk()}>
@@ -439,20 +577,42 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
                   Clear zone
                 </Btn>
               </div>
-              <Hint>With physics on, distance is measured to the machine&apos;s hull, and the dozer conflict ends in real contact.</Hint>
+              <Hint>
+                With physics on, distance is measured to the machine&apos;s
+                hull, and the dozer conflict ends in real contact.
+              </Hint>
             </Section>
 
-            <Section title="Incident logging" icon={NotebookPen} status={<Pill tone="off">{hmi.autoIncidents} auto · {incidents.length} total</Pill>}>
-              <Hint>Seatbelt, danger-zone, stability and critical camera events log themselves. Operators file the rest from Safety.</Hint>
+            <Section
+              title="Incident logging"
+              icon={NotebookPen}
+              status={
+                <Pill tone="off">
+                  {hmi.autoIncidents} auto · {incidents.length} total
+                </Pill>
+              }
+            >
+              <Hint>
+                Seatbelt, danger-zone, stability and critical camera events log
+                themselves. Operators file the rest from Safety.
+              </Hint>
               <div className="grid grid-cols-2 gap-2">
                 <Btn
                   onClick={() =>
-                    report({ machineId: live.id, kind: "proximity", severity: "warning", title: "Near miss (test)", summary: "Filed from the test bench." })
+                    report({
+                      machineId: live.id,
+                      kind: "proximity",
+                      severity: "warning",
+                      title: "Near miss (test)",
+                      summary: "Filed from the test bench.",
+                    })
                   }
                 >
                   File test report
                 </Btn>
-                <Btn onClick={() => display.current?.openApp("safety")}>Open Safety</Btn>
+                <Btn onClick={() => display.current?.openApp("safety")}>
+                  Open Safety
+                </Btn>
               </div>
             </Section>
           </TabsContent>
@@ -462,7 +622,17 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
             <Section
               title="Working conditions"
               icon={ThermometerSun}
-              status={<Pill tone={live.weather === "clear" && hmi.ambientC < 40 ? "ok" : "warn"}>{live.weather} · {hmi.ambientC}°C</Pill>}
+              status={
+                <Pill
+                  tone={
+                    live.weather === "clear" && hmi.ambientC < 40
+                      ? "ok"
+                      : "warn"
+                  }
+                >
+                  {live.weather} · {hmi.ambientC}°C
+                </Pill>
+              }
             >
               <Segmented
                 label="Weather"
@@ -475,10 +645,25 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
                   { value: "heat", label: "heat", icon: Flame },
                 ]}
               />
-              <RangeRow label="Ambient" value={hmi.ambientC} unit="°C" min={18} max={48} onChange={(v) => hmi.setAmbient(v)} />
-              <Hint>Rain soaks the ground: every surface loses grip, loose spoil and wet clay most of all.</Hint>
-              <Btn icon={Mountain} onClick={() => twin.forceTipOver()} className="w-full">
-                Load shift on the sidehill (stability {live.tipOver.toFixed(2)}×)
+              <RangeRow
+                label="Ambient"
+                value={hmi.ambientC}
+                unit="°C"
+                min={18}
+                max={48}
+                onChange={(v) => hmi.setAmbient(v)}
+              />
+              <Hint>
+                Rain soaks the ground: every surface loses grip, loose spoil and
+                wet clay most of all.
+              </Hint>
+              <Btn
+                icon={Mountain}
+                onClick={() => twin.forceTipOver()}
+                className="w-full"
+              >
+                Load shift on the sidehill (stability {live.tipOver.toFixed(2)}
+                ×)
               </Btn>
             </Section>
 
@@ -486,12 +671,18 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
               title="Unusual machine usage"
               icon={Zap}
               status={
-                <Pill tone={hmi.harshEvents || hmi.idleStreak > 45 ? "warn" : "ok"}>
-                  idle {Math.round(hmi.idleSeconds / 60)}m · harsh {hmi.harshEvents}
+                <Pill
+                  tone={hmi.harshEvents || hmi.idleStreak > 45 ? "warn" : "ok"}
+                >
+                  idle {Math.round(hmi.idleSeconds / 60)}m · harsh{" "}
+                  {hmi.harshEvents}
                 </Pill>
               }
             >
-              <Hint>Detected live from your driving: sit still to idle, slam ↑ then ↓ for harsh operation.</Hint>
+              <Hint>
+                Detected live from your driving: sit still to idle, slam ↑ then
+                ↓ for harsh operation.
+              </Hint>
               <div className="grid grid-cols-2 gap-2">
                 <Btn icon={Timer} onClick={() => hmi.addIdle(600, true)}>
                   Idle 10 min
@@ -506,21 +697,32 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
                         level: 2,
                         source: "monitor",
                         title: "Harsh operation",
-                        action: "Three abrupt control inputs in 20 s. Feather the controls.",
+                        action:
+                          "Three abrupt control inputs in 20 s. Feather the controls.",
                       })
                     )
-                      setTimeout(() => useHmiStore.getState().resolve("harsh"), 8000);
+                      setTimeout(
+                        () => useHmiStore.getState().resolve("harsh"),
+                        8000,
+                      );
                   }}
                 >
                   Harsh burst
                 </Btn>
-                <Btn icon={ThermometerSun} onClick={() => twin.forceHydraulicSpike()}>
+                <Btn
+                  icon={ThermometerSun}
+                  onClick={() => twin.forceHydraulicSpike()}
+                >
                   Hydraulic spike
                 </Btn>
                 <Btn icon={Fuel} onClick={() => twin.forceLowFuel()}>
                   Low fuel
                 </Btn>
-                <Btn icon={Wrench} onClick={() => twin.forceEngineWarning()} className="col-span-2">
+                <Btn
+                  icon={Wrench}
+                  onClick={() => twin.forceEngineWarning()}
+                  className="col-span-2"
+                >
                   Engine fault code
                 </Btn>
               </div>
@@ -533,18 +735,37 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
               title="Operator camera"
               icon={Camera}
               status={
-                <Pill tone={hmi.camera.status === "running" ? "ok" : hmi.camera.enabled ? "warn" : "off"}>
+                <Pill
+                  tone={
+                    hmi.camera.status === "running"
+                      ? "ok"
+                      : hmi.camera.enabled
+                        ? "warn"
+                        : "off"
+                  }
+                >
                   {hmi.camera.enabled ? hmi.camera.status : "off"}
                 </Pill>
               }
             >
               <div className="grid grid-cols-2 gap-2">
-                <Btn icon={Camera} active={hmi.camera.enabled} onClick={() => hmi.setCamera({ enabled: !hmi.camera.enabled })}>
+                <Btn
+                  icon={Camera}
+                  active={hmi.camera.enabled}
+                  onClick={() =>
+                    hmi.setCamera({ enabled: !hmi.camera.enabled })
+                  }
+                >
                   {hmi.camera.enabled ? "Camera on" : "Use webcam"}
                 </Btn>
-                <Btn onClick={() => display.current?.openApp("camera")}>Open camera view</Btn>
+                <Btn onClick={() => display.current?.openApp("camera")}>
+                  Open camera view
+                </Btn>
               </div>
-              <Hint>With the webcam on, close your eyes, look away, yawn or hold up a phone. Or simulate:</Hint>
+              <Hint>
+                With the webcam on, close your eyes, look away, yawn or hold up
+                a phone. Or simulate:
+              </Hint>
               <div className="flex flex-wrap gap-1.5">
                 {CAMERA_CHECKS.map((c) => {
                   const on = Boolean(hmi.camera.simulated[c.id]);
@@ -554,9 +775,14 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
                       key={c.id}
                       active={on}
                       onClick={() => hmi.simulate(c.id, !on)}
-                      className={cn("h-8 text-[12px]", firing && !on && "ring-1 ring-status-crit")}
+                      className={cn(
+                        "h-8 text-[12px]",
+                        firing && !on && "ring-1 ring-status-crit",
+                      )}
                     >
-                      {c.title.replace(" detected", "").replace("Operator not ", "Not ")}
+                      {c.title
+                        .replace(" detected", "")
+                        .replace("Operator not ", "Not ")}
                     </Btn>
                   );
                 })}
@@ -564,8 +790,14 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
             </Section>
 
             <Section title="Task time estimation" icon={Timer}>
-              <Hint>The estimate follows live weather and ambient temperature. Change them under Conditions and watch it move.</Hint>
-              <Btn onClick={() => display.current?.openApp("estimate")} className="w-full">
+              <Hint>
+                The estimate follows live weather and ambient temperature.
+                Change them under Conditions and watch it move.
+              </Hint>
+              <Btn
+                onClick={() => display.current?.openApp("estimate")}
+                className="w-full"
+              >
                 Open estimator
               </Btn>
             </Section>
@@ -575,7 +807,9 @@ export function TestBench({ display }: { display: React.RefObject<VehicleDisplay
                 <Btn active onClick={() => display.current?.launchLesson()}>
                   Guided lesson
                 </Btn>
-                <Btn onClick={() => display.current?.openApp("training")}>Videos · booking</Btn>
+                <Btn onClick={() => display.current?.openApp("training")}>
+                  Videos · booking
+                </Btn>
               </div>
             </Section>
           </TabsContent>

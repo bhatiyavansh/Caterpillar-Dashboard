@@ -80,6 +80,17 @@ export interface Machine {
   fuelUsedL: number;
   hydraulicTemperature: number;
   coolantTemperature: number;
+  /**
+   * Engine and hydraulic readings (contract 1.4.0). `null` means the source did
+   * not report it — never zero, so a gauge can say "—" instead of lying.
+   */
+  engineRpm: number | null;
+  /** Percent 0-100. */
+  batteryPct: number | null;
+  /** Diesel exhaust fluid, percent 0-100. */
+  defLevelPct: number | null;
+  oilPressurePsi: number | null;
+  hydraulicPressurePsi: number | null;
   /** Stability ratio. >= 1.5 safe, 1.2-1.5 caution, < 1.2 critical. */
   tipOverMargin: number;
   /** Percent 0-100. */

@@ -185,6 +185,12 @@ class FakeSite:
             "nearest_person_m": round(near, 1), "fatigue_score": round(m.fatigue, 2),
             "fault_codes": list(m.faults), "zone": zone, "task_id": None,
             "task_progress": 0.0, "task_eta_min": 0.0,
+            # contract 1.4.0: plausible engine/hydraulic readings for the HMI
+            "engine_rpm": 1750.0 if moving else 850.0,
+            "battery_pct": 95.0,
+            "def_level_pct": 72.0,
+            "oil_pressure_psi": 55.0 if moving else 36.0,
+            "hydraulic_pressure_psi": round(3000.0 + m.payload * 0.2) if moving else 750.0,
         }
 
     def worker_state(self, wid: str, ts: str) -> dict[str, Any]:

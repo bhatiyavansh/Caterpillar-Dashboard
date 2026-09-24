@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from simulator.schemas import EVENT_CATALOGUE, Event, MachineState, Severity, WorkerState
 
-CONTRACT_VERSION = "1.2.0"
+CONTRACT_VERSION = "1.4.0"
 
 #: Event kinds the hub itself (or a non-C source) may emit, on top of C's catalogue.
 HUB_EVENT_KINDS: tuple[str, ...] = (

@@ -92,6 +92,26 @@ export function AlertRibbon({
   const Icon = style.icon;
   const cab = size === "cab";
 
+  // On the cab HMI, "nothing is wrong" doesn't need a quarter of the screen —
+  // it collapses to a single compact line, and only expands into the full
+  // treatment below once there is something the operator actually needs to
+  // read. The banner grows with the severity of the situation, not by default.
+  if (cab && level === "normal") {
+    return (
+      <div
+        className={cn("flex items-center gap-2.5 rounded border px-4 py-2.5", style.wrap, className)}
+        role="status"
+      >
+        <Icon className="size-4 shrink-0 text-status-ok" aria-hidden />
+        <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.14em] text-status-ok">
+          System status
+        </span>
+        <span className="truncate text-sm font-semibold text-zinc-100">{restingMessage}</span>
+        <span className="ml-auto hidden truncate text-[11px] text-muted sm:block">Continue with the current task.</span>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(

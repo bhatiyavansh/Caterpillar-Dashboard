@@ -33,8 +33,61 @@ import {
   headingVector,
 } from "./site";
 
-/** Cheap deterministic value noise — no dependencies, stable across reloads. */
-function noise(x: number, z: number): number {
+/* ------------------------------------------------------------------------ */
+/*  Noise                                                                   */
+/* ------------------------------------------------------------------------ */
+
+/** Integer lattice hash -> [0, 1). Deterministic, so the site never reshuffles. */
+function hash2(i: number, j: number): number {
+  let n = Math.imul(i, 374761393) + Math.imul(j, 668265263);
+  n = Math.imul(n ^ (n >>> 13), 1274126177);
+  n ^= n >>> 16;
+  return (n >>> 0) / 4294967296;
+}
+
+/** Smooth value noise in [-1, 1]. */
+export function valueNoise(x: number, z: number): number {
+  const i = Math.floor(x);
+  const j = Math.floor(z);
+  const fx = x - i;
+  const fz = z - j;
+  const u = fx * fx * (3 - 2 * fx);
+  const v = fz * fz * (3 - 2 * fz);
+  const a = hash2(i, j);
+  const b = hash2(i + 1, j);
+  const c = hash2(i, j + 1);
+  const d = hash2(i + 1, j + 1);
+  return (a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v) * 2 - 1;
+}
+
+/** Fractal noise: `octaves` layers, each twice the frequency and half the weight. */
+export function fbm(x: number, z: number, octaves = 4): number {
+  let sum = 0;
+  let amp = 0.5;
+  let freq = 1;
+  let norm = 0;
+  for (let o = 0; o < octaves; o++) {
+    sum += valueNoise(x * freq + o * 17.3, z * freq - o * 9.1) * amp;
+    norm += amp;
+    amp *= 0.5;
+    freq *= 2.03;
+  }
+  return sum / norm;
+}
+
+/* ------------------------------------------------------------------------ */
+/*  Landform pieces                                                         */
+/* ------------------------------------------------------------------------ */
+
+/** How far (metres) a point lies outside the graded site box. 0 inside. */
+export function distanceOutsideSite(x: number, z: number): number {
+  const dx = Math.max(SITE_BOUNDS.x0 - x, 0, x - SITE_BOUNDS.x1);
+  const dz = Math.max(SITE_BOUNDS.z0 - z, 0, z - SITE_BOUNDS.z1);
+  return Math.hypot(dx, dz);
+}
+
+/** Undisturbed ground: broad rolling relief with a gentle fall to the south. */
+function naturalGround(x: number, z: number): number {
   return (
     Math.sin(x * 0.0401 + 1.7) * Math.cos(z * 0.0333 - 0.6) * 1.15 +
     Math.sin(x * 0.0172 + z * 0.0231 + 2.3) * 0.85 +

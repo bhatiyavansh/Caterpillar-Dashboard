@@ -2,38 +2,57 @@
 
 /**
  * Operator monitoring camera: watches the person in the seat and reports what
- * they are doing — eyes closed, yawning, looking away, head down, holding a
- * phone, not in the seat, a second person in view.
+ * they are doing — microsleep, drowsiness building (PERCLOS), repeated
+ * yawning, looking away, head down, holding a phone, not in the seat, a
+ * second person in view.
  *
- * Runs the repo's MediaPipe face landmarker every frame and the object
- * detector every few frames, off the shared webcam stream. Results go to the
- * HMI store; the monitor loop turns them into alerts. Every check can also be
- * simulated from the test bench, so the demo works without a camera.
+ * Face analysis runs every frame through the shared driver-monitoring engine
+ * (`@web/components/cv/operator-monitor`, which owns the fatigue thresholds);
+ * the object detector runs every few frames for phone and passenger checks.
+ * Results go to the HMI store; the monitor loop turns them into alerts and
+ * hub events. Every check can also be simulated from the test bench, so the
+ * demo works without a camera.
  */
 import * as React from "react";
 import { useWebcam } from "@web/components/cv/useWebcam";
-import { getFaceLandmarker, getObjectDetector, type FaceLandmarker, type ObjectDetector } from "@web/components/cv/mediapipe";
+import {
+  getFaceLandmarker,
+  getObjectDetector,
+  nextTimestamp,
+  type FaceLandmarker,
+  type FaceLandmarkerResult,
+  type ObjectDetector,
+} from "@web/components/cv/mediapipe";
+import { Latch, OperatorMonitor } from "@web/components/cv/operator-monitor";
+import { snapshotFrom } from "@web/lib/cv";
 import { useHmiStore, type CameraCheck } from "./hmi-store";
 
 /** Latest face box and gaze, normalised 0-1, for the feed overlay to draw. */
 export const cameraOverlay: {
   face: { x: number; y: number; w: number; h: number } | null;
   yaw: number;
+  eyesClosed: boolean;
   objects: { label: string; x: number; y: number; w: number; h: number }[];
   videoW: number;
   videoH: number;
-} = { face: null, yaw: 0, objects: [], videoW: 640, videoH: 480 };
+} = { face: null, yaw: 0, eyesClosed: false, objects: [], videoW: 640, videoH: 480 };
 
-/** How long a condition must persist before it counts, seconds. */
-const HOLD: Record<CameraCheck, number> = {
-  absent: 2.5,
-  drowsy: 1.2,
-  yawn: 1.0,
-  distracted: 2.0,
-  head_down: 2.0,
-  phone: 0.6,
-  extra_person: 1.0,
-};
+/** Object-detector checks. Face checks are tuned in DMS_THRESHOLDS. */
+const PHONE_MIN_SCORE = 0.45;
+const PHONE_HOLD_S = 1.0;
+const PERSON_MIN_SCORE = 0.5;
+const EXTRA_PERSON_HOLD_S = 2.0;
+/** Run the (heavier) object detector on every Nth frame. */
+const OBJECT_EVERY = 4;
+const METRICS_INTERVAL_MS = 250;
+
+/** The element the detector is reading, for evidence stills. */
+let detectorVideo: HTMLVideoElement | null = null;
+
+/** A JPEG still of the operator camera right now, if it is running. */
+export function operatorSnapshot(): string | undefined {
+  return snapshotFrom(detectorVideo);
+}
 
 export function useOperatorCamera(enabled: boolean) {
   const { videoRef, status } = useWebcam(enabled);
@@ -42,7 +61,7 @@ export function useOperatorCamera(enabled: boolean) {
 
   React.useEffect(() => {
     if (!enabled) {
-      setCamera({ status: "off", fps: 0 });
+      setCamera({ status: "off", fps: 0, metrics: null });
       setDetected({});
       return;
     }
@@ -61,95 +80,97 @@ export function useOperatorCamera(enabled: boolean) {
     let lastTime = -1;
     let fpsCount = 0;
     let fpsAt = performance.now();
-    const since: Partial<Record<CameraCheck, number>> = {};
+    let metricsAt = 0;
     let lastObjects: { label: string; score: number }[] = [];
+    const monitor = new OperatorMonitor();
+    const phone = new Latch(PHONE_HOLD_S, 1.0, 0.6);
+    const extraPerson = new Latch(EXTRA_PERSON_HOLD_S, 1.0, 0.6);
 
     setCamera({ status: "loading" });
-    Promise.all([getFaceLandmarker(), getObjectDetector(0.4)])
-      .then(([f, o]) => {
+    // The face model is what fatigue needs; the object detector is a bonus and must not block it.
+    getFaceLandmarker()
+      .then((f) => {
         if (cancelled) return;
         face = f;
-        objects = o;
         setCamera({ status: "running" });
       })
-      .catch(() => !cancelled && setCamera({ status: "error" }));
-
-    const hold = (id: CameraCheck, cond: boolean, now: number) => {
-      if (!cond) {
-        delete since[id];
-        return false;
-      }
-      since[id] ??= now;
-      return (now - since[id]!) / 1000 >= HOLD[id];
-    };
+      .catch((err) => {
+        console.warn("[cv] face landmarker failed to load", err);
+        if (!cancelled) setCamera({ status: "error" });
+      });
+    getObjectDetector()
+      .then((o) => {
+        if (!cancelled) objects = o;
+      })
+      .catch((err) => console.warn("[cv] object detector failed to load; phone/passenger checks off", err));
 
     const loop = () => {
       if (cancelled) return;
       raf = requestAnimationFrame(loop);
       const video = videoRef.current;
-      if (!video || !face || video.readyState < 2 || video.currentTime === lastTime) return;
+      if (!video || !face || video.readyState < 2 || !video.videoWidth || video.currentTime === lastTime) return;
       lastTime = video.currentTime;
-      const now = performance.now();
-      cameraOverlay.videoW = video.videoWidth || 640;
-      cameraOverlay.videoH = video.videoHeight || 480;
+      detectorVideo = video;
+      const W = video.videoWidth;
+      const H = video.videoHeight;
+      cameraOverlay.videoW = W;
+      cameraOverlay.videoH = H;
 
-      let lm: { x: number; y: number }[] | undefined;
-      let shapes: { categoryName: string; score: number }[] | undefined;
+      let result: FaceLandmarkerResult;
       try {
-        const r = face.detectForVideo(video, now);
-        lm = r.faceLandmarks?.[0];
-        shapes = r.faceBlendshapes?.[0]?.categories;
+        result = face.detectForVideo(video, nextTimestamp(face));
       } catch {
-        return;
+        return; // a dropped frame
       }
 
-      if (objects && frame++ % 4 === 0) {
+      if (objects && frame++ % OBJECT_EVERY === 0) {
         try {
-          const r = objects.detectForVideo(video, now);
+          const r = objects.detectForVideo(video, nextTimestamp(objects));
           lastObjects = r.detections.map((d) => ({ label: d.categories[0]?.categoryName ?? "", score: d.categories[0]?.score ?? 0 }));
           cameraOverlay.objects = r.detections
             .filter((d) => ["cell phone", "person"].includes(d.categories[0]?.categoryName ?? ""))
             .map((d) => ({
               label: d.categories[0].categoryName,
-              x: (d.boundingBox?.originX ?? 0) / cameraOverlay.videoW,
-              y: (d.boundingBox?.originY ?? 0) / cameraOverlay.videoH,
-              w: (d.boundingBox?.width ?? 0) / cameraOverlay.videoW,
-              h: (d.boundingBox?.height ?? 0) / cameraOverlay.videoH,
+              x: (d.boundingBox?.originX ?? 0) / W,
+              y: (d.boundingBox?.originY ?? 0) / H,
+              w: (d.boundingBox?.width ?? 0) / W,
+              h: (d.boundingBox?.height ?? 0) / H,
             }));
         } catch {
           /* keep last */
         }
       }
 
-      const score = (name: string) => shapes?.find((c) => c.categoryName === name)?.score ?? 0;
-      let yaw = 0;
-      let pitch = 0.5;
+      const now = performance.now();
+      const { conditions, metrics } = monitor.update(result, W, H, now);
+      const t = now / 1000;
+
+      const lm = result.faceLandmarks?.[0];
       if (lm) {
-        const xs = lm.map((p) => p.x);
-        const ys = lm.map((p) => p.y);
-        const minX = Math.min(...xs);
-        const minY = Math.min(...ys);
-        cameraOverlay.face = { x: minX, y: minY, w: Math.max(...xs) - minX, h: Math.max(...ys) - minY };
-        // Nose tip (1) between the cheeks (234, 454): 0 = centred.
-        const l = lm[234];
-        const rr = lm[454];
-        yaw = ((lm[1].x - l.x) / Math.max(1e-3, rr.x - l.x) - 0.5) * 2;
-        // Nose between forehead (10) and chin (152): ~0.5 level, larger = head down.
-        pitch = (lm[1].y - lm[10].y) / Math.max(1e-3, lm[152].y - lm[10].y);
+        let minX = 1, minY = 1, maxX = 0, maxY = 0;
+        for (const p of lm) {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        }
+        cameraOverlay.face = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
       } else {
         cameraOverlay.face = null;
       }
-      cameraOverlay.yaw = yaw;
+      cameraOverlay.yaw = Math.max(-1, Math.min(1, (metrics.yawDeg ?? 0) / 60));
+      cameraOverlay.eyesClosed = metrics.eyesClosed;
 
-      const persons = lastObjects.filter((o) => o.label === "person").length;
-      const detected: Partial<Record<CameraCheck, boolean>> = {
-        absent: hold("absent", !lm, now),
-        drowsy: hold("drowsy", !!lm && score("eyeBlinkLeft") > 0.5 && score("eyeBlinkRight") > 0.5, now),
-        yawn: hold("yawn", !!lm && score("jawOpen") > 0.55, now),
-        distracted: hold("distracted", !!lm && Math.abs(yaw) > 0.45, now),
-        head_down: hold("head_down", !!lm && pitch > 0.68, now),
-        phone: hold("phone", lastObjects.some((o) => o.label === "cell phone" && o.score > 0.4), now),
-        extra_person: hold("extra_person", persons >= 2, now),
+      const persons = lastObjects.filter((o) => o.label === "person" && o.score >= PERSON_MIN_SCORE).length;
+      const detected: Record<CameraCheck, boolean> = {
+        absent: conditions.absent,
+        drowsy: conditions.microsleep,
+        fatigue: conditions.drowsy,
+        yawn: conditions.yawning,
+        distracted: conditions.distracted,
+        head_down: conditions.head_down,
+        phone: phone.update(lastObjects.some((o) => o.label === "cell phone" && o.score >= PHONE_MIN_SCORE), t),
+        extra_person: extraPerson.update(persons >= 2, t),
       };
 
       fpsCount++;
@@ -158,6 +179,10 @@ export function useOperatorCamera(enabled: boolean) {
         fpsCount = 0;
         fpsAt = now;
       }
+      if (now - metricsAt > METRICS_INTERVAL_MS) {
+        metricsAt = now;
+        setCamera({ metrics });
+      }
       const prev = useHmiStore.getState().camera.detected;
       if ((Object.keys(detected) as CameraCheck[]).some((k) => Boolean(prev[k]) !== detected[k])) setDetected(detected);
     };
@@ -165,6 +190,9 @@ export function useOperatorCamera(enabled: boolean) {
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
+      detectorVideo = null;
+      cameraOverlay.face = null;
+      cameraOverlay.objects = [];
     };
   }, [enabled, status, videoRef, setCamera, setDetected]);
 

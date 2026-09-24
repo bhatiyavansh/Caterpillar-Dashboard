@@ -1,152 +1,374 @@
 "use client";
 
 /**
- * TRK001 — CAT 745 style articulated haul truck.
+ * CAT 745 articulated haul truck.
  *
- * The bed tips when the truck drops its load at the stockpile, driven entirely
- * by the reported payload falling to zero.
+ *   Truck            position + heading
+ *   └── Tilt         pitch / roll
+ *       ├── Tractor  (yaws about the hitch)  cab, engine, front axle
+ *       └── Trailer  (yaws about the hitch)  tandem bogies, frame
+ *           └── Body (hinged at the tail)    tips with bucketAngle < 0
+ *
+ * Steering is articulation: each half turns half the steer angle about the
+ * hitch, which is how these trucks actually corner. The body rides up on two
+ * hoist rams, and the load heap inside scales with payload.
  */
 
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
+import { RoundedBox } from "@react-three/drei";
 import type { MachineTelemetry } from "@/types/twin";
-import { PALETTE } from "./materials";
-import { useChassis, useRunningGear } from "./chassis";
-import { damp } from "@/lib/twin/vehicle";
-import { InternalBox, InternalTube, useXray } from "./xray";
+import { TRUCK_FULL_KG } from "@/lib/twin/fleet";
+import {
+  Anchor,
+  Beacon,
+  Decal,
+  Lamp,
+  MAT,
+  Ram,
+  TailLamps,
+  Tyre,
+  profileGeometry,
+  useMachineMotion,
+} from "./rig";
 
-const WHEELS: [number, number][] = [
-  [-1.45, -2.6],
-  [1.45, -2.6],
-  [-1.45, 1.5],
-  [1.45, 1.5],
-  [-1.45, 3.1],
-  [1.45, 3.1],
+const HITCH_Z = -0.9;
+const TYRE_R = 0.95;
+const TYRE_W = 0.78;
+const TRACK = 1.36;
+
+/** Body side silhouette, pivot (tail hinge) at the origin, u forward. */
+const BODY_SIDE: [number, number][] = [
+  [-1.05, 0.25],
+  [0.1, 0.0],
+  [4.85, 0.38],
+  [5.2, 0.6],
+  [5.45, 2.05],
+  [4.95, 2.2],
+  [0.1, 1.72],
+  [-1.05, 1.3],
 ];
 
 export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
-  const { root, tilt } = useChassis(telemetry);
-  const { register } = useRunningGear(telemetry, 0.28);
-  const bed = useRef<THREE.Group>(null);
-  const { handlers } = useXray(telemetry.machineId, root);
-  const load = useRef<THREE.Mesh>(null);
-  const tipping = useRef(0);
+  const { root, tilt, steer, travel } = useMachineMotion(telemetry, 5.8);
+  const tractor = useRef<THREE.Group>(null);
+  const trailer = useRef<THREE.Group>(null);
+  const body = useRef<THREE.Group>(null);
+  const heap = useRef<THREE.Mesh>(null);
+  const wheels = useRef<THREE.Group[]>([]);
+  const hoistBaseL = useRef<THREE.Group>(null);
+  const hoistBaseR = useRef<THREE.Group>(null);
+  const hoistRodL = useRef<THREE.Group>(null);
+  const hoistRodR = useRef<THREE.Group>(null);
 
-  useFrame((_, delta) => {
-    if (!bed.current) return;
-    // Empty and stationary at a dump point reads as "tipping".
-    const shouldTip = telemetry.payload < 200 && Math.abs(telemetry.speed) < 0.3;
-    tipping.current = damp(tipping.current, shouldTip ? 1 : 0, 1.4, delta);
-    bed.current.rotation.x = -tipping.current * 0.62;
+  const geo = useMemo(
+    () => ({ side: profileGeometry(BODY_SIDE, 0.12, 0.02) }),
+    [],
+  );
 
-    // Toggled imperatively: this component never re-renders, because telemetry
-    // is a stable object mutated in place rather than React state.
-    if (load.current) load.current.visible = telemetry.payload > 200;
+  useFrame(() => {
+    const t = telemetry;
+    const s = steer.current;
+    if (tractor.current) tractor.current.rotation.y = -s * 0.5;
+    if (trailer.current) trailer.current.rotation.y = s * 0.5;
+    if (body.current)
+      body.current.rotation.x = Math.min(Math.max(-t.bucketAngle, 0), 1) * 0.95;
+    if (heap.current) {
+      const fill = Math.min(t.payload / TRUCK_FULL_KG, 1);
+      heap.current.visible = fill > 0.03;
+      heap.current.scale.set(1, 0.15 + fill * 0.85, 0.35 + fill * 0.65);
+    }
+    const spin = -travel.current / TYRE_R;
+    for (const w of wheels.current) w.rotation.x = spin;
   });
+
+  const spinRef = (el: THREE.Group | null) => {
+    if (el && !wheels.current.includes(el)) wheels.current.push(el);
+  };
 
   return (
     <group ref={root} {...handlers}>
       <group ref={tilt}>
-        {/* wheels */}
-        {WHEELS.map(([x, z]) => (
-          <group key={`${x}:${z}`} ref={register} position={[x, 0.95, z]} userData={{ part: "undercarriage" }}>
-            <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
-              <cylinderGeometry args={[0.95, 0.95, 0.68, 16]} />
-              <meshStandardMaterial color={PALETTE.track} roughness={0.95} />
-            </mesh>
-            <mesh rotation={[0, 0, Math.PI / 2]}>
-              <cylinderGeometry args={[0.44, 0.44, 0.72, 12]} />
-              <meshStandardMaterial color={PALETTE.steelDark} roughness={0.7} metalness={0.5} />
-            </mesh>
-          </group>
-        ))}
-
-        {/* X-ray internals */}
-        <InternalBox part="engine" position={[0, 1.6, -3.0]} size={[1.4, 0.9, 1.4]} />
-        <InternalBox part="hydraulic_pump" position={[0.5, 1.2, -1.2]} size={[0.4, 0.4, 0.5]} />
-        {[-1, 1].map((side) => (
-          <group key={side}>
-            <InternalTube part="hydraulic_lines" from={[0.5 * side, 1.2, -1.2]} to={[1.1 * side, 1.3, 1.0]} />
-            <InternalTube part="hydraulic_lines" from={[1.1 * side, 1.1, 1.0]} to={[1.1 * side, 2.0, 1.4]} radius={0.12} />
-          </group>
-        ))}
-
-        {/* tractor chassis */}
-        <mesh position={[0, 1.15, -1.9]} castShadow receiveShadow userData={{ part: "engine" }}>
-          <boxGeometry args={[2.6, 0.9, 3.4]} />
-          <meshStandardMaterial color={PALETTE.catYellow} roughness={0.6} metalness={0.25} />
-        </mesh>
-        {/* bonnet */}
-        <mesh position={[0, 1.75, -3.2]} castShadow userData={{ part: "engine" }}>
-          <boxGeometry args={[2.3, 0.85, 1.5]} />
-          <meshStandardMaterial color={PALETTE.catYellow} roughness={0.6} metalness={0.25} />
-        </mesh>
-        {/* cab */}
-        <mesh position={[0, 2.35, -1.9]} castShadow userData={{ part: "cab" }}>
-          <boxGeometry args={[2.0, 1.5, 1.7]} />
-          <meshStandardMaterial
-            color={PALETTE.glass}
-            roughness={0.1}
-            metalness={0.1}
-            transparent
-            opacity={0.6}
-          />
-        </mesh>
-        <mesh position={[0, 3.14, -1.9]} castShadow userData={{ part: "cab" }}>
-          <boxGeometry args={[2.15, 0.12, 1.85]} />
-          <meshStandardMaterial color={PALETTE.steelDark} roughness={0.8} />
-        </mesh>
-
-        {/* hitch */}
-        <mesh position={[0, 1.05, -0.1]} castShadow userData={{ part: "hitch" }}>
-          <cylinderGeometry args={[0.4, 0.4, 0.8, 12]} />
-          <meshStandardMaterial color={PALETTE.steelDark} roughness={0.7} metalness={0.5} />
-        </mesh>
-        {/* rear frame */}
-        <mesh position={[0, 1.0, 2.3]} castShadow userData={{ part: "undercarriage" }}>
-          <boxGeometry args={[2.2, 0.5, 4.0]} />
-          <meshStandardMaterial color={PALETTE.steel} roughness={0.85} metalness={0.35} />
-        </mesh>
-
-        {/* dump bed, hinged at the rear */}
-        <group ref={bed} position={[0, 1.35, 3.9]} userData={{ part: "dump_body" }}>
-          <group position={[0, 0.45, -1.9]}>
-            {/* floor */}
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[2.9, 0.22, 4.6]} />
-              <meshStandardMaterial
-                color={PALETTE.catYellow}
-                roughness={0.6}
-                metalness={0.3}
+        {/* ---------------- tractor unit ---------------- */}
+        <group ref={tractor} position={[0, 0, HITCH_Z]}>
+          {/* front axle tyres */}
+          {[-1, 1].map((side) => (
+            <group key={side} position={[side * TRACK, TYRE_R, -3.05]}>
+              <Tyre
+                radius={TYRE_R}
+                width={TYRE_W}
+                spinRef={spinRef}
+                side={side as 1 | -1}
               />
+            </group>
+          ))}
+          {/* chassis rails */}
+          <mesh position={[0, 1.1, -2.2]} material={MAT.steelDark} castShadow>
+            <boxGeometry args={[1.1, 0.6, 3.9]} />
+          </mesh>
+          {/* engine bonnet and grille */}
+          <RoundedBox
+            args={[1.95, 1.25, 2.3]}
+            radius={0.14}
+            position={[0, 1.98, -3.45]}
+            material={MAT.paint}
+            castShadow
+            receiveShadow
+          />
+          <mesh position={[0, 1.92, -4.62]} material={MAT.grille}>
+            <boxGeometry args={[1.5, 0.95, 0.06]} />
+          </mesh>
+          {[-0.45, -0.15, 0.15, 0.45].map((y) => (
+            <mesh key={y} position={[0, 1.92 + y, -4.66]} material={MAT.steel}>
+              <boxGeometry args={[1.5, 0.05, 0.03]} />
             </mesh>
-            {/* side walls */}
-            {[-1.45, 1.45].map((x) => (
-              <mesh key={x} position={[x, 0.62, 0]} castShadow>
-                <boxGeometry args={[0.2, 1.05, 4.6]} />
-                <meshStandardMaterial
-                  color={PALETTE.catYellow}
-                  roughness={0.6}
-                  metalness={0.3}
-                />
+          ))}
+          <Decal
+            text="CAT"
+            logo
+            position={[0.99, 2.05, -3.5]}
+            rotation={[0, Math.PI / 2, 0]}
+            width={1.1}
+          />
+          <Decal
+            text="CAT"
+            logo
+            position={[-0.99, 2.05, -3.5]}
+            rotation={[0, -Math.PI / 2, 0]}
+            width={1.1}
+          />
+          {/* front bumper with lights */}
+          <mesh position={[0, 1.05, -4.78]} material={MAT.steelDark} castShadow>
+            <boxGeometry args={[2.7, 0.35, 0.3]} />
+          </mesh>
+          <Lamp position={[-1.0, 1.08, -4.95]} size={[0.3, 0.18, 0.04]} />
+          <Lamp position={[1.0, 1.08, -4.95]} size={[0.3, 0.18, 0.04]} />
+          {/* front fenders */}
+          {[-1, 1].map((side) => (
+            <RoundedBox
+              key={side}
+              args={[0.95, 0.14, 2.3]}
+              radius={0.05}
+              position={[side * TRACK, 2.02, -3.05]}
+              material={MAT.paint}
+              castShadow
+            />
+          ))}
+          {/* cab on its platform */}
+          <mesh position={[0, 2.0, -1.55]} material={MAT.paint} castShadow>
+            <boxGeometry args={[2.4, 0.2, 1.9]} />
+          </mesh>
+          <group position={[0, 2.95, -1.55]}>
+            <mesh material={MAT.glass}>
+              <boxGeometry args={[1.95, 1.6, 1.6]} />
+            </mesh>
+            {[
+              [-0.95, -0.78],
+              [0.95, -0.78],
+              [-0.95, 0.78],
+              [0.95, 0.78],
+            ].map(([x, z]) => (
+              <mesh
+                key={`${x}${z}`}
+                position={[x, 0, z]}
+                material={MAT.black}
+                castShadow
+              >
+                <boxGeometry args={[0.07, 1.62, 0.07]} />
               </mesh>
             ))}
-            {/* headboard */}
-            <mesh position={[0, 0.85, -2.3]} castShadow>
-              <boxGeometry args={[2.9, 1.5, 0.2]} />
-              <meshStandardMaterial
-                color={PALETTE.catYellow}
-                roughness={0.6}
-                metalness={0.3}
+            <RoundedBox
+              args={[2.1, 0.16, 1.8]}
+              radius={0.05}
+              position={[0, 0.86, 0]}
+              material={MAT.paint}
+              castShadow
+            />
+            <mesh position={[0, -0.35, 0.2]} material={MAT.seat}>
+              <boxGeometry args={[0.5, 0.5, 0.5]} />
+            </mesh>
+            <mesh position={[0, 0.05, 0.15]} material={MAT.seat}>
+              <sphereGeometry args={[0.13, 10, 8]} />
+            </mesh>
+            <Beacon telemetry={telemetry} position={[0.6, 0.94, 0.5]} />
+            <Lamp position={[-0.6, 0.97, -0.8]} />
+            <Lamp position={[0.6, 0.97, -0.8]} />
+            {/* mirrors on arms */}
+            {[-1, 1].map((side) => (
+              <group key={side} position={[side * 1.3, 0.2, -0.8]}>
+                <mesh position={[-side * 0.18, 0, 0]} material={MAT.black}>
+                  <boxGeometry args={[0.4, 0.04, 0.04]} />
+                </mesh>
+                <mesh material={MAT.black}>
+                  <boxGeometry args={[0.05, 0.42, 0.24]} />
+                </mesh>
+              </group>
+            ))}
+          </group>
+          {/* access ladder */}
+          <group position={[-1.25, 1.2, -1.2]}>
+            {[-0.2, 0.2].map((z) => (
+              <mesh key={z} position={[0, 0, z]} material={MAT.black}>
+                <boxGeometry args={[0.04, 1.6, 0.04]} />
+              </mesh>
+            ))}
+            {[-0.6, -0.2, 0.2, 0.6].map((y) => (
+              <mesh key={y} position={[0, y, 0]} material={MAT.steel}>
+                <boxGeometry args={[0.05, 0.04, 0.44]} />
+              </mesh>
+            ))}
+          </group>
+          {/* exhaust */}
+          <mesh position={[0.95, 3.0, -2.5]} material={MAT.black} castShadow>
+            <cylinderGeometry args={[0.08, 0.09, 1.2, 10]} />
+          </mesh>
+          {/* hitch */}
+          <mesh
+            position={[0, 1.05, 0]}
+            rotation={[0, 0, 0]}
+            material={MAT.steelDark}
+            castShadow
+          >
+            <cylinderGeometry args={[0.38, 0.38, 0.9, 14]} />
+          </mesh>
+        </group>
+
+        {/* ---------------- trailer unit ---------------- */}
+        <group ref={trailer} position={[0, 0, HITCH_Z]}>
+          {/* tandem bogies */}
+          {[3.1, 4.9].map((z) =>
+            [-1, 1].map((side) => (
+              <group key={`${z}${side}`} position={[side * TRACK, TYRE_R, z]}>
+                <Tyre
+                  radius={TYRE_R}
+                  width={TYRE_W}
+                  spinRef={spinRef}
+                  side={side as 1 | -1}
+                />
+              </group>
+            )),
+          )}
+          {[-1, 1].map((side) => (
+            <mesh
+              key={side}
+              position={[side * 0.85, 1.0, 4.0]}
+              material={MAT.steelDark}
+              castShadow
+            >
+              <boxGeometry args={[0.3, 0.45, 2.4]} />
+            </mesh>
+          ))}
+          {/* frame rails */}
+          <mesh position={[0, 1.2, 2.6]} material={MAT.steelDark} castShadow>
+            <boxGeometry args={[1.2, 0.5, 5.2]} />
+          </mesh>
+          <Anchor anchorRef={hoistBaseL} position={[-0.75, 1.25, 1.2]} />
+          <Anchor anchorRef={hoistBaseR} position={[0.75, 1.25, 1.2]} />
+          <TailLamps
+            telemetry={telemetry}
+            positions={[
+              [-1.2, 1.35, 5.62],
+              [1.2, 1.35, 5.62],
+            ]}
+          />
+
+          {/* ---------------- dump body, hinged at the tail ---------------- */}
+          <group ref={body} position={[0, 1.55, 5.2]}>
+            <mesh
+              geometry={geo.side}
+              position={[1.62, 0, 0]}
+              material={MAT.paint}
+              castShadow
+              receiveShadow
+            />
+            <mesh
+              geometry={geo.side}
+              position={[-1.62, 0, 0]}
+              material={MAT.paint}
+              castShadow
+              receiveShadow
+            />
+            <Decal
+              text="CAT"
+              logo
+              position={[1.7, 1.05, -2.3]}
+              rotation={[0, Math.PI / 2, 0]}
+              width={2.0}
+            />
+            <Decal
+              text="CAT"
+              logo
+              position={[-1.7, 1.05, -2.3]}
+              rotation={[0, -Math.PI / 2, 0]}
+              width={2.0}
+            />
+            <Decal
+              text="745"
+              position={[1.7, 0.55, -4.3]}
+              rotation={[0, Math.PI / 2, 0]}
+              width={0.9}
+            />
+            {/* floor, rising to the headboard */}
+            <mesh
+              position={[0, 0.2, -2.4]}
+              rotation={[-0.08, 0, 0]}
+              material={MAT.paintWorn}
+              castShadow
+              receiveShadow
+            >
+              <boxGeometry args={[3.3, 0.14, 5.1]} />
+            </mesh>
+            {/* tail chute lip */}
+            <mesh
+              position={[0, 0.15, 0.55]}
+              rotation={[0.2, 0, 0]}
+              material={MAT.paintWorn}
+              castShadow
+            >
+              <boxGeometry args={[3.3, 0.12, 1.2]} />
+            </mesh>
+            {/* headboard with canopy over the hitch */}
+            <mesh
+              position={[0, 1.3, -5.25]}
+              rotation={[-0.08, 0, 0]}
+              material={MAT.paint}
+              castShadow
+            >
+              <boxGeometry args={[3.3, 1.85, 0.14]} />
+            </mesh>
+            <mesh position={[0, 2.18, -5.55]} material={MAT.paint} castShadow>
+              <boxGeometry args={[3.3, 0.12, 0.8]} />
+            </mesh>
+            {/* reinforcing ribs on the sides */}
+            {[-1.0, -2.2, -3.4, -4.4].map((z) =>
+              [-1, 1].map((side) => (
+                <mesh
+                  key={`${z}${side}`}
+                  position={[side * 1.7, 0.95, z]}
+                  material={MAT.paintDark}
+                >
+                  <boxGeometry args={[0.06, 1.5, 0.1]} />
+                </mesh>
+              )),
+            )}
+            {/* the load */}
+            <mesh
+              ref={heap}
+              position={[0, 0.55, -2.5]}
+              material={MAT.dirt}
+              visible={false}
+              castShadow
+            >
+              <sphereGeometry
+                args={[1.55, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]}
               />
             </mesh>
-            {/* load — visibility driven from telemetry in useFrame */}
-            <mesh ref={load} position={[0, 0.52, 0.1]} castShadow>
-              <boxGeometry args={[2.5, 0.72, 4.0]} />
-              <meshStandardMaterial color={PALETTE.dirtDark} roughness={1} />
-            </mesh>
+            <Anchor anchorRef={hoistRodL} position={[-0.75, 0.15, -3.6]} />
+            <Anchor anchorRef={hoistRodR} position={[0.75, 0.15, -3.6]} />
           </group>
+          <Ram from={hoistBaseL} to={hoistRodL} radius={0.12} />
+          <Ram from={hoistBaseR} to={hoistRodR} radius={0.12} />
         </group>
       </group>
     </group>

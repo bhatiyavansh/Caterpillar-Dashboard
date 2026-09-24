@@ -18,4 +18,19 @@ questions:
   - {q: "How far back from the edge must spoil piles be kept?", expect: "29 CFR 1926.651(j)"}
   - {q: "Ladder or ramp needed to get out of a trench how deep?", expect: "29 CFR 1926.651(c)"}
   - {q: "What safety training must employers give workers?", expect: "29 CFR 1926.21(b)"}
+  # synthetic demo knowledge (backend/data/synthetic): trainee and operator questions from the demo script
+  - {q: "What should I check before starting the machine?", expect: "Synthetic demo knowledge: Pre-start inspection"}
+  - {q: "Why do I need to walk around the machine before a shift?", expect: "Synthetic demo knowledge: Pre-start inspection"}
+  - {q: "Why does the excavator move backward when I push the travel lever forward?", expect: "Synthetic demo knowledge"}
+  - {q: "How do I stop overshooting when I slew?", expect: "Synthetic demo knowledge: Common trainee mistakes"}
+  - {q: "Why does slewing matter for people near the counterweight?", expect: "Synthetic demo knowledge"}
+  - {q: "Why should I wear the seatbelt for a short move?", expect: "Synthetic demo knowledge: Seatbelt use"}
+  - {q: "How should a worker on foot approach a working excavator?", expect: "Synthetic demo knowledge: Worker awareness"}
+  - {q: "Is it safe to work near trench edges after rain?", expect: "Synthetic demo knowledge"}
+  - {q: "What are the warning signs of operator fatigue?", expect: "Synthetic demo knowledge: Fatigue awareness"}
+  - {q: "What do I do first in an emergency?", expect: "Synthetic demo knowledge: Emergency response basics"}
+  - {q: "How do I park and shut down the machine safely?", expect: "Synthetic demo knowledge: Parking and shutting down"}
+  - {q: "Where should the truck driver be while I load the truck?", expect: "Synthetic demo knowledge: Loading and unloading"}
+  - {q: "What usually causes the hydraulic oil to overheat?", expect: "Synthetic demo knowledge: Interpreting hydraulic warnings"}
+  - {q: "What daily care does the machine need?", expect: "Synthetic demo knowledge: Basic machine care"}
   - {q: "Recipe for chocolate cake", expect_none: true, expect: "-"}

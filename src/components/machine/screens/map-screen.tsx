@@ -5,10 +5,62 @@ import { motion } from "motion/react";
 import { Crosshair, Layers } from "lucide-react";
 import { worksite } from "@/lib/mock-data";
 import { cn, statusStyles } from "@/lib/utils";
+import type { HealthStatus } from "@/lib/types";
+import type { Machine } from "@/lib/api/contracts";
+import { PRIMARY_MACHINE_ID } from "@/lib/api/seed";
+import { useFleet } from "@/lib/hooks/use-site";
+import { planToLatLon, planToMapPct } from "@/lib/hmi/site-plan";
 import { ScreenPad, SectionTitle } from "../touch";
 
-/** Mock site plan drawn entirely in SVG — no external map provider. */
+interface MapMachine {
+  id: string;
+  name: string;
+  left: number;
+  top: number;
+  health: HealthStatus;
+  self: boolean;
+  lat: number;
+  lon: number;
+}
+
+const HEALTH: Record<Machine["status"], HealthStatus> = {
+  operating: "healthy",
+  idle: "healthy",
+  warning: "warning",
+  critical: "critical",
+  maintenance: "offline",
+};
+
+/**
+ * Every machine on site, where it actually is. Positions come from the fleet
+ * source — live from the hub when connected, the simulated baseline otherwise —
+ * so this map and `/command` always agree.
+ */
+function useMapMachines(): MapMachine[] {
+  const { data: fleet } = useFleet();
+  return React.useMemo(
+    () =>
+      fleet.map((m) => {
+        const { left, top } = planToMapPct(m.position);
+        const { lat, lon } = planToLatLon(m.position);
+        return {
+          id: m.id,
+          name: `${m.model} · ${m.id}`,
+          left,
+          top,
+          health: HEALTH[m.status] ?? "healthy",
+          self: m.id === PRIMARY_MACHINE_ID,
+          lat,
+          lon,
+        };
+      }),
+    [fleet],
+  );
+}
+
+/** Site plan drawn entirely in SVG — no external map provider. */
 export function MockMap({ selected, onSelect }: { selected: string | null; onSelect: (id: string) => void }) {
+  const machines = useMapMachines();
   return (
     <div className="relative h-full w-full overflow-hidden rounded border border-white/10 bg-[#11161b]">
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
@@ -53,7 +105,7 @@ export function MockMap({ selected, onSelect }: { selected: string | null; onSel
         </span>
       ))}
 
-      {worksite.machines.map((m) => {
+      {machines.map((m) => {
         const s = statusStyles[m.health];
         const active = selected === m.id;
         return (
@@ -61,8 +113,8 @@ export function MockMap({ selected, onSelect }: { selected: string | null; onSel
             key={m.id}
             onClick={() => onSelect(m.id)}
             aria-label={`${m.name}, ${s.label}`}
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: `${m.x}%`, top: `${m.y}%` }}
+            className="absolute -translate-x-1/2 -translate-y-1/2 transition-[left,top] duration-500 ease-linear"
+            style={{ left: `${m.left}%`, top: `${m.top}%` }}
           >
             {m.self ? (
               <motion.span
@@ -90,7 +142,8 @@ export function MockMap({ selected, onSelect }: { selected: string | null; onSel
 
 export function MapScreen() {
   const [selected, setSelected] = React.useState<string | null>(null);
-  const machine = worksite.machines.find((m) => m.id === selected);
+  const machines = useMapMachines();
+  const machine = machines.find((m) => m.id === selected);
 
   return (
     <ScreenPad className="flex h-full flex-col gap-3">
@@ -98,7 +151,7 @@ export function MapScreen() {
         <div>
           <p className="text-xl font-bold text-zinc-50">{worksite.name}</p>
           <p className="text-sm text-muted">
-            {worksite.sector} · North bench · 5 machines on site
+            {worksite.sector} · North bench · {machines.length} machines on site
           </p>
         </div>
         <div className="flex gap-2 text-xs">
@@ -135,7 +188,7 @@ export function MapScreen() {
             <div>
               <p className="label-xs">Grid position</p>
               <p className="font-mono text-lg text-zinc-100">
-                N {(52.31 + machine.y / 1000).toFixed(4)} · W {(1.42 + machine.x / 1000).toFixed(4)}
+                {machine.lat.toFixed(5)}° N · {machine.lon.toFixed(5)}° E
               </p>
             </div>
           </div>

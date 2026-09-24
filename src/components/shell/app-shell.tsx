@@ -14,6 +14,7 @@ import { Menu, X } from "lucide-react";
 import { AppSidebar } from "./app-sidebar";
 import { TopBar } from "./top-bar";
 import { CommandPalette } from "./command-palette";
+import { AssistantDrawer } from "@/components/assistant/global-assistant";
 import { Button } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +26,7 @@ import { cn } from "@/lib/utils";
  * gives. The rail collapses to icons rather than disappearing, so navigation is
  * always one click away.
  */
-const FOCUSED_ROUTES = ["/hmi", "/training/lesson", "/cab", "/ar", "/director", "/twin", "/machine"];
+const FOCUSED_ROUTES = ["/hmi", "/training/lesson", "/cab", "/ar/procedures", "/director", "/twin", "/machine"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -104,6 +105,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      {/* The drawer view of the one assistant (its dock is in the top bar; its state in AssistantProvider). */}
+      <AssistantDrawer />
     </div>
   );
 }

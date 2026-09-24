@@ -12,7 +12,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { ROADS, type RoadSegment } from "@/lib/twin/site";
 import { terrainHeight } from "@/lib/twin/terrain";
-import { PALETTE } from "./materials";
+import { PALETTE, gravelTexture } from "./materials";
 
 /** Lengthwise samples per metre of road. */
 const SAMPLES_PER_METRE = 0.25;
@@ -144,6 +144,7 @@ export function Roads() {
   const markingGeo = useMemo(buildMarkingGeometry, []);
   const posts = useMemo(delineatorTransforms, []);
   const postsRef = useRef<THREE.InstancedMesh>(null);
+  const gravel = useMemo(gravelTexture, []);
 
   useLayoutEffect(() => {
     const mesh = postsRef.current;
@@ -155,15 +156,15 @@ export function Roads() {
   return (
     <group>
       <mesh geometry={roadGeo} receiveShadow>
-        <meshStandardMaterial color={PALETTE.road} roughness={0.92} metalness={0.02} />
+        <meshStandardMaterial map={gravel} roughness={0.95} metalness={0} />
       </mesh>
 
       <mesh geometry={markingGeo}>
         <meshStandardMaterial
-          color="#e8e4d4"
-          roughness={0.7}
-          emissive="#3a3730"
-          emissiveIntensity={0.35}
+          color="#d9d2bd"
+          roughness={0.85}
+          transparent
+          opacity={0.55}
         />
       </mesh>
 

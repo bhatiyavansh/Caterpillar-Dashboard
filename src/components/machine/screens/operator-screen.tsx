@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { BadgeCheck, Clock, ShieldCheck, User } from "lucide-react";
-import { operator } from "@/lib/mock-data";
 import { Progress } from "@/components/ui/primitives";
 import { useMachineStore } from "@/store/machine-store";
 import { ScreenPad, SectionTitle, TouchButton } from "../touch";
@@ -13,9 +12,11 @@ export function OperatorScreen({ navigate }: { navigate: (s: MachineScreen) => v
   // selector returns a new array on every store read, which makes the snapshot
   // compare unequal forever and drives React into an update loop.
   const allTasks = useMachineStore((s) => s.tasks);
+  // Live from the hub while connected (see sensor-engine.tsx), else the local profile.
+  const operator = useMachineStore((s) => s.operator);
   const tasks = React.useMemo(
     () => allTasks.filter((t) => t.machineId === operator.machineId),
-    [allTasks],
+    [allTasks, operator.machineId],
   );
   const completed = tasks.filter((t) => t.status === "completed").length;
 

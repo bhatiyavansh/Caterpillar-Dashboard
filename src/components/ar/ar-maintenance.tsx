@@ -24,7 +24,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/primitives";
-import { PageShell } from "@/components/ui/page";
+import { Breadcrumbs, PageShell } from "@/components/ui/page";
 import { cn } from "@/lib/utils";
 
 interface Hotspot {
@@ -360,7 +360,7 @@ export function ArMaintenance() {
     <PageShell width="narrow" className="lg:max-w-5xl">
       <header className="flex items-center justify-between gap-3">
         <div>
-          <p className="label-xs">AR maintenance</p>
+          <Breadcrumbs items={[{ label: "AR maintenance", href: "/ar" }, { label: "Routine procedures" }]} />
           <h1 className="text-lg font-bold tracking-tight text-zinc-50">
             EXC001 · CAT 320
           </h1>

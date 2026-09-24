@@ -1,20 +1,68 @@
 /**
- * Single source of truth for the synthetic site layout.
+ * Single source of truth for the site layout.
  *
- * Terrain generation, road meshes, zone markers and machine AI all read from
- * here, so moving a zone moves everything that depends on it.
+ * The layout is not invented for the twin: it is the backend simulator's own
+ * site (`simulator/site.py`) translated into twin coordinates, so a machine the
+ * live feed reports "at the loader point" is standing at the loader point in
+ * 3D, on the right road, on the right bench. Terrain, roads, props, zone
+ * markers and the local fleet autonomy all read from here.
  *
  * Coordinate convention: +X is east, -Z is north, +Y is up. Metres throughout.
+ * Simulator (x, y) maps to twin (x - 192, -(y - 192)) — a translation only, the
+ * same one `liveFrame.ts` applies to every live frame.
  */
 
-/**
- * 360 m square. Larger than the twin's own layout needs, because the live
- * simulator's fleet ranges over x 46-339 / y 118-266 in its own frame, and
- * live coordinates are translated 1:1 (never scaled — see liveFrame.ts). The
- * extra ground keeps every machine on the mesh in live mode.
- */
-export const SITE_SIZE = 360;
-export const SITE_HALF = SITE_SIZE / 2;
+/** Simulator site coordinates -> twin world coordinates. */
+export function fromSim(x: number, y: number): { x: number; z: number } {
+  return { x: x - 192, z: -(y - 192) };
+}
+
+/** Half-extent of the drivable working area. Covers the whole simulator site. */
+export const SITE_HALF = 205;
+export const SITE_SIZE = SITE_HALF * 2;
+
+/** The rendered ground: the site plus the valley walls around it. */
+export const TERRAIN_SIZE = 700;
+
+/** Inside this box the ground is the site proper; outside it rises into hills. */
+export const SITE_BOUNDS = { x0: -214, x1: 226, z0: -150, z1: 206 } as const;
+
+/** Perimeter fence. The gate is on the west side, where the simulator's gate node is. */
+export const FENCE = { x0: -206, x1: 218, z0: -144, z1: 200, gateZ: 92, gateWidth: 18 } as const;
+
+/* ------------------------------------------------------------------------ */
+/*  Operational points (straight from simulator/site.py)                    */
+/* ------------------------------------------------------------------------ */
+
+export const LOADER_POINT = fromSim(300, 150); // (108, 42)
+export const DUMP_POINT = fromSim(40, 40); // (-152, 152)
+export const STOCKPILE_POINT = fromSim(340, 165); // (148, 27)
+export const FUEL_POINT = fromSim(200, 30); // (8, 162)
+export const GATE_POINT = fromSim(0, 100); // (-192, 92)
+
+/** Laden trucks: loader -> north lane -> west end -> up onto the dump. */
+export const LOADED_ROUTE = [
+  LOADER_POINT,
+  fromSim(210, 118),
+  fromSim(60, 118),
+  fromSim(30, 118),
+  fromSim(30, 50),
+  DUMP_POINT,
+];
+
+/** Empty trucks: dump -> south lane -> east end -> back into the loading bay. */
+export const EMPTY_ROUTE = [
+  DUMP_POINT,
+  fromSim(55, 20),
+  fromSim(200, 82),
+  fromSim(345, 82),
+  fromSim(365, 110),
+  LOADER_POINT,
+];
+
+/* ------------------------------------------------------------------------ */
+/*  Zones                                                                   */
+/* ------------------------------------------------------------------------ */
 
 export interface SiteZone {
   id: string;
@@ -25,100 +73,133 @@ export interface SiteZone {
   /** Half-extents. */
   rx: number;
   rz: number;
+  /** Rectangular zones match the simulator's rectangles exactly. */
+  shape?: "rect" | "ellipse";
   color: string;
-  kind: "excavation" | "stockpile" | "loading" | "maintenance" | "fuel" | "restricted" | "dump";
+  kind:
+    | "excavation"
+    | "stockpile"
+    | "loading"
+    | "maintenance"
+    | "fuel"
+    | "restricted"
+    | "processing"
+    | "dump";
+}
+
+function simRect(x0: number, y0: number, x1: number, y1: number) {
+  const a = fromSim(x0, y0);
+  const b = fromSim(x1, y1);
+  return {
+    x: (a.x + b.x) / 2,
+    z: (a.z + b.z) / 2,
+    rx: Math.abs(b.x - a.x) / 2,
+    rz: Math.abs(b.z - a.z) / 2,
+    shape: "rect" as const,
+  };
 }
 
 export const ZONES: SiteZone[] = [
   {
-    id: "zone-b",
-    label: "EXCAVATION ZONE B",
-    sub: "ACTIVE DIG",
-    x: -5,
-    z: -55,
-    rx: 40,
-    rz: 28,
+    id: "zone-a",
+    label: "PIT · ZONE A",
+    sub: "BULK EXCAVATION",
+    ...simRect(40, 180, 140, 280),
     color: "#f2b705",
     kind: "excavation",
   },
   {
+    id: "zone-b",
+    label: "ZONE B",
+    sub: "TRENCHING",
+    ...simRect(160, 180, 260, 280),
+    color: "#f2b705",
+    kind: "excavation",
+  },
+  {
+    id: "zone-c",
+    label: "ZONE C",
+    sub: "GRADING",
+    ...simRect(280, 180, 380, 280),
+    color: "#8fb8d8",
+    kind: "processing",
+  },
+  {
     id: "stockpile",
     label: "STOCKPILE",
-    sub: "MATERIAL",
-    x: -58,
-    z: 48,
-    rx: 24,
-    rz: 20,
+    sub: "ROM MATERIAL",
+    x: STOCKPILE_POINT.x + 8,
+    z: STOCKPILE_POINT.z + 6,
+    rx: 20,
+    rz: 16,
     color: "#c9962f",
     kind: "stockpile",
   },
   {
     id: "loading",
-    label: "LOADING ZONE",
-    sub: "HAUL OUT",
-    x: 34,
-    z: 44,
-    rx: 20,
-    rz: 16,
+    label: "LOADING BAY",
+    sub: "TRUCK QUEUE",
+    x: LOADER_POINT.x,
+    z: LOADER_POINT.z,
+    rx: 15,
+    rz: 13,
     color: "#5ec26a",
     kind: "loading",
   },
   {
-    id: "maintenance",
-    label: "MAINTENANCE",
-    sub: "SERVICE BAY",
-    x: 74,
-    z: 30,
-    rx: 18,
-    rz: 14,
-    color: "#5aa0d6",
-    kind: "maintenance",
+    id: "dump",
+    label: "WASTE DUMP",
+    sub: "TIP HEAD",
+    x: DUMP_POINT.x,
+    z: DUMP_POINT.z,
+    rx: 19,
+    rz: 17,
+    color: "#b07a4a",
+    kind: "dump",
   },
   {
     id: "fuel",
-    label: "FUEL STATION",
+    label: "FUEL BAY",
     sub: "DIESEL / DEF",
-    x: -2,
-    z: 76,
+    x: FUEL_POINT.x,
+    z: FUEL_POINT.z,
     rx: 12,
     rz: 10,
     color: "#e08b3c",
     kind: "fuel",
   },
   {
+    id: "maintenance",
+    label: "WORKSHOP",
+    sub: "SERVICE BAY",
+    x: 60,
+    z: 160,
+    rx: 17,
+    rz: 13,
+    color: "#5aa0d6",
+    kind: "maintenance",
+  },
+  {
     id: "restricted",
-    label: "RESTRICTED",
+    label: "SEDIMENT POND",
     sub: "NO ENTRY",
-    x: 76,
-    z: -42,
-    rx: 20,
-    rz: 18,
+    x: 116,
+    z: 166,
+    rx: 19,
+    rz: 16,
     color: "#e0453c",
     kind: "restricted",
   },
   {
-    id: "dump",
-    label: "WASTE DUMP",
-    sub: "TIP HEAD · 20% RAMP",
-    x: -100,
-    z: -50,
-    rx: 26,
-    rz: 22,
-    color: "#b07a4a",
-    kind: "dump",
-  },
-  {
-    id: "face-c",
-    label: "BENCH FACE C",
-    sub: "UNSTABLE GROUND",
-    // Covers the floor below the face; its signboard stands at the toe,
-    // facing the bench, not on the approach to the crest.
-    x: 37,
-    z: -105,
-    rx: 19,
-    rz: 8,
-    color: "#e0453c",
-    kind: "excavation",
+    id: "crusher",
+    label: "CRUSHER PLANT",
+    sub: "PRIMARY / SCREEN",
+    x: 172,
+    z: 158,
+    rx: 17,
+    rz: 18,
+    color: "#b58cd9",
+    kind: "processing",
   },
 ];
 
@@ -128,40 +209,121 @@ export function getZone(id: string): SiteZone {
   return zone;
 }
 
-/** Returns the zone containing (x, z), or null for open ground. */
-export function zoneAt(x: number, z: number): SiteZone | null {
-  for (const zone of ZONES) {
-    const dx = (x - zone.x) / zone.rx;
-    const dz = (z - zone.z) / zone.rz;
-    if (dx * dx + dz * dz <= 1) return zone;
-  }
-  return null;
+export function insideZone(zone: SiteZone, x: number, z: number): boolean {
+  const dx = (x - zone.x) / zone.rx;
+  const dz = (z - zone.z) / zone.rz;
+  if (zone.shape === "rect") return Math.abs(dx) <= 1 && Math.abs(dz) <= 1;
+  return dx * dx + dz * dz <= 1;
 }
 
-/** The excavation pit. Terrain digs a flat-bottomed bowl here. */
-export const PIT = { x: -5, z: -55, rx: 40, rz: 28, depth: 4.6 };
+/** Returns the zone containing (x, z), or null for open ground. Small zones win. */
+export function zoneAt(x: number, z: number): SiteZone | null {
+  let best: SiteZone | null = null;
+  for (const zone of ZONES) {
+    if (!insideZone(zone, x, z)) continue;
+    if (!best || zone.rx * zone.rz < best.rx * best.rz) best = zone;
+  }
+  return best;
+}
 
-/** Stockpile mounds and spoil heaps. */
-export const MOUNDS = [
-  { x: -58, z: 48, r: 17, h: 5.4 },
-  { x: -42, z: 57, r: 11, h: 3.4 },
-  { x: -71, z: 37, r: 10, h: 2.9 },
-  { x: 24, z: -12, r: 9, h: 2.4 },
-  { x: -26, z: -30, r: 8, h: 2.0 },
-  // Former cosmetic spoil cones (SiteProps) — now part of the ground, so
-  // machines have to go round them like any other heap.
-  { x: 8, z: -84, r: 5, h: 1.8 },
-  { x: -36, z: -86, r: 5.5, h: 2.1 },
+/* ------------------------------------------------------------------------ */
+/*  Landforms                                                               */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * The pit: a rectangular floor inside zone A, with benched walls stepping up to
+ * natural ground outside it. Wall width = benches x (face + berm).
+ */
+export const PIT = {
+  floor: { x0: -148, x1: -58, z0: -84, z1: 6 },
+  depth: 10,
+  benches: 4,
+  wallWidth: 30,
+};
+
+/** Centre of the pit floor, handy for props and cameras. */
+export const PIT_CENTRE = {
+  x: (PIT.floor.x0 + PIT.floor.x1) / 2,
+  z: (PIT.floor.z0 + PIT.floor.z1) / 2,
+};
+
+/** Trenches being cut in zone B. `progress` is how much of the run is dug. */
+export const TRENCHES = [
+  { x0: -18, x1: 52, z: -58, width: 2.6, depth: 1.9, progress: 0.62 },
+  { x0: -6, x1: 40, z: -18, width: 2.2, depth: 1.5, progress: 0.35 },
 ];
 
-/** Graded, flat working pads. */
-export const PADS = [
-  { x: 34, z: 44, rx: 22, rz: 18 },
-  { x: 74, z: 30, rx: 20, rz: 16 },
-  { x: -2, z: 76, rx: 14, rz: 12 },
-  // Crusher pad.
-  { x: 74, z: 84, rx: 18, rz: 13 },
+/** Sediment pond inside the restricted zone. */
+export const POND = { x: 116, z: 168, rx: 13, rz: 10, depth: 3, waterY: -1.35 };
+
+/** The waste dump is a raised tip head; trucks climb onto it and tip over the edge. */
+export const DUMP = { x: DUMP_POINT.x, z: DUMP_POINT.z, r: 17, height: 3.6 };
+
+/** Crusher plant layout. */
+export const CRUSHER = {
+  x: 170,
+  z: 156,
+  rot: -0.4,
+  conveyorFrom: { x: 176, z: 150, y: 3.2 },
+  conveyorTo: { x: 192, z: 138, y: 8.8 },
+};
+
+export interface Mound {
+  x: number;
+  z: number;
+  r: number;
+  h: number;
+  /** Tipped/stockpiled material stands at its angle of repose: a cone, not a hill. */
+  cone?: boolean;
+}
+
+export const MOUNDS: Mound[] = [
+  // ROM stockpile the loader digs from (its toe is at STOCKPILE_POINT)
+  { x: STOCKPILE_POINT.x + 13, z: STOCKPILE_POINT.z + 7, r: 13, h: 8.5, cone: true },
+  { x: STOCKPILE_POINT.x + 2, z: STOCKPILE_POINT.z + 22, r: 8, h: 5, cone: true },
+  // crusher feed and product piles
+  { x: 196, z: 136, r: 9, h: 6.2, cone: true },
+  { x: 150, z: 176, r: 7, h: 4.4, cone: true },
+  // spoil beside the pit excavator
+  { x: -114, z: -44, r: 6, h: 3.1, cone: true },
+  // tipped loads down the dump face
+  { x: DUMP_POINT.x - 22, z: DUMP_POINT.z + 6, r: 6, h: 2.8, cone: true },
+  { x: DUMP_POINT.x - 14, z: DUMP_POINT.z + 20, r: 7, h: 3.2, cone: true },
+  { x: DUMP_POINT.x - 26, z: DUMP_POINT.z - 8, r: 5, h: 2.2, cone: true },
+  // natural knolls in the undeveloped south
+  { x: -84, z: 186, r: 26, h: 7 },
+  { x: 32, z: 198, r: 20, h: 5 },
+  { x: 208, z: 60, r: 18, h: 4.5 },
 ];
+
+export interface Pad {
+  x: number;
+  z: number;
+  rx: number;
+  rz: number;
+  shape?: "rect" | "ellipse";
+  /** Finished level. Default 0. */
+  y?: number;
+  /** Width of the batter slope around the pad. */
+  feather?: number;
+}
+
+/** Graded, level working areas. */
+export const PADS: Pad[] = [
+  { ...simRect(160, 180, 260, 280), feather: 10 }, // zone B
+  { ...simRect(280, 180, 380, 280), feather: 10 }, // zone C
+  { x: LOADER_POINT.x, z: LOADER_POINT.z, rx: 17, rz: 15 },
+  { x: STOCKPILE_POINT.x + 4, z: STOCKPILE_POINT.z + 6, rx: 26, rz: 22 },
+  { x: FUEL_POINT.x, z: FUEL_POINT.z, rx: 14, rz: 12 },
+  { x: 60, z: 160, rx: 20, rz: 15, shape: "rect", feather: 6 },
+  { x: 172, z: 156, rx: 22, rz: 24, shape: "rect", feather: 6 },
+  { x: -186, z: 128, rx: 16, rz: 20, shape: "rect", feather: 6 }, // compound
+  { x: DUMP.x, z: DUMP.z, rx: DUMP.r, rz: DUMP.r, y: DUMP.height, feather: 6.5 },
+];
+
+/* ------------------------------------------------------------------------ */
+/*  Roads                                                                   */
+/* ------------------------------------------------------------------------ */
 
 export interface RoadSegment {
   id: string;
@@ -174,119 +336,66 @@ export interface RoadSegment {
   width: number;
   /** Centre lane dashes. Ramps skip them. */
   markings: boolean;
+  /** Safety windrows down both shoulders. */
+  berm?: boolean;
 }
 
-/**
- * The haul road network. `y1`/`y2` let a segment ramp — the excavation spur
- * descends into the pit so the excavator can drive in without a cliff.
- */
+function road(
+  id: string,
+  a: { x: number; z: number },
+  b: { x: number; z: number },
+  opts: Partial<Pick<RoadSegment, "y1" | "y2" | "width" | "markings" | "berm">> = {},
+): RoadSegment {
+  return {
+    id,
+    x1: a.x,
+    z1: a.z,
+    x2: b.x,
+    z2: b.z,
+    y1: opts.y1 ?? 0,
+    y2: opts.y2 ?? opts.y1 ?? 0,
+    width: opts.width ?? 11,
+    markings: opts.markings ?? false,
+    berm: opts.berm ?? false,
+  };
+}
+
+const L = LOADED_ROUTE;
+const E = EMPTY_ROUTE;
+
+/** Top of the pit ramp, and its foot on the pit floor. */
+export const RAMP_TOP = { x: -30, z: 30 };
+export const RAMP_FOOT = { x: -132, z: 10 };
+
 export const ROADS: RoadSegment[] = [
-  {
-    id: "haul-main",
-    x1: -104,
-    z1: 8,
-    y1: 0,
-    // Runs out to the gate in the perimeter fence.
-    x2: 156,
-    z2: 8,
-    y2: 0,
-    width: 15,
-    markings: true,
-  },
-  {
-    id: "spur-excavation",
-    x1: -5,
-    z1: 8,
-    y1: 0,
-    x2: -5,
-    z2: -22,
-    y2: 0,
-    width: 12,
-    markings: true,
-  },
-  {
-    id: "ramp-pit",
-    // 40 m for 4.6 m of fall: an 11.5% haul grade, close to the 10% a real
-    // pit ramp is held to. It runs out over the pit floor as an embankment,
-    // so both edges carry a safety berm and a guardrail.
-    x1: -5,
-    z1: -22,
-    y1: 0,
-    x2: -5,
-    z2: -62,
-    y2: -PIT.depth,
-    width: 12,
-    markings: false,
-  },
-  {
-    id: "spur-loading",
-    x1: 34,
-    z1: 8,
-    y1: 0,
-    x2: 34,
-    z2: 40,
-    y2: 0,
-    width: 12,
-    markings: true,
-  },
-  {
-    id: "spur-stockpile",
-    x1: -58,
-    z1: 8,
-    y1: 0,
-    x2: -58,
-    z2: 34,
-    y2: 0,
-    width: 12,
-    markings: true,
-  },
-  {
-    id: "spur-maintenance",
-    x1: 74,
-    z1: 8,
-    y1: 0,
-    x2: 74,
-    z2: 26,
-    y2: 0,
-    width: 11,
-    markings: false,
-  },
-  {
-    id: "spur-fuel",
-    x1: -2,
-    z1: 8,
-    y1: 0,
-    x2: -2,
-    z2: 70,
-    y2: 0,
-    width: 11,
-    markings: true,
-  },
-  {
-    id: "ramp-dump",
-    // 30 m for 6 m of climb: a 20% tip-head ramp on loose spoil. Deliberately
-    // steeper than the pit ramp — wet, it is where trucks lose traction.
-    x1: -96,
-    z1: 0,
-    y1: 0,
-    x2: -96,
-    z2: -30,
-    y2: 6,
-    width: 12,
-    markings: false,
-  },
-  {
-    id: "spur-face",
-    // Service track up to bench face C, over natural ground.
-    x1: 37,
-    z1: 8,
-    y1: 0,
-    x2: 37,
-    z2: -80,
-    y2: 0,
-    width: 9,
-    markings: false,
-  },
+  // The simulator's haul road spine.
+  road("haul-main", fromSim(20, 100), fromSim(380, 100), { width: 14, markings: true, berm: true }),
+  road("haul-east", fromSim(380, 100), fromSim(380, 170), { width: 12, markings: true, berm: true }),
+  // Laden lane (north) and empty lane (south) the trucks actually drive.
+  road("loaded-exit", L[0], L[1], { width: 12 }),
+  road("loaded-lane", L[1], L[3], { width: 12, markings: true, berm: true }),
+  road("dump-approach", L[3], { x: L[3].x, z: 110 }, { width: 12 }),
+  road("dump-ramp", { x: L[3].x, z: 110 }, { x: L[4].x, z: 138 }, { width: 12, y2: DUMP.height, berm: true }),
+  road("dump-access", { x: L[4].x, z: 138 }, L[5], { width: 12, y1: DUMP.height }),
+  road("dump-exit", L[5], E[1], { width: 12, y1: DUMP.height, y2: 0 }),
+  road("empty-diagonal", E[1], E[2], { width: 12, berm: true }),
+  road("empty-lane", E[2], E[3], { width: 12, markings: true, berm: true }),
+  road("empty-turn", E[3], E[4], { width: 12 }),
+  road("loader-entry", E[4], E[5], { width: 12 }),
+  // Pit access: spur off the laden lane, then a ramp down the south wall.
+  road("pit-spur", { x: RAMP_TOP.x, z: 74 }, RAMP_TOP, { width: 12, markings: true }),
+  road("pit-ramp", RAMP_TOP, RAMP_FOOT, { width: 12, y2: -PIT.depth, berm: true }),
+  road("pit-ramp-foot", RAMP_FOOT, { x: RAMP_FOOT.x - 6, z: -2 }, { width: 13, y1: -PIT.depth }),
+  // Zone B and zone C access.
+  road("zone-b-access", { x: 18, z: 74 }, { x: 18, z: 12 }, { width: 10 }),
+  road("zone-c-access", { x: 140, z: 92 }, { x: 128, z: 12 }, { width: 10 }),
+  // Services.
+  road("fuel-spur", { x: FUEL_POINT.x, z: 110 }, FUEL_POINT, { width: 11, markings: true }),
+  road("workshop-spur", { x: 60, z: 110 }, { x: 60, z: 148 }, { width: 11 }),
+  road("crusher-spur", { x: 150, z: 110 }, { x: 168, z: 140 }, { width: 11 }),
+  road("compound-spur", { x: -186, z: 92 }, { x: -186, z: 110 }, { width: 10 }),
+  // Public access road through the gate, cut into the valley side.
+  road("access-west", fromSim(20, 100), { x: -345, z: 104 }, { width: 13, markings: true, y2: 12 }),
 ];
 
 export interface RoadProjection {
@@ -294,7 +403,24 @@ export interface RoadProjection {
   influence: number;
   /** Target height of the road surface at this point. */
   y: number;
+  /** Index of the road that won. */
+  index: number;
+  /** Distance from that road's centre line. */
+  dist: number;
 }
+
+/** Nearest point on a segment, as (t, distance). */
+export function segmentProjection(road: RoadSegment, x: number, z: number): { t: number; dist: number } {
+  const dx = road.x2 - road.x1;
+  const dz = road.z2 - road.z1;
+  const len2 = dx * dx + dz * dz;
+  let t = len2 > 0 ? ((x - road.x1) * dx + (z - road.z1) * dz) / len2 : 0;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  return { t, dist: Math.hypot(x - (road.x1 + dx * t), z - (road.z1 + dz * t)) };
+}
+
+/** Shoulder over which a road blends into the surrounding ground (cut/fill batter). */
+export const ROAD_SHOULDER = 8;
 
 /**
  * Projects (x, z) onto the road network.
@@ -305,38 +431,31 @@ export interface RoadProjection {
 export function projectRoads(x: number, z: number): RoadProjection {
   let best = 0;
   let bestY = 0;
+  let bestIndex = -1;
   let bestDist = Infinity;
 
-  for (const road of ROADS) {
-    // Cheap reject: outside the segment's box grown by the shoulder.
-    const reach = road.width / 2 + 7;
-    if (x < Math.min(road.x1, road.x2) - reach || x > Math.max(road.x1, road.x2) + reach) continue;
-    if (z < Math.min(road.z1, road.z2) - reach || z > Math.max(road.z1, road.z2) + reach) continue;
-    const dx = road.x2 - road.x1;
-    const dz = road.z2 - road.z1;
-    const len2 = dx * dx + dz * dz;
-    let t = len2 > 0 ? ((x - road.x1) * dx + (z - road.z1) * dz) / len2 : 0;
-    t = t < 0 ? 0 : t > 1 ? 1 : t;
-
-    const cx = road.x1 + dx * t;
-    const cz = road.z1 + dz * t;
-    const dist = Math.hypot(x - cx, z - cz);
-
-    const half = road.width / 2;
-    // Full influence on the surface, feathering out over a 7m shoulder.
-    const influence = 1 - smoothstep(half, half + 7, dist);
-    // Where two segments both fully cover a point (a spur's end cap over the
-    // head of the ramp it feeds), the nearer centreline wins — otherwise the
-    // listing order decides, and the ramp head gets a step in it.
-    if (influence > best || (influence === best && influence > 0 && dist < bestDist)) {
+  for (let i = 0; i < ROADS.length; i++) {
+    const r = ROADS[i];
+    const { t, dist } = segmentProjection(r, x, z);
+    const half = r.width / 2;
+    if (dist > half + ROAD_SHOULDER) continue;
+    const influence = 1 - smoothstep(half, half + ROAD_SHOULDER, dist);
+    // Where two surfaces overlap (a junction), the one you are actually on wins.
+    const tie = Math.abs(influence - best) < 1e-6 && dist < bestDist;
+    if (influence > best + 1e-6 || tie) {
       best = influence;
-      bestY = road.y1 + (road.y2 - road.y1) * t;
+      bestY = r.y1 + (r.y2 - r.y1) * t;
+      bestIndex = i;
       bestDist = dist;
     }
   }
 
-  return { influence: best, y: bestY };
+  return { influence: best, y: bestY, index: bestIndex, dist: bestDist };
 }
+
+/* ------------------------------------------------------------------------ */
+/*  Maths                                                                   */
+/* ------------------------------------------------------------------------ */
 
 export function smoothstep(edge0: number, edge1: number, x: number): number {
   if (edge0 === edge1) return x < edge0 ? 0 : 1;
@@ -376,6 +495,10 @@ export function normalizeHeading(h: number): number {
   return a;
 }
 
+/* ------------------------------------------------------------------------ */
+/*  Machines and crew                                                       */
+/* ------------------------------------------------------------------------ */
+
 export interface Waypoint {
   x: number;
   z: number;
@@ -385,339 +508,98 @@ export interface Waypoint {
   reverse?: boolean;
 }
 
-/** Looping routes for the autonomous machines, so the site feels alive. */
+/** Where EXC001 starts, and where `R` returns it to: at the trench in zone B. */
+export const EXCAVATOR_HOME = {
+  x: 16,
+  z: -52,
+  heading: 0, // facing north, square to the trench face
+};
+
+/** Work stations for the local (no-backend) fleet autonomy. */
+export const WORK_STATIONS = {
+  pitExcavator: { x: -104, z: -44, heading: 0 },
+  dozerLanes: { x0: -142, x1: -70, z0: -78, z1: -58 },
+  graderLanes: { x0: 96, x1: 180, z0: -80, z1: 4 },
+  loaderDig: { x: STOCKPILE_POINT.x, z: STOCKPILE_POINT.z },
+  loaderDump: { x: LOADER_POINT.x + 9, z: LOADER_POINT.z - 3 },
+};
+
+/**
+ * Paths the local fleet repeatedly drives. Used for tyre-rut shading too, so
+ * the ground wears where the machines actually go.
+ */
 export const MACHINE_ROUTES: Record<string, Waypoint[]> = {
-  // Road -> down the pit ramp -> push spoil across the floor -> back out.
-  // The floor is the only part of the benched pit a dozer can reach: the
-  // bench faces are 30-40 degrees and the physics will not let it climb them.
-  DOZ001: [
-    { x: 30, z: 8 },
-    { x: -5, z: 8 },
-    { x: -5, z: -26 },
-    { x: -5, z: -62 },
-    { x: -20, z: -60, dwell: 2.5 },
-    { x: -10, z: -68, dwell: 3 },
-    { x: 8, z: -60, dwell: 2.5 },
-    { x: -5, z: -62 },
-    { x: -5, z: -26 },
-    { x: -5, z: 8 },
-    { x: 46, z: 8, dwell: 1.5 },
-  ],
-  // Stockpile -> loading zone -> stockpile. It loads at the toe of the
-  // stockpile, where the ground is workable, and loads the truck from the
-  // west side of the loading pad, clear of the truck's reversing line.
-  WHL001: [
-    { x: -52, z: 32, dwell: 3 },
-    { x: -58, z: 20 },
-    { x: -58, z: 8 },
-    { x: 27, z: 8 },
-    { x: 27, z: 30 },
-    { x: 27, z: 42, dwell: 3.5 },
-    { x: 27, z: 24 },
-    { x: 27, z: 8 },
-    { x: -58, z: 8 },
-    { x: -58, z: 24 },
-  ],
-  // Load, haul, tip, return. Like a real haul truck it never turns round on
-  // a spur: it runs past the junction and reverses in to load and to tip.
-  TRK001: [
-    { x: 36, z: 42, dwell: 4, reverse: true },
-    { x: 34, z: 16 },
-    { x: 20, z: 8 },
-    { x: -40, z: 8 },
-    { x: -74, z: 8 },
-    { x: -58, z: 30, dwell: 3, reverse: true },
-    { x: -58, z: 10 },
-    { x: -30, z: 8 },
-    { x: 34, z: 8 },
-    { x: 52, z: 8 },
+  HAUL_EMPTY: EMPTY_ROUTE.map((p) => ({ ...p })),
+  HAUL_LOADED: LOADED_ROUTE.map((p) => ({ ...p })),
+  LOADER: [
+    { x: STOCKPILE_POINT.x, z: STOCKPILE_POINT.z },
+    { x: LOADER_POINT.x + 9, z: LOADER_POINT.z - 3 },
   ],
 };
 
-/** Patrol loops for the site crew. */
+/** Patrol loops for the site crew (local mode; live mode uses the feed). */
 export const WORKER_ROUTES: Record<string, Waypoint[]> = {
+  // Pipe crew working along the zone B trench.
   WRK001: [
-    { x: -30, z: -44, dwell: 6 },
-    { x: -18, z: -50, dwell: 4 },
-    { x: -20, z: -62, dwell: 7 },
-    { x: -34, z: -56, dwell: 3 },
+    { x: 30, z: -62, dwell: 8 },
+    { x: 42, z: -63, dwell: 6 },
+    { x: 46, z: -54, dwell: 5 },
+    { x: 34, z: -53, dwell: 4 },
   ],
   WRK002: [
-    { x: 18, z: -46, dwell: 5 },
-    { x: 24, z: -58, dwell: 8 },
-    { x: 8, z: -64, dwell: 4 },
-    { x: 6, z: -44, dwell: 5 },
+    { x: -8, z: -24, dwell: 6 },
+    { x: 8, z: -24, dwell: 7 },
+    { x: 14, z: -12, dwell: 4 },
+    { x: -2, z: -12, dwell: 5 },
   ],
   // The spotter. Periodically walks toward EXC001 for the proximity demo.
   WRK003: [
-    { x: -14, z: -30, dwell: 4 },
-    { x: 4, z: -34, dwell: 5 },
-    { x: 6, z: -20, dwell: 4 },
-    { x: -16, z: -18, dwell: 5 },
+    { x: 2, z: -36, dwell: 4 },
+    { x: 30, z: -38, dwell: 5 },
+    { x: 32, z: -26, dwell: 4 },
+    { x: 4, z: -26, dwell: 5 },
   ],
+  // Banksman at the loading bay.
   WRK004: [
-    { x: 30, z: 40, dwell: 7 },
-    { x: 44, z: 46, dwell: 5 },
-    { x: 40, z: 56, dwell: 6 },
-    { x: 26, z: 52, dwell: 4 },
+    { x: 92, z: 30, dwell: 9 },
+    { x: 94, z: 52, dwell: 7 },
   ],
+  // Surveyor on the pit floor.
   WRK005: [
-    { x: -50, z: 36, dwell: 6 },
-    { x: -64, z: 32, dwell: 5 },
-    { x: -70, z: 46, dwell: 7 },
-    { x: -52, z: 50, dwell: 4 },
+    { x: -130, z: -70, dwell: 9 },
+    { x: -90, z: -76, dwell: 8 },
+    { x: -80, z: -20, dwell: 7 },
+    { x: -128, z: -12, dwell: 6 },
   ],
+  // Fitter at the workshop.
   WRK006: [
-    { x: 66, z: 26, dwell: 8 },
-    { x: 80, z: 28, dwell: 6 },
-    { x: 78, z: 38, dwell: 5 },
-    { x: 64, z: 36, dwell: 6 },
+    { x: 50, z: 156, dwell: 10 },
+    { x: 70, z: 158, dwell: 8 },
+    { x: 64, z: 168, dwell: 6 },
   ],
 };
 
-/**
- * Where EXC001 starts, and where `R` returns it to: on the level ground west
- * of the ramp head, facing the pit. Not on the spur itself — the ramp is the only way
- * into the pit, and with real collision a parked excavator there blocks it.
- */
-export const EXCAVATOR_HOME = {
-  x: -21,
-  z: -14,
-  heading: 0,
-};
-
-/** Static props: containers, site office, barriers, signage. */
+/** Static props: containers, site office, fuel tanks, light masts. */
 export const STATIC_PROPS = {
   containers: [
-    { x: 14, z: 80, rot: 0.1, color: "#c2601f" },
-    { x: 14, z: 87, rot: 0.06, color: "#2f6b8a" },
-    { x: 26, z: 82, rot: -0.35, color: "#4a7c4e" },
-    { x: 68, z: 36, rot: 1.6, color: "#8a4a2f" },
+    { x: 44, z: 170, rot: 0, color: "#c2601f" },
+    { x: 44, z: 176, rot: 0, color: "#2f6b8a" },
+    { x: 78, z: 172, rot: 0.1, color: "#4a7c4e" },
+    { x: -176, z: 142, rot: Math.PI / 2, color: "#8a4a2f" },
   ],
-  office: { x: -18, z: 82, rot: -0.08 },
+  office: { x: -192, z: 138, rot: Math.PI / 2 },
   fuelTanks: [
-    { x: -6, z: 76 },
-    { x: 3, z: 76 },
+    { x: FUEL_POINT.x - 5, z: FUEL_POINT.z + 7 },
+    { x: FUEL_POINT.x + 4, z: FUEL_POINT.z + 7 },
   ],
   lightMasts: [
-    { x: -30, z: -34 },
-    { x: 20, z: -34 },
-    { x: 46, z: 20 },
-    { x: -44, z: 18 },
-    { x: 2, z: 64 },
+    { x: -40, z: 40 },
+    { x: -160, z: 30 },
+    { x: -40, z: -100 },
+    { x: 60, z: -2 },
+    { x: 94, z: 28 },
+    { x: -172, z: 166 },
+    { x: 150, z: -2 },
+    { x: 24, z: 150 },
   ],
 };
-
-/* ------------------------------------------------------------------------ */
-/*  Landforms                                                                */
-/*                                                                          */
-/*  Everything below is geometry the terrain function carves or raises, or   */
-/*  a solid structure standing on it. `terrainHeight` (terrain.ts) turns the */
-/*  landforms into ground; `SITE_COLLIDERS` lists every structure the        */
-/*  physics world must treat as solid. Nothing here is visual-only.          */
-/* ------------------------------------------------------------------------ */
-
-/**
- * Pit terraces, as normalised ellipse distance (1 = PIT rim) -> level.
- * Floor, two working benches, then the rim. Faces between levels are
- * 1.5 m high and 30-40 degrees steep: machines stay on a level or use the ramp.
- */
-export const PIT_BENCHES = [
-  { from: 0, to: 0.62, y: -PIT.depth },
-  { from: 0.68, to: 0.8, y: -3.1 },
-  { from: 0.86, to: 0.98, y: -1.6 },
-  { from: 1.04, to: 1.2, y: 0 },
-] as const;
-
-/**
- * Sidehill bench on the east spoil bank: a planar 13-degree cross-slope,
- * falling to the east. Real benches like this are where excavators are told
- * to keep loads close in and the house uphill — the load-shift scenario
- * shows why.
- */
-export const SIDEHILL = { x1: 88, x2: 112, z1: -82, z2: -60, high: 5.6 };
-
-/** Raised waste dump: a flat tip head reached by `ramp-dump`. */
-export const DUMP = { x: -100, z: -50, rx: 24, rz: 20, h: 6 };
-
-/**
- * Bench face C: a second, shallower cut, left over-steep on purpose.
- *
- * The ground function describes the face *after* it has failed: the crest
- * has slumped back to `crestZ` along a 19 degree plane that meets the floor.
- * The intact face — vertical-ish, crest at `intactCrestZ` — is made of loose
- * rock blocks the physics world stacks on that plane. Until a heavy machine
- * works too close to the edge, the blocks are locked in place; then they
- * break free and slide. One ground function either way. The wedge between
- * the two profiles is roughly 30 x 6.7 x 1.2 m: about 600 t of rock.
- */
-export const SHALLOW_FACE = {
-  x1: 22,
-  x2: 52,
-  /** Crest of the intact face. */
-  intactCrestZ: -92,
-  /** Toe of the intact face: 5.5 m of fall in 1.5 m, about 75 degrees. */
-  intactToeZ: -93.5,
-  /** Where the crest ends up after the failure: 6 m of retreat. */
-  crestZ: -86,
-  /** Where the 21-degree slump plane meets the floor. */
-  slumpToeZ: -100,
-  floorY: -5.5,
-  /** Floor runs north to here, then climbs back to natural ground. */
-  floorEndZ: -112,
-  exitZ: -125,
-};
-
-export interface LineFeature {
-  x1: number;
-  z1: number;
-  x2: number;
-  z2: number;
-  /** Full width across the feature, metres. */
-  width: number;
-  /** Height (ridges) or depth (trenches), metres. */
-  h: number;
-}
-
-/**
- * Windrows: the gravel ridges graders leave along haul-road edges. Gaps at
- * every junction so nothing has to climb one to turn off.
- */
-const WINDROW_N = -1.2;
-const WINDROW_S = 17.2;
-export const WINDROWS: LineFeature[] = [
-  ...[
-    [-87, -14],
-    [4, 29],
-    [45, 150],
-  ].map(([a, b]) => ({ x1: a, z1: WINDROW_N, x2: b, z2: WINDROW_N, width: 2.6, h: 0.9 })),
-  // South side: wide gaps at the stockpile and loading spurs, where trucks
-  // run past and reverse in.
-  ...[
-    [-104, -72],
-    [-44, -10.5],
-    [6.5, 18],
-    [50, 65.5],
-    [82.5, 150],
-  ].map(([a, b]) => ({ x1: a, z1: WINDROW_S, x2: b, z2: WINDROW_S, width: 2.6, h: 0.9 })),
-];
-
-/**
- * Safety berms: along both edges of the two ramps, which run as embankments
- * with a drop on either side. Half a haul-truck wheel high, as the rule says.
- */
-export const BERMS: LineFeature[] = [
-  { x1: -12.4, z1: -26, x2: -12.4, z2: -58, width: 2.2, h: 1.3 },
-  { x1: 2.4, z1: -26, x2: 2.4, z2: -58, width: 2.2, h: 1.3 },
-  { x1: -103.4, z1: -3, x2: -103.4, z2: -29, width: 2.2, h: 1.3 },
-  { x1: -88.6, z1: -3, x2: -88.6, z2: -29, width: 2.2, h: 1.3 },
-];
-
-/** Service trenches, each with its spoil ridge thrown up alongside. */
-export const TRENCHES: (LineFeature & { spoilOffset: number })[] = [
-  { x1: 48, z1: -18, x2: 96, z2: -18, width: 2.2, h: 1.8, spoilOffset: -4 },
-  { x1: 108, z1: 22, x2: 108, z2: 62, width: 2.2, h: 1.8, spoilOffset: 4 },
-];
-
-/** Settling pond. The ring of clay around it stays wet. */
-export const POND = { x: -110, z: 96, r: 13, depth: 1.8, clayR: 24 };
-
-/** Perimeter: fence line, gate on the haul road, rising valley walls behind. */
-export const PERIMETER = { fence: 152, wallStart: 158, wallHeight: 9, gate: { z1: 0, z2: 16 } };
-
-/** Oriented box resting on the ground: a structure the physics world treats as solid. */
-export interface StaticCollider {
-  id: string;
-  x: number;
-  z: number;
-  /** Rotation about Y, radians (three.js convention, as the meshes use). */
-  rot: number;
-  /** Half extents. */
-  hx: number;
-  hy: number;
-  hz: number;
-  /** Lift of the box centre above ground at (x, z). Defaults to hy. */
-  lift?: number;
-  /**
-   * Long runs (rails, fences) follow the ground: the physics world splits
-   * them into short pieces, each seated on the terrain, rather than laying
-   * one level box across a grade.
-   */
-  follow?: boolean;
-}
-
-function guardrail(id: string, x: number, z1: number, z2: number): StaticCollider {
-  return { id, x, z: (z1 + z2) / 2, rot: 0, hx: 0.12, hy: 0.45, hz: Math.abs(z2 - z1) / 2, lift: 0.9, follow: true };
-}
-
-/** Crusher plant: a U-shaped hopper wall, the crusher house and the conveyor. */
-export const CRUSHER = {
-  x: 74,
-  z: 84,
-  walls: [
-    { dx: 0, dz: -5, hx: 5, hz: 0.4 },
-    { dx: -5, dz: 0, hx: 0.4, hz: 5 },
-    { dx: 5, dz: 0, hx: 0.4, hz: 5 },
-  ],
-  house: { dx: 0, dz: 7, hx: 3.5, hy: 3.2, hz: 3 },
-};
-
-/**
- * Every solid structure on site. Derived from the same numbers the meshes are
- * drawn from, so there is nothing a machine can see and still drive through.
- * Traffic cones and zone marker posts are deliberately absent: they are
- * sub-metre and a 20-tonne machine does not stop for them.
- */
-export const SITE_COLLIDERS: StaticCollider[] = [
-  ...STATIC_PROPS.containers.map((c, i) => ({ id: `container-${i}`, x: c.x, z: c.z, rot: c.rot, hx: 3.05, hy: 1.3, hz: 1.22 })),
-  { id: "office", x: STATIC_PROPS.office.x, z: STATIC_PROPS.office.z, rot: STATIC_PROPS.office.rot, hx: 4.6, hy: 1.6, hz: 2.2 },
-  ...STATIC_PROPS.fuelTanks.map((t, i) => ({ id: `fuel-tank-${i}`, x: t.x, z: t.z, rot: 0, hx: 2.6, hy: 1.1, hz: 1.1, lift: 1.5 })),
-  ...STATIC_PROPS.lightMasts.map((m, i) => ({ id: `light-mast-${i}`, x: m.x, z: m.z, rot: 0, hx: 0.6, hy: 2.5, hz: 0.6 })),
-  // Barrier run at the pit-ramp junction (SiteProps HaulRoadBarriers).
-  ...[0, 1, 2, 3, 4].flatMap((i) => [
-    { id: `barrier-w${i}`, x: -16 - i * 3.4, z: -28, rot: 0, hx: 1.6, hy: 0.5, hz: 0.07 },
-    { id: `barrier-e${i}`, x: 6 + i * 3.4, z: -28, rot: 0, hx: 1.6, hy: 0.5, hz: 0.07 },
-  ]),
-  // Guardrails on the drop side of both ramps (on the inside of the berm).
-  guardrail("rail-pit-w", -11.2, -27, -57),
-  guardrail("rail-pit-e", 1.2, -27, -57),
-  guardrail("rail-dump-w", -102.2, -4, -28),
-  guardrail("rail-dump-e", -89.8, -4, -28),
-  // Crusher plant.
-  ...CRUSHER.walls.map((w, i) => ({ id: `hopper-wall-${i}`, x: CRUSHER.x + w.dx, z: CRUSHER.z + w.dz, rot: 0, hx: w.hx, hy: 1.6, hz: w.hz })),
-  { id: "crusher-house", x: CRUSHER.x + CRUSHER.house.dx, z: CRUSHER.z + CRUSHER.house.dz, rot: 0, hx: CRUSHER.house.hx, hy: CRUSHER.house.hy, hz: CRUSHER.house.hz },
-  // Perimeter fence, with the gate gap where the haul road leaves site.
-  { id: "fence-n", x: 0, z: -PERIMETER.fence, rot: 0, hx: PERIMETER.fence, hy: 1.1, hz: 0.08, follow: true },
-  { id: "fence-s", x: 0, z: PERIMETER.fence, rot: 0, hx: PERIMETER.fence, hy: 1.1, hz: 0.08, follow: true },
-  { id: "fence-w", x: -PERIMETER.fence, z: 0, rot: 0, hx: 0.08, hy: 1.1, hz: PERIMETER.fence, follow: true },
-  {
-    id: "fence-e1",
-    x: PERIMETER.fence,
-    z: (-PERIMETER.fence + PERIMETER.gate.z1) / 2,
-    rot: 0,
-    hx: 0.08,
-    hy: 1.1,
-    hz: (PERIMETER.fence + PERIMETER.gate.z1) / 2,
-    follow: true,
-  },
-  {
-    id: "fence-e2",
-    x: PERIMETER.fence,
-    z: (PERIMETER.fence + PERIMETER.gate.z2) / 2,
-    rot: 0,
-    hx: 0.08,
-    hy: 1.1,
-    hz: (PERIMETER.fence - PERIMETER.gate.z2) / 2,
-    follow: true,
-  },
-];
-
-/** Distance from (x, z) to a line segment, and the position along it (0..1). */
-export function segmentDistance(x: number, z: number, f: { x1: number; z1: number; x2: number; z2: number }): { d: number; t: number } {
-  const dx = f.x2 - f.x1;
-  const dz = f.z2 - f.z1;
-  const len2 = dx * dx + dz * dz;
-  let t = len2 > 0 ? ((x - f.x1) * dx + (z - f.z1) * dz) / len2 : 0;
-  t = t < 0 ? 0 : t > 1 ? 1 : t;
-  return { d: Math.hypot(x - (f.x1 + dx * t), z - (f.z1 + dz * t)), t };
-}

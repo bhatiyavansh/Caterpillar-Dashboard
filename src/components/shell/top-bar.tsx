@@ -30,6 +30,8 @@ import { thresholdStatus } from "@/lib/status";
 import { MACHINE_STATUS } from "@/lib/status";
 import type { WeatherMode } from "@/lib/api/contracts";
 import { cn } from "@/lib/utils";
+import { AssistantDock } from "@/components/assistant/global-assistant";
+import { FaultPill } from "@/components/maintenance/fault-indicators";
 
 const WEATHER: Record<WeatherMode, { icon: LucideIcon; label: string }> = {
   clear: { icon: Sun, label: "Clear" },
@@ -161,10 +163,10 @@ export function TopBar({
     : "operating";
 
   return (
-    <header className="relative z-20 flex h-16 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-ink-900/60 px-3 backdrop-blur-xl sm:px-5">
+    <header className="relative z-20 flex h-13 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-ink-900/60 px-3 backdrop-blur-xl sm:px-5">
       <NavToggle onClick={onOpenNav} />
 
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <h1 className="truncate text-base font-bold tracking-tight text-zinc-50">
           {current?.label ?? "CAT Copilot"}
         </h1>
@@ -183,6 +185,8 @@ export function TopBar({
       ) : null}
 
       <div className="ml-auto flex items-center gap-2">
+        <FaultPill />
+
         {/* Live site conditions — the reason a task got re-ordered. */}
         {snapshot ? (
           <div className="hidden items-center divide-x divide-white/10 rounded-full border border-white/[0.08] bg-white/[0.03] px-1 text-[11px] xl:flex">
@@ -215,11 +219,14 @@ export function TopBar({
           aria-label="Search and jump to a screen"
         >
           <Search className="size-3.5" aria-hidden />
-          <span className="hidden md:inline">Jump to</span>
-          <kbd className="hidden rounded border border-white/15 bg-white/5 px-1 font-mono text-[10px] md:inline">
+          <span className="hidden 2xl:inline">Jump to</span>
+          <kbd className="hidden rounded border border-white/15 bg-white/5 px-1 font-mono text-[10px] 2xl:inline">
             Ctrl K
           </kbd>
         </Button>
+
+        {/* The one site assistant: open it, or hold the mic to talk, from any screen. */}
+        <AssistantDock />
 
         <AlertBell />
 

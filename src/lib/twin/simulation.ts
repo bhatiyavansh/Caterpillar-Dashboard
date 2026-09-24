@@ -33,8 +33,11 @@ import type {
   WeatherMode,
 } from "@/types/twin";
 import {
+  DUMP_POINT,
+  EMPTY_ROUTE,
+  LOADER_POINT,
+  STOCKPILE_POINT,
   EXCAVATOR_HOME,
-  MACHINE_ROUTES,
   SITE_HALF,
   WORKER_ROUTES,
   type Waypoint,
@@ -46,6 +49,7 @@ import {
   normalizeHeading,
   zoneAt,
 } from "./site";
+import { type Agent, type FleetRole, initialPlacement, stepAgent } from "./fleet";
 import { sampleAttitude, terrainHeight } from "./terrain";
 import {
   DEG,
@@ -53,7 +57,6 @@ import {
   MockTelemetryProvider,
   computeTipOverMargin,
   createTelemetry,
-  emptyInput,
   tipOverLevel,
 } from "./telemetry";
 import {
@@ -96,11 +99,22 @@ export const PRIMARY_MACHINE = "EXC001";
  * `machines.csv`. Models come from the dataset so the HUD can never disagree
  * with the fleet records; operators are the certified ones from operators.csv.
  */
-const FLEET: { id: string; kind: MachineDescriptor["kind"]; operatorId: string }[] = [
-  { id: "EXC001", kind: "excavator", operatorId: "OP1002" },
-  { id: "DOZ001", kind: "bulldozer", operatorId: "OP1003" },
-  { id: "WHL001", kind: "loader", operatorId: "OP1007" },
-  { id: "TRK001", kind: "truck", operatorId: "OP1004" },
+const FLEET: {
+  id: string;
+  kind: MachineDescriptor["kind"];
+  operatorId: string;
+  role: FleetRole | "hero";
+}[] = [
+  // The same nine machines, with the same roles, as simulator/config.py.
+  { id: "EXC001", kind: "excavator", operatorId: "OP1002", role: "hero" },
+  { id: "EXC002", kind: "excavator", operatorId: "OP1001", role: "excavate" },
+  { id: "WHL001", kind: "loader", operatorId: "OP1007", role: "load" },
+  { id: "DOZ001", kind: "bulldozer", operatorId: "OP1003", role: "push" },
+  { id: "TRK001", kind: "truck", operatorId: "OP1004", role: "haul" },
+  { id: "TRK002", kind: "truck", operatorId: "OP1006", role: "haul" },
+  { id: "TRK003", kind: "truck", operatorId: "OP1005", role: "haul" },
+  { id: "TRK004", kind: "truck", operatorId: "OP1008", role: "haul" },
+  { id: "GRD001", kind: "grader", operatorId: "OP1009", role: "grade" },
 ];
 
 export const MACHINES: MachineDescriptor[] = FLEET.map((m) => {
@@ -196,7 +210,8 @@ const TASK_TEMPLATE: Omit<SiteTask, "progress" | "status">[] = [
 export class SimulationEngine {
   private telemetry = new Map<string, MachineTelemetry>();
   private models = new Map<string, VehicleModel>();
-  private routes = new Map<string, RouteState>();
+  /** Behaviour state for every machine the twin drives itself. */
+  private agents: Agent[] = [];
   private workers: WorkerRuntime[] = [];
 
   private tasks: SiteTask[] = [];
@@ -367,24 +382,25 @@ export class SimulationEngine {
     });
     this.register(exc, TUNING.excavator);
 
-    // Autonomous fleet, each parked on the first waypoint of its route.
-    const fleet: [string, keyof typeof TUNING][] = [
-      ["DOZ001", "bulldozer"],
-      ["WHL001", "loader"],
-      ["TRK001", "truck"],
-    ];
-    for (const [id, kind] of fleet) {
-      const route = MACHINE_ROUTES[id];
-      const start = route[0];
-      const next = route[1] ?? route[0];
-      const rollup = getRollup(id);
-      const t = createTelemetry(id, {
-        x: start.x,
-        z: start.z,
-        heading: headingTo(start.x, start.z, next.x, next.z),
+    // Autonomous fleet, each placed mid-cycle so the site is busy from frame one.
+    const ordinals = new Map<string, number>();
+    this.agents = [];
+    for (const m of FLEET) {
+      if (m.role === "hero") continue;
+      const n = ordinals.get(m.role) ?? 0;
+      ordinals.set(m.role, n + 1);
+      const place = initialPlacement(m.role, n);
+      const rollup = getRollup(m.id);
+      const t = createTelemetry(m.id, {
+        x: place.x,
+        z: place.z,
+        heading: place.heading,
         fuel: 40 + Math.random() * 45,
         hydraulicTemperature: rollup?.avgHydraulicC ?? 70,
-        payload: id === "TRK001" ? 12000 : 0,
+        payload: place.payload,
+        boomAngle: m.kind === "excavator" ? 22 * DEG : 0.1,
+        stickAngle: m.kind === "excavator" ? -10 * DEG : 0,
+        bucketAngle: 0,
       });
       this.register(t, TUNING[kind]);
       // `register` settles the machine and empties it; the truck starts parked
@@ -437,12 +453,21 @@ export class SimulationEngine {
     }
   }
 
-  private register(t: MachineTelemetry, tuning: (typeof TUNING)[string]): void {
+  private register(t: MachineTelemetry, tuning: (typeof TUNING)[string]): VehicleModel {
     this.telemetry.set(t.machineId, t);
     const model = new VehicleModel(t, tuning);
-    // Settle the machine onto the terrain before the first frame is drawn.
+    // Settle the machine onto the terrain before the first frame is drawn,
+    // keeping the load and implement pose it was placed with.
+    const keep = {
+      payload: t.payload,
+      boomAngle: t.boomAngle,
+      stickAngle: t.stickAngle,
+      bucketAngle: t.bucketAngle,
+    };
     model.reset(t.x, t.z, t.heading);
+    Object.assign(t, keep);
     this.models.set(t.machineId, model);
+    return model;
   }
 
   /* --------------------------------------------------------------------- */
@@ -1136,8 +1161,14 @@ export class SimulationEngine {
       t.tipOverMargin = target.tipOverMargin;
       t.activity = target.activity;
 
+      // The feed only carries arm joints for excavators. Everything else gets
+      // its implements posed from what it is reported to be doing, so a loader
+      // at the bay visibly lifts and tips, and a truck on the dump tips its body.
+      if (descriptor.kind !== "excavator") poseImplements(descriptor.kind, t, dt);
+
       // Ride the twin's own terrain rather than trusting a remote height.
-      const att = sampleAttitude(t.x, t.z, t.heading);
+      const tune = this.modelOf(descriptor.id).tuning;
+      const att = sampleAttitude(t.x, t.z, t.heading, tune.wheelbase, tune.trackWidth);
       t.y = att.y;
       t.pitch = att.pitch;
       t.roll = att.roll;
@@ -1246,7 +1277,14 @@ export class SimulationEngine {
     const all = this.allTelemetry();
     this.paths.clear();
     for (const t of all) this.paths.set(t.machineId, predictPath(t));
-    this.risks = detectCollisionRisks(all);
+    // Machines meeting at a service point are working together, not colliding —
+    // a loader dumping into a truck, trucks queued for the bay. Same rule as the
+    // backend's V2V layer (simulator/v2x.py SERVICE_POINTS).
+    this.risks = detectCollisionRisks(all).filter((r) => {
+      const a = this.telemetry.get(r.a);
+      const b = this.telemetry.get(r.b);
+      return !(a && b && atServicePoint(a.x, a.z) && atServicePoint(b.x, b.z));
+    });
 
     this.reconcileAlerts();
     this.emitEvents();
@@ -1979,7 +2017,7 @@ export class SimulationEngine {
     this.selectedForReplay = null;
     this.telemetry.clear();
     this.models.clear();
-    this.routes.clear();
+    this.agents = [];
     this.alerts.clear();
     this.events = [];
     this.workers = [];

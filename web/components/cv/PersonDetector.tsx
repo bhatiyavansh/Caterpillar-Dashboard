@@ -16,7 +16,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { getObjectDetector, type ObjectDetector, type ObjectDetectorResult } from "./mediapipe";
+import { getObjectDetector, nextTimestamp, type ObjectDetector, type ObjectDetectorResult } from "./mediapipe";
 import { useWebcam } from "./useWebcam";
 
 export type CvProximityEvent = {
@@ -121,7 +121,7 @@ export function PersonDetector({
 
       let result: ObjectDetectorResult;
       try {
-        result = detector.detectForVideo(video, performance.now());
+        result = detector.detectForVideo(video, nextTimestamp(detector));
       } catch {
         return;   // a dropped frame is not worth tearing the component down
       }
@@ -182,7 +182,7 @@ export function PersonDetector({
 
     (async () => {
       try {
-        detector = await getObjectDetector(minConfidence);
+        detector = await getObjectDetector();
         if (cancelled) return;
         setModelState("ready");
         rafRef.current = requestAnimationFrame(loop);

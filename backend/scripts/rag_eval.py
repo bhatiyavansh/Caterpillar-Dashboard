@@ -12,8 +12,12 @@ from copilot.knowledge.manuals import FastEmbedder, ManualIndex
 EVAL = BACKEND_DIR / "data" / "rag_eval.yaml"
 
 
-def run(index: ManualIndex) -> tuple[int, int, list[str]]:
-    cases = yaml.safe_load(EVAL.read_text())["questions"]
+def is_synthetic(case: dict) -> bool:
+    return str(case.get("expect", "")).startswith("Synthetic demo knowledge")
+
+
+def run(index: ManualIndex, select=None) -> tuple[int, int, list[str]]:
+    cases = [c for c in yaml.safe_load(EVAL.read_text())["questions"] if select is None or select(c)]
     lines, hits = [], 0
     for c in cases:
         res = index.search(c["q"], k=5)

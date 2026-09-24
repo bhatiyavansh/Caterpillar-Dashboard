@@ -1,7 +1,11 @@
 """The agent loop (P2_SPEC §5.3): one assistant request -> a stream of SSE events.
 
-    meta -> [specialist] -> status -> (token* -> tool_call* -> tool_result* -> confirm_required*)x<=5
+    meta -> [specialist] -> [evidence: tool_call/tool_result/citation, fetched by code]
+         -> status -> (token* -> tool_call* -> tool_result* -> confirm_required*)x<=5
          -> final -> done           (error events are emitted when a fallback is used)
+
+The specialist decides the context (copilot/agent/context.py) and the retrieval profile; document
+specialists get their evidence retrieved before the model runs, so answers explain retrieved passages.
 
 Deadline: 20 s for the whole request, 5 s to first token per round. On any LLM failure the answer
 is built deterministically from tool results (or read-only tools chosen by keyword rules), so the
@@ -21,9 +25,10 @@ from pathlib import Path
 from typing import Any
 
 from copilot.agent import grounding
+from copilot.agent.context import build_context, retrieval_query, wants_prefetch
 from copilot.agent.fallback import deterministic_answer
 from copilot.agent.llm import LLMError, LLMPort
-from copilot.agent.prompts import live_context, system_blocks
+from copilot.agent.prompts import system_blocks
 from copilot.agent.registry import ToolContext, ToolRegistry, ToolResult
 from copilot.contracts.assistant import AssistantRequest
 
@@ -31,6 +36,11 @@ EFFORT = {"cab": "low", "training": "low", "ar": "low", "command": "medium", "ow
 TOOL_RESULT_CHARS = 6000  # free tiers allow ~8k tokens/min per model; a turn resends every result each round
 SpeakMax = {"cab": 2, "ar": 2, "training": 3, "command": 3, "owner": 3}
 MACHINE_RE = re.compile(r"\b[A-Z]{3}\d{3}\b")
+#: an answer asking the user to confirm something; only valid when a tool call created a pending action
+ASK_CONFIRM_RE = re.compile(
+    r"\b(?:please|can you|could you|to|shall i|should i|want me to|would you like me to)\b[^.?!\n]{0,60}\bconfirm\b"
+    r"|\bconfirm\s*\?|\b(?:tap|say|press)\s+['\"\u201c]?confirm", re.IGNORECASE)
+NO_ACTION_NOTE = "(No action is pending: nothing has been filed, booked or changed.)"
 
 
 @dataclass
@@ -63,6 +73,8 @@ class _Turn:
     actions: list[dict[str, Any]] = field(default_factory=list)
     citations: list[dict[str, Any]] = field(default_factory=list)
     log: dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)  # the specialist-scoped live context
+    prefetched: int = 0  # results fetched by code before the model ran (evidence, protocol)
 
 
 def rule_calls(message: str, machine_id: str | None, surface: str) -> list[tuple[str, dict[str, Any]]]:
@@ -91,7 +103,8 @@ def citations_from(name: str, res: ToolResult) -> list[dict[str, Any]]:
         return []
     if name == "search_manual":
         return [{"kind": "manual", "doc_id": h["doc_id"], "title": h["title"], "page": h.get("page"),
-                 "section": h.get("section"), "citation": h["citation"], "quote": h["quote"][:400]}
+                 "section": h.get("section"), "citation": h["citation"], "quote": h["quote"][:400],
+                 **({"synthetic": True} if h.get("synthetic") else {})}
                 for h in res.data.get("hits", [])[:3]]
     if name == "get_protocol" and res.data.get("found"):
         p = res.data["protocol"]
@@ -110,8 +123,29 @@ def protocol_block(p: dict[str, Any]) -> str:
     return f"{p['title']} ({p['id']}, {p['source']}):\n{steps}"
 
 
+_LIST_MARK = re.compile(r"^\s*(?:\d+[.)]|[-*•])\s*")
+
+
+def strip_restated_steps(text: str, p: dict[str, Any]) -> str:
+    """The protocol block appended by code is the only copy of the steps: drop lines where the model
+    restated a step (or introduced its own copy of the protocol), so the operator reads them once."""
+    steps = {s.strip().lower() for s in p["steps"]}
+    kept = []
+    for line in text.splitlines():
+        norm = _LIST_MARK.sub("", line).replace("*", "").strip().strip('"').lower()
+        if norm in steps or (p["id"].lower() in norm and norm.endswith(":")):
+            continue
+        kept.append(line)
+    out = re.sub(r"\n{3,}", "\n\n", "\n".join(kept)).strip()
+    return out or "Follow the site protocol for this alert."
+
+
+_MARKDOWN = re.compile(r"\*\*|__|`|^#+\s*", re.MULTILINE)
+
+
 def speak(text: str, surface: str) -> str:
-    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    """The first sentences, as they should sound: no markdown symbols read aloud."""
+    sentences = re.split(r"(?<=[.!?])\s+", _MARKDOWN.sub("", text).strip())
     return " ".join(sentences[: SpeakMax.get(surface, 2)])
 
 
@@ -145,6 +179,8 @@ class Agent:
                                  "confidence": route.confidence}
 
         ctx = self.context_factory(req)
+        ctx.specialist = route.id
+        t.context = build_context(self.hub, req, route.id)
         protocol: dict[str, Any] | None = None
         if route.protocol_event is not None:  # deterministic: the protocol is fetched by code, not the model
             evt, data = route.protocol_event
@@ -154,6 +190,19 @@ class Agent:
             res = t.results[-1][1]
             if res.ok and res.data.get("found"):
                 protocol = res.data["protocol"]
+        if wants_prefetch(req, route.id) and ctx.extras.get("rag") is not None:
+            # evidence first: the specialist's retrieval profile over the shared index, fetched by code
+            previous = next((m["content"] for m in reversed(self._history(req))
+                             if m["role"] == "user" and isinstance(m["content"], str)), None)
+            query = retrieval_query(req, route.id, t.context, previous)
+            async for ev in self._run_tools(t, ctx, Route(), [("evidence_0", "search_manual", {"query": query})]):
+                yield ev
+            res = t.results[-1][1]
+            if res.ok and isinstance(res.data, dict) and res.data.get("hits"):
+                t.context["evidence"] = [
+                    {"citation": h["citation"], "quote": h["quote"][:500], **({"synthetic": True} if h.get("synthetic") else {})}
+                    for h in res.data["hits"][:3]]
+        t.prefetched = len(t.results)
         final_text: str | None = None
         grounded = True
         llm_grounded: bool | None = None
@@ -178,7 +227,7 @@ class Agent:
             if error:
                 yield "error", error
         if final_text is None:  # fallback: facts from tools only
-            if not t.results:
+            if len(t.results) == t.prefetched:  # nothing beyond the evidence: add the keyword-picked data tools
                 async for ev in self._run_tools(t, ctx, route, [(f"rule_{i}", n, a) for i, (n, a) in
                                                                   enumerate(rule_calls(req.message, req.machine_id, req.surface))]):
                     yield ev
@@ -192,6 +241,8 @@ class Agent:
             protocol = next((r.data["protocol"] for n, r in t.results
                              if n == "get_protocol" and r.ok and r.data.get("found")), None)
         if protocol is not None:
+            final_text = strip_restated_steps(final_text, protocol)
+            speak_text = speak(final_text, req.surface)
             final_text = final_text.rstrip() + "\n\n" + protocol_block(protocol)
             speak_text = (speak_text + " " + " ".join(protocol["steps"])).strip()
         yield "status", {"state": "answering"}
@@ -231,10 +282,12 @@ class Agent:
         req = t.req
         tools = self.registry.for_surface(req.surface, route.tool_names)
         schemas = [tool.schema() for tool in tools]
-        live = live_context(self.hub, req.surface, req.machine_id, req.operator_id)
+        live = t.context
         system = system_blocks(req.surface, route.prompt, live)
+        training = live.get("training")
         messages = self._history(req) + [{"role": "user", "content": req.message}]
         effort = EFFORT.get(req.surface, "low")
+        told_to_act = False
         for _ in range(self.s.max_rounds):
             yield "status", {"state": "thinking"}
             queue: asyncio.Queue[str] = asyncio.Queue()
@@ -256,18 +309,33 @@ class Agent:
             messages.append({"role": "assistant", "content": turn.content})
             if not turn.tool_calls:
                 text = turn.text.strip()
-                report = grounding.check(text, [r.for_model() for _, r in t.results] + [live], req.message)
+                if not t.actions and ASK_CONFIRM_RE.search(text) and not told_to_act \
+                        and asyncio.get_running_loop().time() < deadline - 2:
+                    # "please confirm" with no pending action would make the user confirm nothing: the
+                    # confirmation card only exists once the tool is called, so send the model back to call it
+                    told_to_act = True
+                    messages.append({"role": "user", "content": (
+                        "Correction from the system: you asked the user to confirm, but no action is pending, so "
+                        "confirming would do nothing. If the user asked for this action, call its tool now (that "
+                        "creates the confirmation card); otherwise answer without asking for confirmation.")})
+                    continue
+                report = grounding.check(text, [r.for_model() for _, r in t.results] + [live], req.message,
+                                         training=training)
                 if not report.grounded and asyncio.get_running_loop().time() < deadline - 1:
                     messages.append({"role": "user", "content": (
-                        "Correction from the system: your answer contains values that are not in the tool results "
-                        f"or live context: {', '.join(report.problems)}. Restate the answer using only values from "
-                        "the tool results, or say plainly that you do not have that information.")})
+                        "Correction from the system: your answer contains values or claims that are not in the tool "
+                        f"results or live context: {'; '.join(report.problems)}. Restate the answer using only values "
+                        "from the tool results, or say plainly that you do not have that information. Only the "
+                        "sensors decide whether a lesson step passed.")})
                     retry = await self.llm.turn(model=self.s.model, system=system, messages=messages, tools=schemas,
                                                 max_tokens=self.s.max_tokens, effort=effort, on_text=None,
                                                 first_token_s=self.s.first_token_s, deadline=deadline)
                     text = retry.text.strip()
-                    report = grounding.check(text, [r.for_model() for _, r in t.results] + [live], req.message)
+                    report = grounding.check(text, [r.for_model() for _, r in t.results] + [live], req.message,
+                                             training=training)
                 t.log["grounding"] = {"grounded": report.grounded, "problems": report.problems}
+                if report.grounded and not t.actions and ASK_CONFIRM_RE.search(text):
+                    text = f"{text}\n\n{NO_ACTION_NOTE}"
                 if not report.grounded:
                     yield "_final", {"text": deterministic_answer(t.results, "ungrounded"), "grounded": False}
                 else:

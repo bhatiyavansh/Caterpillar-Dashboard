@@ -10,7 +10,7 @@ import Link from "next/link";
 import { ArrowUpRight, MousePointerSquareDashed } from "lucide-react";
 import type { Machine, SiteAlert } from "@/lib/api/contracts";
 import { LIMITS, MACHINE_STATUS, PROXIMITY, thresholdStatus } from "@/lib/status";
-import { ArcGauge, MeterRow, Readout, SectionHeader } from "@/components/ui/data";
+import { MeterRow, Readout, SectionHeader } from "@/components/ui/data";
 import { MachineStatusChip } from "@/components/ui/status";
 import { EmptyPanel } from "@/components/ui/states";
 import { AlertCard } from "@/components/alerts/alert-card";
@@ -70,7 +70,7 @@ export function MachineInspector({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {/* Identity */}
-        <div className={cn("border-b border-white/10 px-4 py-3", token.bg)}>
+        <div className={cn("border-b border-white/10 px-4 py-3.5", token.bg)}>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="font-mono text-2xl font-bold leading-none text-zinc-50">{machine.id}</p>
@@ -84,7 +84,7 @@ export function MachineInspector({
         </div>
 
         {/* Assignment */}
-        <dl className="border-b border-white/10 px-4 py-2.5">
+        <dl className="border-b border-white/10 px-4 py-3">
           <Readout label="Operator" value={machine.operator?.name ?? "Unassigned"} hint={machine.operator?.id} />
           <Readout label="Current task" value={machine.taskLabel ?? "None"} />
           {machine.taskLabel ? (
@@ -97,43 +97,30 @@ export function MachineInspector({
           ) : null}
         </dl>
 
-        {/* Vitals */}
-        <div className="border-b border-white/10 px-4 py-3">
-          <p className="label-xs mb-2">Live vitals</p>
-          <div className="grid grid-cols-3 gap-1">
-            <ArcGauge
-              label="Fuel"
-              value={machine.fuel}
-              min={0}
-              max={100}
-              unit="%"
-              status={fuelStatus}
-              limit={LIMITS.fuel.warn}
-              size={92}
-            />
-            <ArcGauge
-              label="Hydraulic"
-              value={machine.hydraulicTemperature}
-              min={40}
-              max={120}
-              unit="°C"
+        {/* Machine health */}
+        <div className="border-b border-white/10 px-4 py-3.5">
+          <p className="label-xs mb-2.5">Machine health</p>
+          <div className="space-y-2.5">
+            <MeterRow label="Fuel" value={machine.fuel} status={fuelStatus} valueLabel={`${Math.round(machine.fuel)}%`} />
+            <MeterRow
+              label="Hydraulic temp"
+              value={((machine.hydraulicTemperature - 40) / (120 - 40)) * 100}
               status={tempStatus}
-              limit={LIMITS.hydraulicTemperature.warn}
-              size={92}
+              valueLabel={`${Math.round(machine.hydraulicTemperature)}°C`}
             />
-            <ArcGauge
-              label="Tip-over"
-              value={machine.tipOverMargin}
-              min={1}
-              max={3}
+            <Readout
+              label="Tip-over margin"
+              value={machine.tipOverMargin.toFixed(2)}
               status={tipStatus}
-              decimals={2}
-              limit={LIMITS.tipOverMargin.crit}
-              size={92}
+              hint={tipStatus !== "operating" ? "near limit" : undefined}
             />
           </div>
+        </div>
 
-          <dl className="mt-2 divide-y divide-white/5">
+        {/* Live telemetry */}
+        <div className="border-b border-white/10 px-4 py-3.5">
+          <p className="label-xs mb-1.5">Live telemetry</p>
+          <dl className="divide-y divide-white/5">
             <Readout label="Load" value={machine.load} unit="%" status={loadStatus} hint={`${machine.payloadKg.toLocaleString("en-IN")} kg`} />
             <Readout label="Speed" value={Math.abs(machine.speedKmh).toFixed(1)} unit="km/h" hint={machine.speedKmh < -0.2 ? "reversing" : undefined} />
             <Readout label="Engine hours" value={machine.engineHours.toFixed(1)} unit="h" />
@@ -148,8 +135,8 @@ export function MachineInspector({
         </div>
 
         {/* Proximity */}
-        <div className="border-b border-white/10 px-4 py-3">
-          <p className="label-xs mb-2">Safety envelope</p>
+        <div className="border-b border-white/10 px-4 py-3.5">
+          <p className="label-xs mb-2.5">Safety envelope</p>
           <div className={cn("flex items-center gap-3 rounded border px-3 py-2", proximity.border, proximity.bg)}>
             <span className={cn("font-mono text-xl font-bold tabular-nums", proximity.text)}>
               {machine.proximity.nearestPersonM !== null ? `${machine.proximity.nearestPersonM.toFixed(1)}m` : "—"}
@@ -164,8 +151,8 @@ export function MachineInspector({
         </div>
 
         {/* Alerts */}
-        <div className="px-4 py-3">
-          <p className="label-xs mb-2">Recent alerts</p>
+        <div className="px-4 py-3.5">
+          <p className="label-xs mb-2.5">Recent alerts</p>
           {machineAlerts.length ? (
             <div className="space-y-2">
               {machineAlerts.map((a) => (

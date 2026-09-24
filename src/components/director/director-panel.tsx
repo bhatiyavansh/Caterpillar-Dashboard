@@ -12,7 +12,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowUpRight, Check, Loader2, MonitorCog, RotateCcw, X } from "lucide-react";
+import { ArrowUpRight, Check, FastForward, Loader2, MonitorCog, RotateCcw, Siren, X } from "lucide-react";
 import { DIRECTOR_SCENARIOS } from "@/lib/api";
 import type { DirectorScenario, DirectorScenarioId } from "@/lib/api/contracts";
 import { useAlerts, useDirector, useSnapshot } from "@/lib/hooks/use-site";
@@ -23,6 +23,8 @@ import { SeverityChip } from "@/components/ui/status";
 import { EmptyPanel } from "@/components/ui/states";
 import { relativeTime } from "@/components/alerts/alert-card";
 import { cn } from "@/lib/utils";
+import { useFaultStore, useFaultView } from "@/lib/maintenance/fault-store";
+import { phaseAtLeast } from "@/lib/maintenance/hydraulic-leak";
 
 const GROUP_ORDER: DirectorScenario["group"][] = [
   "Safety",
@@ -112,8 +114,73 @@ function ScenarioButton({
   );
 }
 
+/**
+ * The breakdown runs on its own clock and lives in Maintenance, so it is
+ * driven from here rather than through the site scenario endpoint.
+ */
+function BreakdownControl() {
+  const view = useFaultView();
+  const { trigger, skipToFailure, reset } = useFaultStore();
+  const running = view !== null && view.phase !== "closed";
+  const beforeSplit = view !== null && !phaseAtLeast(view.phase, "detected");
+
+  return (
+    <section>
+      <h2 className="label-xs mb-2">Machine breakdown</h2>
+      <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+        <button
+          onClick={trigger}
+          aria-pressed={running}
+          className={cn(
+            "group relative flex min-h-24 w-full flex-col justify-between gap-1.5 rounded border p-3 text-left transition-colors",
+            running ? "border-cat-500 bg-cat-500/12" : "border-white/12 bg-ink-850 hover:border-cat-500/50 hover:bg-white/[0.04]",
+          )}
+        >
+          <span className="flex items-start justify-between gap-2">
+            <span className={cn("text-sm font-bold leading-tight", running ? "text-cat-500" : "text-zinc-50")}>Hydraulic hose leak</span>
+            {running ? (
+              <span className="shrink-0 rounded bg-cat-500 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-ink-950">
+                {view.phase}
+              </span>
+            ) : (
+              <Siren className="size-4 shrink-0 text-muted" aria-hidden />
+            )}
+          </span>
+          <span className="text-[11px] leading-relaxed text-muted">
+            EXC001 boom hose weeps, then splits at 20 s. Detection, safe stop, diagnosis and the breakdown report follow. Pressing again restarts it.
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">Watch /ar</span>
+        </button>
+        {view ? (
+          <div className="flex min-h-24 flex-col justify-between gap-2 rounded border border-white/12 bg-ink-850 p-3">
+            <Button variant="outline" size="sm" onClick={skipToFailure} disabled={!beforeSplit}>
+              <FastForward className="size-3.5" aria-hidden />
+              Skip to hose split
+            </Button>
+            <Button variant="ghost" size="sm" onClick={reset}>
+              <RotateCcw className="size-3.5" aria-hidden />
+              Clear breakdown
+            </Button>
+            <Link href="/ar/EXC001" className="text-center text-[11px] font-semibold text-cat-500 hover:underline">
+              Open breakdown report
+            </Link>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 export function DirectorPanel() {
-  const { active, pending, log, trigger } = useDirector();
+  const { active, pending, log, trigger: dispatch } = useDirector();
+  const resetFault = useFaultStore((s) => s.reset);
+  const trigger = React.useCallback(
+    (id: DirectorScenarioId) => {
+      if (id === "reset") resetFault();
+      return dispatch(id);
+    },
+    [dispatch, resetFault],
+  );
   const snapshot = useSnapshot();
   const { data: alerts } = useAlerts({ includeAcknowledged: false });
 
@@ -176,6 +243,7 @@ export function DirectorPanel() {
                 </div>
               </section>
             ))}
+            <BreakdownControl />
           </div>
 
           {/* Run sheet + log */}

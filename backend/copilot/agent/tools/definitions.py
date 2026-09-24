@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from copilot.agent.registry import ALL, Tool, ToolContext, ToolError, ToolRegistry, ToolResult
 from copilot.config import BACKEND_DIR, REPO_DIR
+from copilot.knowledge.retrieval import profile_for
 from copilot.ml.port import MLUnavailable
 from copilot.sim_client import SimError, SimUnavailable
 from copilot.timeutil import parse_ts
@@ -394,10 +395,11 @@ class ManualIn(_In):
 
 
 async def search_manual(ctx: ToolContext, a: ManualIn) -> ToolResult:
+    """One shared index; the asking specialist's retrieval profile weights its own document domains."""
     rag = ctx.extras.get("rag")
     if rag is None:
         raise ToolError("the manual index is not built yet (Phase C)", "stub")
-    return await rag.tool_search(a.query)
+    return await rag.tool_search(a.query, profile_for(ctx.specialist, ctx.surface))
 
 
 class ProtocolIn(_In):
@@ -419,12 +421,15 @@ async def list_documents(ctx: ToolContext, a: EmptyIn) -> ToolResult:
         raise ToolError("document library not loaded", "stub")
     docs: dict[str, dict[str, Any]] = {}
     for c in (rag.chunks if rag is not None else []):
-        d = docs.setdefault(c.doc_id, {"doc_id": c.doc_id, "title": c.title, "citation": c.citation.split("(")[0].strip(),
-                                       "source": c.source, "sections": 0})
+        d = docs.setdefault(c.doc_id, {"doc_id": c.doc_id, "title": c.title,
+                                       "citation": c.citation.split("(")[0].split(", §")[0].strip(),
+                                       "source": c.source, "domain": getattr(c, "domain", "general"),
+                                       "synthetic": getattr(c, "synthetic", False), "sections": 0})
         d["sections"] += 1
     return ToolResult(True, {"protocols": _protocol_list(lib) if lib is not None else [],
                              "manuals": list(docs.values()),
-                             "note": "Use get_protocol for a protocol's steps and search_manual to read a manual."},
+                             "note": "Use get_protocol for a protocol's steps and search_manual to read a manual. "
+                                     "Documents marked synthetic are demo knowledge, not official publications."},
                       "document_library", f"{len(lib.protocols) if lib else 0} protocols, {len(docs)} manuals")
 
 
@@ -603,13 +608,13 @@ def build_tools() -> list[Tool]:
     return [
         Tool("get_machine_status", "Live state and active alerts of one machine (position, fuel, seatbelt, "
              "bubble, temperatures, task progress).", MachineIn, get_machine_status, ALL,
-             frozenset({"safety", "maintenance", "coordination", "general", "planner"})),
+             frozenset({"safety", "maintenance", "coordination", "general", "planner", "operations", "training"})),
         Tool("get_fleet_overview", "All live machines, active alerts, site environment and fleet KPIs.",
              EmptyIn, get_fleet_overview, frozenset({"command", "owner", "training"}),
              frozenset({"planner", "reporting", "coordination", "general"})),
         Tool("get_shift_tasks", "Today's tasks for an operator (or the operator of a machine), in order, with "
              "progress and planner estimates.", ShiftTasksIn, get_shift_tasks,
-             frozenset({"cab", "command", "training"}), frozenset({"planner", "general", "coordination"})),
+             frozenset({"cab", "command", "training"}), frozenset({"planner", "general", "coordination", "operations"})),
         Tool("get_site_plan", "The whole site's plan for this shift: every operator's task queue in order, what "
              "each machine is working on now, task counts by status.", EmptyIn, get_site_plan, ALL,
              frozenset({"planner", "general", "coordination", "reporting"})),
@@ -625,26 +630,29 @@ def build_tools() -> list[Tool]:
              frozenset({"maintenance", "reporting", "general"})),
         Tool("get_recent_events", "Recent site events (safety alerts, advisories, anomalies) from the live "
              "stream, optionally filtered.", RecentEventsIn, get_recent_events, ALL,
-             frozenset({"safety", "maintenance", "reporting", "coordination", "general", "training"})),
+             frozenset({"safety", "maintenance", "reporting", "coordination", "general", "training", "operations"})),
         Tool("get_shift_summary", "What has happened over a window and what is still open: event counts by "
              "severity/type/machine, the notable safety events, and the alerts open right now. Use for "
              "\"what happened this shift\", \"what changed\", \"anything I should know\", \"catch me up\".",
              ShiftSummaryIn, get_shift_summary, ALL,
-             frozenset({"safety", "reporting", "coordination", "general", "maintenance", "training", "planner"}),
+             frozenset({"safety", "reporting", "coordination", "general", "maintenance", "training", "planner",
+                        "operations"}),
              timeout_s=5.0),
         Tool("get_machine_history", "How one machine's readings have moved over a window (first/last/min/max/"
              "mean/change per channel). Use for \"has it been running hot\", \"how much fuel has it used\", "
              "\"is the tip-over margin getting worse\".", MachineHistoryIn, get_machine_history, ALL,
-             frozenset({"maintenance", "safety", "reporting", "general", "planner"}), timeout_s=5.0),
-        Tool("search_manual", "Search the machine manuals and fault codes; returns passages with page citations.",
-             ManualIn, search_manual, ALL, frozenset({"maintenance", "safety", "training", "general"})),
+             frozenset({"maintenance", "safety", "reporting", "general", "planner", "operations"}), timeout_s=5.0),
+        Tool("search_manual", "Search the site's documents: regulations, the site manual and fault codes, and the "
+             "synthetic training notes (marked synthetic). Returns passages with citations.",
+             ManualIn, search_manual, ALL,
+             frozenset({"maintenance", "safety", "training", "general", "operations", "planner", "coordination"})),
         Tool("get_protocol", "The site protocol for a safety event or protocol id: steps to follow (verbatim), "
              "escalation, and the regulation it cites.", ProtocolIn, get_protocol, ALL,
-             frozenset({"safety", "training", "general", "maintenance"})),
+             frozenset({"safety", "training", "general", "maintenance", "operations", "coordination"})),
         Tool("list_documents", "List every document on file: the site's safety protocols (SOPs) and the "
              "manuals/regulations. Use when asked what protocols, procedures, manuals or rules exist.", EmptyIn,
              list_documents, ALL, frozenset({"safety", "maintenance", "training", "general", "reporting",
-                                              "planner", "coordination"})),
+                                              "planner", "coordination", "operations"})),
         Tool("create_incident", "File an incident report for a machine. Needs confirmation.", IncidentIn,
              incident_execute, CAB_CMD, frozenset({"safety", "reporting", "general"}), True, incident_prepare,
              timeout_s=10.0),

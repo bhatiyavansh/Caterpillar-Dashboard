@@ -15,6 +15,7 @@ import type {
   TrainingModule,
 } from "./contracts";
 import { dataset, getOperator, replays } from "@/lib/data/dataset";
+import { engineTargets } from "./engine-readings";
 import { historicalAnomalies, type HistoricalAnomaly } from "@/lib/intel";
 import {
   RESTING_CONDITIONS,
@@ -147,7 +148,16 @@ export const MACHINE_SEED: MachineSeed[] = [
 ];
 
 export function seedMachines(): Machine[] {
-  return MACHINE_SEED.map((s) => ({
+  return MACHINE_SEED.map((s) => {
+    const engineOn = !s.offline && !s.maintenance;
+    const coolant = s.offline ? 28 : s.hydraulicTemperature + 12;
+    const readings = engineTargets({
+      engineOn,
+      effort: engineOn && s.utilization >= 55 ? s.utilization / 100 : 0,
+      loadRatio: s.load / 100,
+      coolantC: coolant,
+    });
+    return {
     id: s.id,
     kind: s.kind,
     model: s.model,
@@ -181,7 +191,14 @@ export function seedMachines(): Machine[] {
     heading: s.heading,
     proximity: { nearestPersonM: null, level: "safe" as const, zone: null },
     alertIds: [],
-  }));
+    engineRpm: Math.round(readings.engineRpm),
+    oilPressurePsi: Number(readings.oilPressurePsi.toFixed(1)),
+    hydraulicPressurePsi: Math.round(readings.hydraulicPressurePsi),
+    // Deterministic per machine so a reload does not reshuffle the gauges.
+    batteryPct: engineOn ? 90 + (s.engineHours % 9) : 62,
+    defLevelPct: 48 + (Math.round(s.engineHours) % 45),
+    };
+  });
 }
 
 /* ------------------------------------------------------------------ tasks */

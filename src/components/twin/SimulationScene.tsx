@@ -21,6 +21,7 @@ import { Excavator } from "./Excavator";
 import { Bulldozer } from "./Bulldozer";
 import { Loader } from "./Loader";
 import { Truck } from "./Truck";
+import { Grader } from "./Grader";
 import { WorkerCrew } from "./Worker";
 import { SafetyBubble } from "./SafetyBubble";
 import { PredictedPaths } from "./PredictedPath";
@@ -40,10 +41,28 @@ function Fleet() {
 
   return (
     <group>
-      <Excavator telemetry={engine.telemetryOf("EXC001")} safety={safety} />
-      <Bulldozer telemetry={engine.telemetryOf("DOZ001")} />
-      <Loader telemetry={engine.telemetryOf("WHL001")} />
-      <Truck telemetry={engine.telemetryOf("TRK001")} />
+      {MACHINES.map((m) => {
+        const telemetry = engine.telemetryOf(m.id);
+        switch (m.kind) {
+          case "excavator":
+            return (
+              <Excavator
+                key={m.id}
+                telemetry={telemetry}
+                primary={m.id === PRIMARY_MACHINE}
+                safety={m.id === PRIMARY_MACHINE ? safety : "safe"}
+              />
+            );
+          case "bulldozer":
+            return <Bulldozer key={m.id} telemetry={telemetry} />;
+          case "loader":
+            return <Loader key={m.id} telemetry={telemetry} />;
+          case "truck":
+            return <Truck key={m.id} telemetry={telemetry} />;
+          case "grader":
+            return <Grader key={m.id} telemetry={telemetry} />;
+        }
+      })}
     </group>
   );
 }

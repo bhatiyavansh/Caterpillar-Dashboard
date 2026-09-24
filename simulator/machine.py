@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import math
 import random
+import zlib
 
 from .config import (
     AMBIENT_TEMP_C,
@@ -88,6 +89,16 @@ class Machine:
         self.seatbelt = "fastened"
         self.hydraulic_temp_c = 58.0
         self.coolant_temp_c = 86.0
+
+        # Engine and hydraulic readings (contract 1.4.0). Seeded from the
+        # machine id rather than the shared rng, so adding them leaves every
+        # value the rest of the world draws exactly where it was.
+        aux = random.Random(zlib.crc32(self.machine_id.encode()))
+        self.battery_pct = round(aux.uniform(88.0, 99.0), 1)
+        self.def_level_pct = round(aux.uniform(45.0, 95.0), 1)
+        self.engine_rpm = 850.0
+        self.oil_pressure_psi = 38.0
+        self.hydraulic_pressure_psi = 700.0
         self.fatigue_score = round(rng.uniform(0.05, 0.20), 2)
         self.fault_codes: list[str] = []
         self.harsh_swing = False
@@ -426,11 +437,60 @@ class Machine:
             hours_in = min(world.hours_on_shift / 10.0, 1.0)
             self.fatigue_score = round(min(0.95, 0.08 + 0.35 * hours_in), 2)
 
+        self._update_engine(dt, burn, working)
+
         # fault codes from sustained overheating
         if self.hydraulic_temp_c > 95.0 and "HYD-118" not in self.fault_codes:
             self.fault_codes.append("HYD-118")
         elif self.hydraulic_temp_c < 90.0 and "HYD-118" in self.fault_codes:
             self.fault_codes.remove("HYD-118")
+
+    def _update_engine(self, dt: float, burn_l: float, working: bool) -> None:
+        """rpm, oil and hydraulic pressure, battery and DEF.
+
+        Each is driven by what already drives the machine - status, speed,
+        payload, fuel burn - so the gauges move with the work instead of on
+        their own. Pressures and rpm lag toward their target the way the
+        temperatures do, so a change of phase ramps rather than steps.
+        """
+        spec = self.spec
+        speed_ratio = min(abs(self.speed_mps) / max(spec.max_speed_mps, 0.1), 1.0)
+        load_ratio = min(self.payload_kg / max(spec.max_payload_kg, 1.0), 1.0)
+        effort = 1.0 if self.status == "working" else (0.55 if working else 0.0)
+        effort = max(effort, speed_ratio)
+        # Faster lag at fine time steps, one-step convergence at dt >= ~0.7 s.
+        k = min(1.0, 1.5 * dt)
+
+        if self.engine_on:
+            rpm_target = min(850.0 + 900.0 * effort + 250.0 * load_ratio, 2200.0)
+            # Normal work stays under the HMI's 3,400 psi warning; only a heated,
+            # overworked circuit (the hydraulic-spike scenario) crosses into critical.
+            hyd_target = 700.0 + 2100.0 * effort + 450.0 * load_ratio
+            # The hydraulic-spike scenario heats the oil through this offset;
+            # a hot, overworked circuit also runs at higher pressure.
+            hyd_target += max(self.ov_hydraulic_offset_c, 0.0) * 25.0
+            hyd_target = min(hyd_target, 4800.0)
+        else:
+            rpm_target = 0.0
+            hyd_target = 0.0
+
+        self.engine_rpm += (rpm_target - self.engine_rpm) * k
+        self.hydraulic_pressure_psi += (hyd_target - self.hydraulic_pressure_psi) * k
+
+        if self.engine_on:
+            oil = 22.0 + 40.0 * (self.engine_rpm / 2200.0)
+            # Hot oil thins and pressure sags.
+            oil -= max(self.coolant_temp_c - 92.0, 0.0) * 0.8
+            self.oil_pressure_psi = min(max(oil, 10.0), 70.0)
+            # The alternator tops the battery up while the engine runs.
+            self.battery_pct = min(99.5, self.battery_pct + 0.01 * dt)
+        else:
+            self.oil_pressure_psi = 0.0
+            self.battery_pct = max(0.0, self.battery_pct - 0.005 * dt)
+
+        # DEF is dosed at roughly 3 % of diesel burned; the tank is ~10 % of the fuel tank.
+        def_tank_l = max(spec.tank_l * 0.1, 1.0)
+        self.def_level_pct = max(0.0, self.def_level_pct - burn_l * 0.03 / def_tank_l * 100.0)
 
     def _finalise(self, world) -> None:
         self.zone = zone_of(self.x, self.y)
@@ -498,4 +558,9 @@ class Machine:
             "task_id": self.task_id,
             "task_progress": round(self.task_progress, 3),
             "task_eta_min": round(self.task_eta_min, 1),
+            "engine_rpm": round(self.engine_rpm, 0),
+            "battery_pct": round(self.battery_pct, 1),
+            "def_level_pct": round(self.def_level_pct, 1),
+            "oil_pressure_psi": round(self.oil_pressure_psi, 1),
+            "hydraulic_pressure_psi": round(self.hydraulic_pressure_psi, 0),
         }
