@@ -97,6 +97,10 @@ export interface TwinState {
   forceLowFuel: () => void;
   forceEngineWarning: () => void;
 
+  /* --- physics scenarios (lib/twin/physics/scenarios) --- */
+  runScenario: (id: string) => void;
+  stopScenario: () => void;
+
   /* --- recorded incident replay --- */
   startReplay: (incidentId: string) => void;
   stopReplay: () => void;
@@ -106,6 +110,14 @@ export interface TwinState {
 
 export const useTwinStore = create<TwinState>()((set, get) => {
   const engine = getEngine();
+
+  /** Point the camera at whatever a scenario just started on. */
+  const followScenario = () => {
+    const focus = get().engine.scenarios.focus;
+    if (focus) {
+      set((s) => ({ selectedMachine: focus, cameraMode: "follow", cameraResetNonce: s.cameraResetNonce + 1 }));
+    }
+  };
 
   return {
     engine,
@@ -225,10 +237,12 @@ export const useTwinStore = create<TwinState>()((set, get) => {
     },
     forceCollisionRisk: () => {
       get().engine.forceCollisionRisk();
+      followScenario();
       get().refresh();
     },
     forceTipOver: () => {
       get().engine.forceTipOver();
+      followScenario();
       get().refresh();
     },
     forceHydraulicSpike: () => {
@@ -241,6 +255,16 @@ export const useTwinStore = create<TwinState>()((set, get) => {
     },
     forceEngineWarning: () => {
       get().engine.forceEngineWarning();
+      get().refresh();
+    },
+
+    runScenario: (id) => {
+      get().engine.runScenario(id);
+      followScenario();
+      get().refresh();
+    },
+    stopScenario: () => {
+      get().engine.stopScenario();
       get().refresh();
     },
 

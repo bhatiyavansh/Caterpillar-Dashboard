@@ -115,7 +115,8 @@ export class FaceC {
         const p = m.toWorld({ x: s.x, y: 0, z: s.z });
         if (p.x > f.x1 && p.x < f.x2 && p.z < f.crestZ + 1.5 && p.z > f.intactCrestZ - 0.5) on++;
       }
-      if (on >= 2) heavy = m.id;
+      // Half the machine's weight on the crest.
+      if (on >= Math.ceil(m.build.supports.length / 2)) heavy = m.id;
     }
     this.load = heavy ? this.load + 1 / 60 : Math.max(0, this.load - 2 / 60);
     if (heavy && this.load >= HOLD_S) this.release(heavy);

@@ -23,6 +23,7 @@ import {
   POND,
   ROADS,
   SHALLOW_FACE,
+  SIDEHILL,
   SITE_SIZE,
   TRENCHES,
   WINDROWS,
@@ -188,6 +189,18 @@ export function terrainHeight(x: number, z: number): number {
     h = lerpN(h, faceFailedHeight(z), along);
   }
 
+  // Sidehill bench: a planar cross-slope falling east, feathered at the edges.
+  const sh = SIDEHILL;
+  if (x > sh.x1 - 6 && x < sh.x2 + 6 && z > sh.z1 - 6 && z < sh.z2 + 6) {
+    const w =
+      smoothstep(sh.x1 - 6, sh.x1, x) *
+      (1 - smoothstep(sh.x2, sh.x2 + 6, x)) *
+      smoothstep(sh.z1 - 6, sh.z1, z) *
+      (1 - smoothstep(sh.z2, sh.z2 + 6, z));
+    const plane = sh.high * (1 - (Math.min(Math.max(x, sh.x1), sh.x2) - sh.x1) / (sh.x2 - sh.x1));
+    h = lerpN(h, plane, w);
+  }
+
   // Stockpile mounds and spoil heaps.
   for (const m of MOUNDS) {
     const d = Math.hypot(x - m.x, z - m.z) / m.r;
@@ -315,6 +328,7 @@ export function surfaceAt(x: number, z: number, slope?: number): SurfaceClass {
   // Steep ground that is not a feature above reads as a rock face.
   if ((slope ?? slopeAngle(x, z)) > 0.42) return "rock_face";
 
+  if (x > SIDEHILL.x1 && x < SIDEHILL.x2 && z > SIDEHILL.z1 && z < SIDEHILL.z2) return "packed";
   if (pitDistance(x, z) < 1.04) return "packed";
   for (const p of PADS) {
     if (Math.hypot((x - p.x) / p.rx, (z - p.z) / p.rz) < 0.9) return "packed";

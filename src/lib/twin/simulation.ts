@@ -60,6 +60,7 @@ import {
   TUNING,
   VehicleModel,
   damp,
+  steerReverse,
   steerToward,
   type StepContext,
 } from "./vehicle";
@@ -75,6 +76,9 @@ import {
   type IncidentTrack,
 } from "@/lib/data/dataset";
 import { PhysicsWorld, type PhysicsStats } from "./physics/world";
+import { ScenarioRunner } from "./physics/scenarios/runner";
+import { PHYSICS_SCENARIOS, getPhysicsScenario } from "./physics/scenarios/library";
+import type { ScenarioStatus } from "./physics/scenarios/types";
 import {
   PROXIMITY,
   evaluateProximity,
@@ -169,6 +173,8 @@ export interface UiSnapshot {
     progress: number;
     durationS: number;
   } | null;
+  /** The physics scenario running (or the one that last ran), if any. */
+  scenario: (ScenarioStatus & { focus: string | null }) | null;
   /** Rigid-body world status; null until the physics WASM has loaded. */
   physics: (PhysicsStats & {
     /** Stepping this frame (false in live / replay mode). */
@@ -298,6 +304,8 @@ export class SimulationEngine {
   readonly overrides = new Map<string, VehicleInput>();
   /** Machines whose V2V braking a scenario has switched off. */
   readonly avoidanceOff = new Set<string>();
+  /** Data-driven physics scenarios (physics/scenarios/library.ts). */
+  readonly scenarios = new ScenarioRunner();
 
   constructor() {
     this.build();
@@ -515,6 +523,10 @@ export class SimulationEngine {
     // recorded replays are the authority on pose; the world isn't touched.
     const local = !this.replay && this.source !== "websocket";
     this.syncPhysicsModes(local);
+    if (this.scenarios.running) {
+      if (this.physicsActive) this.scenarios.tick(step, this);
+      else this.scenarios.stop(this);
+    }
 
     if (this.driver) {
       this.stepFleet(step);
@@ -1622,7 +1634,44 @@ export class SimulationEngine {
             contacts: Array.from(this.physics.touching.keys()),
           }
         : null,
+      scenario: (() => {
+        const st = this.scenarios.status();
+        return st ? { ...st, met: st.met.map((m) => ({ ...m })), focus: this.scenarios.focus } : null;
+      })(),
     };
+  }
+
+  /* --------------------------------------------------------------------- */
+  /*  Physics scenarios                                                     */
+  /* --------------------------------------------------------------------- */
+
+  /** Every scenario the director can run. */
+  get physicsScenarios() {
+    return PHYSICS_SCENARIOS;
+  }
+
+  /** Starts a library scenario by id. False if physics is not running locally. */
+  runScenario(id: string): boolean {
+    const def = getPhysicsScenario(id);
+    if (!def) return false;
+    if (!this.physics || this.replay || this.source === "websocket") {
+      this.pushEvent(`${def.title}: needs the local physics simulation`, "warning");
+      return false;
+    }
+    return this.scenarios.start(def, this);
+  }
+
+  stopScenario(): void {
+    this.scenarios.stop(this);
+  }
+
+  /** Forgets route-AI manoeuvre state, so a machine handed back resumes cleanly. */
+  clearAi(id: string): void {
+    this.turning.delete(id);
+    this.yielding.delete(id);
+    this.recovering.delete(id);
+    this.stalledFor.delete(id);
+    this.blockedFor.delete(id);
   }
 
   /* --------------------------------------------------------------------- */
@@ -1870,7 +1919,14 @@ export class SimulationEngine {
     this.pushEvent(`Work zone around ${PRIMARY_MACHINE} cleared`, "info");
   }
 
+  /**
+   * With physics running this is the "dozer-intercept" scenario: the dozer
+   * closes with its V2V braking faulted, the conflict is predicted, and the
+   * blade meets the excavator. Before physics has loaded, the original
+   * kinematic intercept runs instead.
+   */
   forceCollisionRisk(): void {
+    if (this.physics && this.runScenario("dozer-intercept")) return;
     this.forcedCollisionLeft = 14;
     const dozer = this.telemetryOf("DOZ001");
     const p = this.primary;
@@ -1883,7 +1939,15 @@ export class SimulationEngine {
     this.pushEvent("DOZ001 on intercept course with EXC001", "warning");
   }
 
+  /**
+   * With physics running this is the "load-shift-tipover" scenario: a loaded
+   * bucket swung out over the downhill side of the sidehill bench. The
+   * stability alert fires from the physical attitude, and if the load shifts
+   * far enough the machine really goes over. Before physics, the original
+   * injected-grade version runs.
+   */
   forceTipOver(): void {
+    if (this.physics && this.runScenario("load-shift-tipover")) return;
     this.tipOverBias = { pitch: 0.06, roll: 0.24 };
     this.tipOverLeft = 14;
     this.primary.payload = MAX_PAYLOAD;
@@ -1908,6 +1972,7 @@ export class SimulationEngine {
   }
 
   resetSimulation(): void {
+    this.scenarios.abandon();
     this.stopMock();
     this.stopLive();
     this.replay = null;
@@ -1955,22 +2020,6 @@ export class SimulationEngine {
       this.attachFleet();
     }
   }
-}
-
-/**
- * Waypoint -> operator input for a leg driven in reverse: the machine backs
- * its tail toward the target. Front-steered machines steer the opposite way
- * when reversing; skid-steered ones do not.
- */
-function steerReverse(t: MachineTelemetry, tx: number, tz: number, cruise: number, skid: boolean): VehicleInput {
-  const turn = angleDelta(t.heading + Math.PI, headingTo(t.x, t.z, tx, tz));
-  const dist = Math.hypot(tx - t.x, tz - t.z);
-  const steer = clamp(turn * 1.6, -1, 1);
-  return {
-    ...emptyInput(),
-    throttle: -cruise * (1 - Math.min(Math.abs(turn) / (Math.PI * 0.6), 0.7)) * Math.min(dist / 5, 1),
-    steer: skid ? steer : -steer,
-  };
 }
 
 /** Who gives way to whom in physical traffic: higher keeps going. */

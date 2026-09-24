@@ -78,6 +78,10 @@ export class PhysicsMachine {
   groundFriction = 0.8;
   /** Rest height of the body origin above ground, from the suspension sag. */
   private sag = 0;
+  private lastDt = 1 / 60;
+  /** Traction control is holding the drive back: the ground can't take more. */
+  tractionLimited = false;
+  private prevSpeed = 0;
   kinematic = false;
 
   constructor(
@@ -332,28 +336,50 @@ export class PhysicsMachine {
     const bodyPos = this.body.translation();
 
     let frictionSum = 0;
+    let requested = 0;
+    let allowed = 0;
     for (let i = 0; i < b.supports.length; i++) {
       const s = b.supports[i];
       // Friction of the ground actually under this support.
       const world = add(qRotate(q, { x: s.x, y: 0, z: s.z }), bodyPos);
       const mu = frictionFor(surfaceAt(world.x, world.z, 0), wetness) * (b.tracked ? 1.1 : 1);
       frictionSum += mu;
-      this.controller.setWheelFrictionSlip(i, mu);
+      // Rapier's ray-cast vehicle (a Bullet port) halves the forward impulse
+      // before clamping it against frictionSlip x suspension force, so the
+      // real traction limit is 2 x frictionSlip x N. Pass mu/2 to make it mu x N.
+      this.controller.setWheelFrictionSlip(i, mu * 0.5);
 
-      if (b.tracked) {
+      // Traction control: never ask a support for more than the ground under
+      // it can give (mu x the normal load it carried last step). The grade
+      // then decides whether that is enough.
+      const grip = mu * (this.controller.wheelSuspensionForce(i) ?? 0) * 1.05;
+      const limit = (f: number) => {
+        requested += Math.abs(f);
+        const out = Math.sign(f) * Math.min(Math.abs(f), grip);
+        allowed += Math.abs(out);
+        return out;
+      };
+      if (brake > 0) {
+        // Rapier only applies a wheel's brake when its engine force is zero —
+        // a residual steering bias would silently release the brakes.
+        this.controller.setWheelEngineForce(i, 0);
+      } else if (b.tracked) {
         // Skid steer: one track pushes harder than the other.
         const side = s.x < 0 ? 1 : -1; // left track leads a right (clockwise) turn
         const bias = throttle === 0 ? steer : steer * 0.6;
         const f = perWheel + side * bias * (b.tractiveForce / b.supports.length) * 0.8;
-        this.controller.setWheelEngineForce(i, -f);
+        this.controller.setWheelEngineForce(i, -limit(f));
       } else {
-        this.controller.setWheelEngineForce(i, s.driven ? -perWheel : 0);
+        this.controller.setWheelEngineForce(i, s.driven ? -limit(perWheel) : 0);
         // Positive steer is a right (clockwise) turn: a negative wheel angle about +Y.
         this.controller.setWheelSteering(i, (s.steer ?? 0) * -steer * b.steer);
       }
-      this.controller.setWheelBrake(i, brake / b.supports.length);
+      // The controller takes brake as the impulse available per step.
+      this.controller.setWheelBrake(i, (brake / b.supports.length) * dt);
     }
+    this.lastDt = dt;
     this.groundFriction = frictionSum / b.supports.length;
+    this.tractionLimited = requested > 1 && allowed < requested * 0.9;
 
     if (b.tracked && !stopped) {
       // Skid steering is a torque the track differential produces, limited by
@@ -405,16 +431,22 @@ export class PhysicsMachine {
     // Past ~50 degrees nothing brings a machine back: it is going over.
     if (this.tilt > 50 * DEG) this.tippedOver = true;
 
-    // Slip: commanded governor speed vs what the ground allowed.
+    // Slip. Driving: traction control is at the limit of the ground and the
+    // machine is still well short of the speed asked for — it can't make the
+    // grade. Braked: still sliding and not slowing down.
     const input = this.input;
-    if (input && Math.abs(input.throttle) > 0.1 && !this.stopped) {
+    let slip = 0;
+    const accel = (this.speed - this.prevSpeed) / this.lastDt;
+    this.prevSpeed = this.speed;
+    const driving = input && Math.abs(input.throttle) >= 0.02 && !this.stopped;
+    if (driving && this.tractionLimited) {
       const want = input.throttle * this.build.maxSpeed;
       const shortfall = Math.max(0, (want - this.speed) * Math.sign(want));
-      this.slip = clamp(shortfall / Math.max(Math.abs(want), 0.5), 0, 1);
-    } else {
-      // Sliding while not driving is slip too (a braked truck sliding back).
-      this.slip = clamp((Math.abs(this.speed) - 0.15) / 1.5, 0, 1);
+      // Short of speed *and* not gaining it: grip is what's missing.
+      if (accel * Math.sign(want) < 0.3) slip = clamp(shortfall / Math.max(Math.abs(want), 0.5), 0, 1);
     }
+    if (!driving && Math.abs(this.speed) > 0.3 && Math.abs(accel) < 1) slip = Math.max(slip, clamp(Math.abs(this.speed) / 1.2, 0, 1));
+    this.slip += (slip - this.slip) * 0.15;
   }
 
   /** Mean height of the wheel/track bottoms relative to the body origin. */

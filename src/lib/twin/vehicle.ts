@@ -19,7 +19,7 @@
 
 import type { MachineTelemetry, VehicleInput } from "@/types/twin";
 import type { PhysicsMachine } from "./physics/machine";
-import { SITE_HALF, clamp, headingVector, normalizeHeading } from "./site";
+import { SITE_HALF, angleDelta, clamp, headingTo, headingVector, normalizeHeading } from "./site";
 import { sampleAttitude } from "./terrain";
 import {
   ARM_LIMITS,
@@ -29,6 +29,7 @@ import {
   MAX_PAYLOAD,
   computeTipOverMargin,
   detectActivity,
+  emptyInput,
 } from "./telemetry";
 
 /** Frame-rate independent exponential smoothing. */
@@ -425,5 +426,21 @@ export function steerToward(
     stick: 0,
     bucket: 0,
     emergencyStop: false,
+  };
+}
+
+/**
+ * Waypoint -> operator input for a leg driven in reverse: the machine backs
+ * its tail toward the target. Front-steered machines steer the opposite way
+ * when reversing; skid-steered ones do not.
+ */
+export function steerReverse(t: MachineTelemetry, tx: number, tz: number, cruise: number, skid: boolean): VehicleInput {
+  const turn = angleDelta(t.heading + Math.PI, headingTo(t.x, t.z, tx, tz));
+  const dist = Math.hypot(tx - t.x, tz - t.z);
+  const steer = clamp(turn * 1.6, -1, 1);
+  return {
+    ...emptyInput(),
+    throttle: -cruise * (1 - Math.min(Math.abs(turn) / (Math.PI * 0.6), 0.7)) * Math.min(dist / 5, 1),
+    steer: skid ? steer : -steer,
   };
 }

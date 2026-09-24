@@ -57,6 +57,21 @@ function Action({
   );
 }
 
+function ScenarioOutcomes({ met }: { met: { label: string; at: number | null }[] }) {
+  return (
+    <ul className="mt-1 space-y-0.5">
+      {met.map((m) => (
+        <li key={m.label} className="flex items-center justify-between gap-2 text-[10px]">
+          <span className={m.at === null ? "text-zinc-500" : "text-zinc-200"}>
+            {m.at === null ? "○" : "●"} {m.label}
+          </span>
+          {m.at !== null ? <span className="font-mono text-zinc-400">{m.at.toFixed(1)} s</span> : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 const WEATHER: { mode: WeatherMode; label: string }[] = [
   { mode: "clear", label: "Clear" },
   { mode: "rain", label: "Rain" },
@@ -75,6 +90,9 @@ export function DirectorPanel({ compact }: { compact?: boolean }) {
   const showIncidents = useTwinStore((s) => s.showIncidents);
   const paused = useTwinStore((s) => s.snapshot.paused);
   const source = useTwinStore((s) => s.snapshot.source);
+  const scenario = useTwinStore((s) => s.snapshot.scenario);
+  const physics = useTwinStore((s) => s.snapshot.physics);
+  const engine = useTwinStore((s) => s.engine);
 
   const store = useTwinStore.getState();
 
@@ -143,6 +161,43 @@ export function DirectorPanel({ compact }: { compact?: boolean }) {
                 tone="crit"
                 wide
               />
+            </Section>
+
+            <Section title="Physics scenarios">
+              {scenario && !scenario.done ? (
+                <div className="col-span-2 rounded border border-cat-500/40 bg-cat-500/10 px-2 py-1.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-[11px] font-bold text-cat-500">{scenario.title}</span>
+                    <span className="font-mono text-[10px] text-zinc-400">{scenario.t.toFixed(1)} s</span>
+                  </div>
+                  <div className="mt-0.5 text-[10px] text-zinc-300">{scenario.step}</div>
+                  <ScenarioOutcomes met={scenario.met} />
+                </div>
+              ) : null}
+              {scenario && !scenario.done ? (
+                <Action label="Stop scenario" onClick={store.stopScenario} tone="accent" wide />
+              ) : (
+                engine.physicsScenarios.map((sc) => (
+                  <Action
+                    key={sc.id}
+                    label={sc.title}
+                    onClick={() => store.runScenario(sc.id)}
+                    tone={sc.category === "traffic" ? "warn" : "crit"}
+                    wide
+                  />
+                ))
+              )}
+              {scenario?.done ? (
+                <div className="col-span-2 text-[10px] text-zinc-400">
+                  Last: {scenario.title}
+                  <ScenarioOutcomes met={scenario.met} />
+                </div>
+              ) : null}
+              <p className="col-span-2 text-[10px] leading-snug text-zinc-500">
+                {physics
+                  ? `Rapier · ${physics.bodies} bodies · ${physics.awake} awake · step ${physics.avgStepMs.toFixed(2)} ms`
+                  : "Physics loading…"}
+              </p>
             </Section>
 
             <Section title="Machine">

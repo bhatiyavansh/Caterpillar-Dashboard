@@ -527,6 +527,14 @@ export const PIT_BENCHES = [
   { from: 1.04, to: 1.2, y: 0 },
 ] as const;
 
+/**
+ * Sidehill bench on the east spoil bank: a planar 13-degree cross-slope,
+ * falling to the east. Real benches like this are where excavators are told
+ * to keep loads close in and the house uphill — the load-shift scenario
+ * shows why.
+ */
+export const SIDEHILL = { x1: 88, x2: 112, z1: -82, z2: -60, high: 5.6 };
+
 /** Raised waste dump: a flat tip head reached by `ramp-dump`. */
 export const DUMP = { x: -100, z: -50, rx: 24, rz: 20, h: 6 };
 
