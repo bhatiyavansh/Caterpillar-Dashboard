@@ -61,7 +61,7 @@ export function SiteLighting() {
         intensity={2.5}
         color="#fff1d6"
         castShadow
-        shadow-mapSize={[4096, 4096]}
+        shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0006}
         shadow-normalBias={0.05}
         // Covers the whole working site, not just the middle of it.

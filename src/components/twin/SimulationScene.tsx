@@ -85,7 +85,7 @@ export function SimulationScene() {
     <Canvas
       // PCFSoftShadowMap was removed in three 0.186 — plain PCF is the default.
       shadows
-      dpr={[1, 1.75]}
+      dpr={[1, 1.25]}
       gl={{
         antialias: true,
         powerPreference: "high-performance",

@@ -9,6 +9,7 @@ import { DEVICE_SIZES, type DeviceSizeKey, useMachineStore } from "@/store/machi
 import { SimulationControls } from "./simulation-controls";
 import { SimulationFrame } from "./simulation-frame";
 import { TwinStage } from "@/components/twin/TwinExperience";
+import { TwinAssistantScope } from "@/components/assistant/page-scopes";
 
 /** What the in-cab display is showing. */
 type StageView = "twin" | "incab";
@@ -110,6 +111,8 @@ export function SimulationStage({ onExit }: { onExit?: () => void }) {
               >
                 <MachineApp screen={screen} onNavigate={setScreen} />
               </div>
+              {/* The HMI always describes the cab; while the twin is showing, it wins. */}
+              {view === "twin" ? <TwinAssistantScope label="Simulation" /> : null}
             </div>
           </SimulationFrame>
         </div>

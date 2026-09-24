@@ -146,8 +146,9 @@ export function useVoice(opts: UseVoiceOptions) {
     [ttsSupported],
   );
 
-  // speak each new assistant answer once (external side effect only; no state set here)
-  const last = assistant.messages[assistant.messages.length - 1];
+  // speak each new assistant answer once (external side effect only; no state set here). Only answers
+  // this tab produced: a history restored on reload, or written by another tab, is not read out again.
+  const last = assistant.messages.find((m) => m.id === assistant.answeredId);
   useEffect(() => {
     if (last && last.role === "assistant" && spokenRef.current !== last.id) {
       spokenRef.current = last.id;

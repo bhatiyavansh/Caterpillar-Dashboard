@@ -16,11 +16,14 @@ import {
   TriangleAlert,
   User,
   Wifi,
+  WifiOff,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn, statusStyles } from "@/lib/utils";
 import { useMachineHealth, useMachineStore } from "@/store/machine-store";
 import { StatusDot } from "@/components/shared/status";
+import { useAssistantScope } from "@/components/assistant/assistant-provider";
+import { PRIMARY_MACHINE_ID } from "@/lib/api/seed";
 import { HomeScreen } from "./screens/home-screen";
 import { AssistantScreen } from "./screens/assistant-screen";
 import { InspectionScreen } from "./screens/inspection-screen";
@@ -102,6 +105,8 @@ export function MachineTopBar({
 }) {
   const health = useMachineHealth();
   const unread = useMachineStore((s) => s.notifications.filter((n) => !n.read).length);
+  const live = useMachineStore((s) => s.backendConnected);
+  const operatorName = useMachineStore((s) => s.operator.name.split(" ")[0]);
   const s = statusStyles[health];
 
   return (
@@ -147,8 +152,16 @@ export function MachineTopBar({
         <span className="hidden items-center gap-1.5 text-xs text-muted md:flex">
           <Signal className="size-4 text-status-ok" aria-hidden /> GPS
         </span>
-        <span className="hidden items-center gap-1.5 text-xs text-muted md:flex">
-          <Wifi className="size-4 text-status-ok" aria-hidden /> LTE
+        {/* Whether these readings are the site's or the cab's own model. */}
+        <span
+          className={cn(
+            "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em]",
+            live ? "bg-status-ok/12 text-status-ok" : "bg-status-warn/12 text-status-warn",
+          )}
+          title={live ? "Readings streaming from the site hub" : "Hub unreachable: showing the cab's local model"}
+        >
+          {live ? <Wifi className="size-4" aria-hidden /> : <WifiOff className="size-4" aria-hidden />}
+          {live ? "Live" : "Offline"}
         </span>
         <button
           onClick={() => navigate("notifications")}
@@ -167,7 +180,7 @@ export function MachineTopBar({
           aria-label="Operator profile"
         >
           <User className="size-5 text-cat-500" aria-hidden />
-          <span className="hidden text-sm font-semibold text-zinc-200 sm:block">Alex</span>
+          <span className="hidden text-sm font-semibold text-zinc-200 sm:block">{operatorName}</span>
         </button>
       </div>
     </header>
@@ -228,6 +241,8 @@ export function MachineApp({
   onNavigate: (s: MachineScreen) => void;
 }) {
   const Screen = screens[screen];
+  // Every in-cab screen is about this machine, not only the assistant screen.
+  useAssistantScope({ surface: "cab", machineId: PRIMARY_MACHINE_ID });
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-ink-950 text-zinc-100">
