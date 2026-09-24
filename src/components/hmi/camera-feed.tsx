@@ -92,8 +92,8 @@ export function CameraFeed({ compact = false }: { compact?: boolean }) {
         ) : (
           <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_50%_40%,#1a2130,#07090d)]">
             <div className="flex flex-col items-center gap-2 text-center">
-              {simulatedOnly ? <ScanFace className="size-8 text-[#FFB547]" aria-hidden /> : <CameraOff className="size-7 text-[#566070]" aria-hidden />}
-              <p className="text-[13px] text-[#8E98A6]">{simulatedOnly ? "Simulated detection" : "Operator camera off"}</p>
+              {simulatedOnly ? <ScanFace className="size-8 text-status-warn" aria-hidden /> : <CameraOff className="size-7 text-zinc-500" aria-hidden />}
+              <p className="text-[13px] text-muted">{simulatedOnly ? "Simulated detection" : "Operator camera off"}</p>
               {!compact ? (
                 <Button icon={Camera} variant="primary" onClick={() => setCamera({ enabled: true })} className="mt-2">
                   Turn on camera
@@ -121,8 +121,8 @@ export function CameraFeed({ compact = false }: { compact?: boolean }) {
           {CAMERA_CHECKS.map((c) => {
             const on = cameraActive(camera, c.id);
             return (
-              <li key={c.id} className={cn("flex items-center justify-between rounded-xl px-3.5 py-3 text-[14px]", on ? "bg-[#FF5A67]/12" : "bg-white/4")}>
-                <span className={on ? "text-white" : "text-[#C4CBD4]"}>{c.label}</span>
+              <li key={c.id} className={cn("flex items-center justify-between rounded-xl px-3.5 py-3 text-[14px]", on ? "bg-status-crit/12" : "bg-white/4")}>
+                <span className={on ? "text-white" : "text-zinc-300"}>{c.label}</span>
                 <span className="flex items-center gap-2 text-[12px]" style={{ color: on ? C.crit : camera.status === "running" ? C.ok : C.dim }}>
                   <Dot tone={on ? "crit" : camera.status === "running" ? "ok" : "off"} />
                   {on ? (camera.simulated[c.id] ? "Simulated" : "Detected") : camera.status === "running" ? "OK" : "—"}

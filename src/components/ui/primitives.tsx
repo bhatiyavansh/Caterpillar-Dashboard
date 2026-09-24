@@ -129,7 +129,7 @@ export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttrib
       <select
         ref={ref}
         className={cn(
-          "h-10 rounded border border-white/15 bg-ink-800 px-3 text-sm text-zinc-200 hover:border-white/25",
+          "h-10 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-zinc-100 transition-colors hover:border-white/20 focus-visible:border-cat-500/60",
           className,
         )}
         {...props}
@@ -144,7 +144,7 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
       <input
         ref={ref}
         className={cn(
-          "h-10 w-full rounded border border-white/15 bg-ink-800 px-3 text-sm text-zinc-200 placeholder:text-muted hover:border-white/25",
+          "h-10 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-zinc-100 transition-colors placeholder:text-muted hover:border-white/20 focus-visible:border-cat-500/60",
           className,
         )}
         {...props}
@@ -178,11 +178,11 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-2 rounded border border-dashed border-white/12 px-6 py-10 text-center",
+        "flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/12 px-6 py-10 text-center",
         className,
       )}
     >
-      {icon ? <span className="rounded-full bg-white/5 p-2 text-muted">{icon}</span> : null}
+      {icon ? <span className="rounded-xl bg-white/6 p-2.5 text-muted">{icon}</span> : null}
       <p className="text-sm font-semibold text-zinc-200">{title}</p>
       <p className="max-w-xs text-xs leading-relaxed text-muted">{body}</p>
       {action ? <div className="mt-1">{action}</div> : null}
@@ -193,5 +193,5 @@ export function EmptyState({
 /* --------------------------------------------------------------- Skeleton */
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded bg-white/8", className)} />;
+  return <div className={cn("animate-pulse rounded-lg bg-white/8", className)} />;
 }

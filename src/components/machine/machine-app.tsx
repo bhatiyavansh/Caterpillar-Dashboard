@@ -105,18 +105,18 @@ export function MachineTopBar({
   const s = statusStyles[health];
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-3 border-b-2 border-white/10 bg-ink-900 px-4">
+    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-white/8 bg-ink-900/80 px-4 backdrop-blur-xl">
       {screen !== "home" ? (
         <button
           onClick={() => navigate("home")}
-          className="flex h-12 items-center gap-2 rounded bg-white/5 px-3 text-sm font-semibold text-zinc-200 hover:bg-white/10"
+          className="flex h-12 items-center gap-2 rounded-xl bg-white/6 px-3 text-sm font-semibold text-zinc-200 hover:bg-white/10"
           aria-label="Back to machine home"
         >
           <ChevronLeft className="size-5" aria-hidden />
           Back
         </button>
       ) : (
-        <div className="flex size-11 items-center justify-center rounded bg-cat-500 text-sm font-black text-ink-950">
+        <div className="flex size-11 items-center justify-center rounded-xl bg-cat-500 text-sm font-black text-ink-950 shadow-[0_6px_18px_-8px_rgba(255,205,17,0.8)]">
           CAT
         </div>
       )}
@@ -125,21 +125,20 @@ export function MachineTopBar({
         <p className="truncate text-base font-bold tracking-wide text-zinc-50">
           {screen === "home" ? "CAT 320" : SCREEN_TITLES[screen]}
         </p>
-        <p className="truncate text-[11px] uppercase tracking-[0.16em] text-muted">
+        <p className="truncate text-[12px] text-muted">
           {screen === "home" ? "Hydraulic Excavator · CAT-320-014" : "CAT 320 · CAT-320-014"}
         </p>
       </div>
 
       <div
         className={cn(
-          "ml-4 hidden items-center gap-2 rounded border px-3 py-2 sm:flex",
+          "ml-4 hidden items-center gap-2 rounded-full px-3 py-1.5 sm:flex",
           s.bg,
-          s.border,
           s.text,
         )}
       >
         <StatusDot status={health} pulse soundKey="cab:machine-health" />
-        <span className="text-sm font-bold uppercase tracking-[0.12em]">
+        <span className="text-sm font-semibold">
           {health === "healthy" ? "Operational" : health === "warning" ? "Caution" : "Critical"}
         </span>
       </div>
@@ -153,7 +152,7 @@ export function MachineTopBar({
         </span>
         <button
           onClick={() => navigate("notifications")}
-          className="relative flex size-12 items-center justify-center rounded bg-white/5 hover:bg-white/10"
+          className="relative flex size-12 items-center justify-center rounded-xl bg-white/6 hover:bg-white/10"
           aria-label={`Notifications, ${unread} unread`}
         >
           <Bell className="size-5 text-zinc-200" aria-hidden />
@@ -164,7 +163,7 @@ export function MachineTopBar({
         <ClockReadout />
         <button
           onClick={() => navigate("operator")}
-          className="flex h-12 items-center gap-2 rounded bg-white/5 px-3 hover:bg-white/10"
+          className="flex h-12 items-center gap-2 rounded-xl bg-white/6 px-3 hover:bg-white/10"
           aria-label="Operator profile"
         >
           <User className="size-5 text-cat-500" aria-hidden />
@@ -187,7 +186,7 @@ export function QuickActionDock({
   return (
     <nav
       aria-label="Machine quick actions"
-      className="flex h-20 shrink-0 items-stretch gap-2 overflow-x-auto border-t-2 border-white/10 bg-ink-900 px-2 py-2"
+      className="flex h-[84px] shrink-0 items-stretch gap-1.5 overflow-x-auto border-t border-white/8 bg-ink-900/85 px-3 py-2.5 backdrop-blur-xl"
     >
       {quickActions.map(({ screen: target, label, icon: Icon }) => {
         const active = screen === target;
@@ -197,12 +196,14 @@ export function QuickActionDock({
             onClick={() => navigate(target)}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex min-w-[72px] flex-1 flex-col items-center justify-center gap-1 rounded transition-colors",
-              active ? "bg-cat-500 text-ink-950" : "bg-white/5 text-zinc-300 hover:bg-white/10",
+              "relative flex min-w-[72px] flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl transition-all active:scale-[0.97]",
+              active
+                ? "bg-cat-500 text-ink-950 shadow-[0_8px_22px_-10px_rgba(255,205,17,0.8)]"
+                : "text-zinc-400 hover:bg-white/6 hover:text-zinc-100",
             )}
           >
             <Icon className="size-6" aria-hidden />
-            <span className="text-[11px] font-bold uppercase tracking-wider">{label}</span>
+            <span className="text-[12px] font-semibold">{label}</span>
             {target === "alerts" && openAlerts > 0 ? (
               <span className="absolute right-2 top-1.5 rounded-full bg-status-crit px-1.5 text-[10px] font-bold text-white">
                 {openAlerts}

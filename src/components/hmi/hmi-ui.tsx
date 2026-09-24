@@ -25,14 +25,14 @@ export const C = {
   track: "rgba(255,255,255,0.08)",
 } as const;
 
-export const glass = "border border-white/7 bg-[#0d1016]/75 backdrop-blur-xl";
+export const glass = "border border-white/7 bg-ink-900/75 backdrop-blur-xl";
 
 export function Card({ title, action, className, children, pad = true }: { title?: string; action?: React.ReactNode; className?: string; children: React.ReactNode; pad?: boolean }) {
   return (
     <section className={cn("rounded-2xl border border-white/6 bg-white/3", className)}>
       {title ? (
         <header className="flex items-center justify-between px-5 pt-4">
-          <h3 className="text-[13px] font-medium tracking-wide text-[#8E98A6]">{title}</h3>
+          <h3 className="text-[13px] font-medium tracking-wide text-muted">{title}</h3>
           {action}
         </header>
       ) : null}
@@ -69,10 +69,10 @@ export function Stat({
   const text = { sm: "text-[20px]", md: "text-[28px]", lg: "text-[40px]", xl: "text-[64px] leading-none" }[size];
   return (
     <div>
-      <p className="text-[12px] font-medium tracking-wide text-[#8E98A6]">{label}</p>
+      <p className="text-[12px] font-medium tracking-wide text-muted">{label}</p>
       <p className={cn("mt-1 font-light tabular-nums tracking-tight", text)} style={{ color }}>
         {value}
-        {unit ? <span className="ml-1 text-[0.42em] font-normal text-[#8E98A6]">{unit}</span> : null}
+        {unit ? <span className="ml-1 text-[0.42em] font-normal text-muted">{unit}</span> : null}
       </p>
     </div>
   );
@@ -90,11 +90,11 @@ export function Button({
       {...props}
       className={cn(
         "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-medium transition-all active:scale-[0.97] disabled:pointer-events-none disabled:opacity-35",
-        variant === "primary" && "bg-[#FFC72C] text-[#14110a] shadow-[0_8px_24px_-10px_rgba(255,199,44,0.7)] hover:bg-[#ffd257]",
-        variant === "danger" && "bg-[#FF5A67] text-white hover:bg-[#ff6f7a]",
-        variant === "selected" && "bg-[#FFC72C]/15 text-[#FFC72C] ring-1 ring-inset ring-[#FFC72C]/60",
-        variant === "default" && "bg-white/6 text-[#E6EAF0] hover:bg-white/[0.1]",
-        variant === "ghost" && "text-[#8E98A6] hover:bg-white/5 hover:text-white",
+        variant === "primary" && "bg-cat-500 text-ink-950 shadow-[0_8px_24px_-10px_rgba(255,199,44,0.7)] hover:bg-cat-400",
+        variant === "danger" && "bg-status-crit text-white hover:bg-status-crit/85",
+        variant === "selected" && "bg-cat-500/15 text-cat-500 ring-1 ring-inset ring-cat-500/60",
+        variant === "default" && "bg-white/6 text-zinc-100 hover:bg-white/[0.1]",
+        variant === "ghost" && "text-muted hover:bg-white/5 hover:text-white",
         className,
       )}
     >
@@ -197,7 +197,7 @@ export function SheetTitle({ title, detail, action }: { title: string; detail?: 
     <div className="mb-5 flex items-end justify-between gap-4">
       <div className="min-w-0">
         <h2 className="text-[30px] font-light tracking-tight text-white">{title}</h2>
-        {detail ? <p className="mt-1 text-[14px] text-[#8E98A6]">{detail}</p> : null}
+        {detail ? <p className="mt-1 text-[14px] text-muted">{detail}</p> : null}
       </div>
       {action}
     </div>
@@ -205,7 +205,7 @@ export function SheetTitle({ title, detail, action }: { title: string; detail?: 
 }
 
 export function Label({ children }: { children: React.ReactNode }) {
-  return <p className="text-[12px] font-medium tracking-wide text-[#8E98A6]">{children}</p>;
+  return <p className="text-[12px] font-medium tracking-wide text-muted">{children}</p>;
 }
 
 export function fmtMin(min: number) {

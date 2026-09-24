@@ -334,5 +334,11 @@ export const useTwinStore = create<TwinState>()((set, get) => {
   };
 });
 
+// Development hook for browser automation and diagnostics (screenshot pass,
+// frame-budget measurement). Never present in production builds.
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+  (window as unknown as { __twin?: typeof useTwinStore }).__twin = useTwinStore;
+}
+
 /** Degrees helper for the HUD, kept here so panels do not import lib internals. */
 export const toDeg = (rad: number) => rad / DEG;

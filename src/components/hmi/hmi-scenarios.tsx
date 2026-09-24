@@ -40,20 +40,20 @@ export function ScenariosApp({ onClose }: { onClose: () => void }) {
               transition={{ delay: i * 0.06 }}
               className="flex flex-col rounded-2xl border border-white/6 bg-white/3 p-5"
             >
-              <p className="text-[12px] font-medium tracking-[0.18em] text-[#FFC72C]">SCENARIO {i + 1}</p>
+              <p className="text-[12px] font-medium tracking-[0.18em] text-cat-500">SCENARIO {i + 1}</p>
               <h3 className="mt-1 text-[22px] font-light leading-tight text-white">{s.title}</h3>
-              <p className="mt-1 text-[13px] text-[#8E98A6]">{s.subtitle}</p>
+              <p className="mt-1 text-[13px] text-muted">{s.subtitle}</p>
               <div className="mt-4 grid grid-cols-2 gap-2 text-[12px]">
-                <div className="rounded-xl bg-[#FFC72C]/8 px-3 py-2">
-                  <p className="text-[#8E98A6]">Assist acts at</p>
-                  <p className="text-[18px] font-light tabular-nums text-[#FFC72C]">{firstAction?.t.toFixed(1)} s</p>
+                <div className="rounded-xl bg-cat-500/8 px-3 py-2">
+                  <p className="text-muted">Assist acts at</p>
+                  <p className="text-[18px] font-light tabular-nums text-cat-500">{firstAction?.t.toFixed(1)} s</p>
                 </div>
-                <div className="rounded-xl bg-[#FF5A67]/10 px-3 py-2">
-                  <p className="text-[#8E98A6]">Without assist</p>
-                  <p className="text-[18px] font-light tabular-nums text-[#FF5A67]">{s.outcome.unassistedAt?.toFixed(1)} s</p>
+                <div className="rounded-xl bg-status-crit/10 px-3 py-2">
+                  <p className="text-muted">Without assist</p>
+                  <p className="text-[18px] font-light tabular-nums text-status-crit">{s.outcome.unassistedAt?.toFixed(1)} s</p>
                 </div>
               </div>
-              <p className="mt-3 text-[11px] tabular-nums text-[#566070]">
+              <p className="mt-3 text-[11px] tabular-nums text-zinc-500">
                 {s.frames.length.toLocaleString()} frames · {s.fps} fps · {s.duration} s · {s.weather}, {s.ambientC}°C
               </p>
               <Button
@@ -68,11 +68,11 @@ export function ScenariosApp({ onClose }: { onClose: () => void }) {
               >
                 Simulate
               </Button>
-              <p className="mt-4 text-[13px] leading-relaxed text-[#C4CBD4]">{s.why}</p>
+              <p className="mt-4 text-[13px] leading-relaxed text-zinc-300">{s.why}</p>
               <ul className="mt-4 space-y-1.5">
                 {s.howItHelps.map((h) => (
-                  <li key={h} className="flex gap-2 text-[13px] text-[#C4CBD4]">
-                    <Check className="mt-0.5 size-3.5 shrink-0 text-[#3DDC97]" />
+                  <li key={h} className="flex gap-2 text-[13px] text-zinc-300">
+                    <Check className="mt-0.5 size-3.5 shrink-0 text-status-ok" />
                     {h}
                   </li>
                 ))}
@@ -119,7 +119,7 @@ export function ScenarioHud() {
               {ACTOR_LABEL[ev.actor].toUpperCase()} · {ev.t.toFixed(1)} s
             </p>
             <p className="text-[17px] text-white">{ev.title}</p>
-            <p className="text-[13px] text-[#AEB6C1]">{ev.detail}</p>
+            <p className="text-[13px] text-zinc-400">{ev.detail}</p>
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -132,18 +132,18 @@ export function ScenarioHud() {
             <p className="flex items-center gap-1.5 text-[12px] capitalize" style={{ color: phaseColor }}>
               <span className="size-1.5 rounded-full" style={{ background: phaseColor }} />
               {p.phase}
-              <span className="text-[#566070]">· 120 fps</span>
+              <span className="text-zinc-500">· 120 fps</span>
             </p>
           </div>
 
           <div className="relative h-10 flex-1">
             <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-white/8" />
-            <div className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#FFC72C]" style={{ width: pct(p.t) }} />
+            <div className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-cat-500" style={{ width: pct(p.t) }} />
             {s.events.map((e, i) => (
               <span
                 key={i}
                 title={`${e.t.toFixed(1)} s · ${e.title}`}
-                className={cn("absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full", e.actor === "outcome" ? "size-3 ring-2 ring-[#FF5A67] ring-offset-2 ring-offset-transparent" : "size-2.5")}
+                className={cn("absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full", e.actor === "outcome" ? "size-3 ring-2 ring-status-crit ring-offset-2 ring-offset-transparent" : "size-2.5")}
                 style={{ left: pct(e.t), background: e.actor === "outcome" ? "transparent" : ACTOR_COLOR[e.actor] }}
               />
             ))}
@@ -157,14 +157,14 @@ export function ScenarioHud() {
               aria-label="Scenario timeline"
               className="absolute inset-0 w-full cursor-pointer opacity-0"
             />
-            <span className="pointer-events-none absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#0d1016] bg-white shadow" style={{ left: pct(p.t) }} />
+            <span className="pointer-events-none absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink-900 bg-white shadow" style={{ left: pct(p.t) }} />
           </div>
 
-          <span className="w-[92px] text-right text-[14px] tabular-nums text-[#C4CBD4]">
+          <span className="w-[92px] text-right text-[14px] tabular-nums text-zinc-300">
             {p.t.toFixed(1)} / {s.duration.toFixed(0)} s
           </span>
           <div className="flex items-center gap-1">
-            <button onClick={p.toggle} aria-label={p.playing ? "Pause" : "Play"} className="grid size-10 place-items-center rounded-full bg-[#FFC72C] text-black">
+            <button onClick={p.toggle} aria-label={p.playing ? "Pause" : "Play"} className="grid size-10 place-items-center rounded-full bg-cat-500 text-black">
               {p.playing ? <Pause className="size-4" /> : <Play className="size-4" />}
             </button>
             <button onClick={() => p.setRate(p.rate === 1 ? 0.5 : p.rate === 0.5 ? 0.25 : 1)} aria-label="Playback speed" className="h-10 w-12 rounded-full bg-white/6 text-[13px] tabular-nums text-white hover:bg-white/10">
@@ -179,7 +179,7 @@ export function ScenarioHud() {
           </div>
         </div>
         {f ? (
-          <div className="mt-2 flex gap-5 border-t border-white/6 pt-2 text-[12px] tabular-nums text-[#8E98A6]">
+          <div className="mt-2 flex gap-5 border-t border-white/6 pt-2 text-[12px] tabular-nums text-muted">
             <span>speed {(f.speed * 3.6).toFixed(1)} km/h</span>
             <span>slew {f.swingDeg.toFixed(0)}°</span>
             <span>person {f.personDist.toFixed(1)} m</span>
@@ -203,16 +203,16 @@ export function ScenarioHud() {
             transition={{ type: "spring", stiffness: 260, damping: 26 }}
             className={cn("absolute left-1/2 top-[90px] z-30 w-[720px] -translate-x-1/2 rounded-[28px] p-7", glass)}
           >
-            <p className="text-[12px] tracking-[0.2em] text-[#8E98A6]">SCENARIO COMPLETE · {s.title.toUpperCase()}</p>
+            <p className="text-[12px] tracking-[0.2em] text-muted">SCENARIO COMPLETE · {s.title.toUpperCase()}</p>
             <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="rounded-2xl bg-[#3DDC97]/10 p-5">
-                <p className="flex items-center gap-2 text-[14px] font-medium text-[#3DDC97]">
+              <div className="rounded-2xl bg-status-ok/10 p-5">
+                <p className="flex items-center gap-2 text-[14px] font-medium text-status-ok">
                   <ShieldCheck className="size-5" /> With CAT Assist
                 </p>
                 <p className="mt-2 text-[15px] leading-relaxed text-white">{s.outcome.assisted}</p>
               </div>
-              <div className="rounded-2xl bg-[#FF5A67]/10 p-5">
-                <p className="flex items-center gap-2 text-[14px] font-medium text-[#FF5A67]">
+              <div className="rounded-2xl bg-status-crit/10 p-5">
+                <p className="flex items-center gap-2 text-[14px] font-medium text-status-crit">
                   <Skull className="size-5" /> Without it · {s.outcome.unassistedAt?.toFixed(1)} s
                 </p>
                 <p className="mt-2 text-[15px] leading-relaxed text-white">{s.outcome.unassisted}</p>
