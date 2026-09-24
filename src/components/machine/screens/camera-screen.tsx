@@ -5,6 +5,10 @@ import { motion } from "motion/react";
 import { CircleDot, TriangleAlert } from "lucide-react";
 import { cameraDetections } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { getStreamStore } from "@web/lib/stream";
+import { PRIMARY_MACHINE_ID } from "@/lib/api/seed";
+import { useMachineStore } from "@/store/machine-store";
+import { detectionsFrom, type CameraView, type Detection } from "@/lib/hmi/camera";
 import { ScreenPad } from "../touch";
 
 const VIEWS = [
@@ -17,10 +21,39 @@ const VIEWS = [
 
 type ViewId = (typeof VIEWS)[number]["id"];
 
+type DetectionMap = Record<CameraView, Omit<Detection, "kind">[]>;
+
+/**
+ * Live detections from site positions while the hub is streaming; the demo
+ * overlays otherwise.
+ *
+ * Sampled at 4 Hz rather than subscribed: the stream can run at 60 Hz, and a
+ * camera overlay gains nothing from re-rendering that often.
+ */
+function useDetections(): { detections: DetectionMap; live: boolean } {
+  const backendConnected = useMachineStore((s) => s.backendConnected);
+  const [live, setLive] = React.useState<DetectionMap | null>(null);
+
+  React.useEffect(() => {
+    if (!backendConnected) return;
+    const sample = () => {
+      const state = getStreamStore().getState();
+      const self = state.machines[PRIMARY_MACHINE_ID];
+      if (!self) return;
+      setLive(detectionsFrom(self, Object.values(state.machines), Object.values(state.workers)));
+    };
+    sample();
+    const id = window.setInterval(sample, 250);
+    return () => window.clearInterval(id);
+  }, [backendConnected]);
+
+  if (backendConnected && live) return { detections: live, live: true };
+  return { detections: cameraDetections as DetectionMap, live: false };
+}
+
 /** Mock camera feed — a stylised scene rather than video, but laid out with the
  * same overlays a real vision system would draw. */
-function Scene({ view }: { view: ViewId }) {
-  const detections = cameraDetections[view] ?? [];
+function Scene({ view, detections, live }: { view: ViewId; detections: DetectionMap[CameraView]; live: boolean }) {
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded bg-gradient-to-b from-[#20303f] via-[#2c2b24] to-[#1a1712]">
@@ -92,8 +125,15 @@ function Scene({ view }: { view: ViewId }) {
         transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
       />
 
-      <span className="absolute left-3 top-3 inline-flex items-center gap-2 rounded bg-ink-950/75 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-status-crit">
-        <CircleDot className="size-3.5" aria-hidden /> Live
+      <span
+        className={cn(
+          "absolute left-3 top-3 inline-flex items-center gap-2 rounded bg-ink-950/75 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em]",
+          live ? "text-status-crit" : "text-zinc-400",
+        )}
+      >
+        <CircleDot className="size-3.5" aria-hidden />
+        {/* Honest about the source: boxes come from positioning, not video. */}
+        {live ? "Live · site positioning" : "Demo overlay"}
       </span>
     </div>
   );
@@ -101,7 +141,8 @@ function Scene({ view }: { view: ViewId }) {
 
 export function CameraScreen() {
   const [view, setView] = React.useState<ViewId>("front");
-  const detections = cameraDetections[view] ?? [];
+  const { detections: all, live } = useDetections();
+  const detections = all[view] ?? [];
   const critical = detections.find((d) => d.critical);
 
   return (
@@ -123,7 +164,7 @@ export function CameraScreen() {
       </div>
 
       <div className="relative min-h-[260px] flex-1">
-        <Scene view={view} />
+        <Scene view={view} detections={detections} live={live} />
         {critical ? (
           <motion.div
             initial={{ opacity: 0, y: -12 }}
