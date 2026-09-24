@@ -155,23 +155,37 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
 
 /* ----------------------------------------------------------- Empty state */
 
+/**
+ * Kept as the dashed-border variant used inside records panels.
+ *
+ * `EmptyPanel` in `./states` is the borderless variant used where the parent
+ * already draws a border. Both share the same type scale and copy shape so an
+ * empty table and an empty inspector read as the same idea.
+ */
 export function EmptyState({
   icon,
   title,
   body,
   action,
+  className,
 }: {
   icon?: React.ReactNode;
   title: string;
   body: string;
   action?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded border border-dashed border-white/12 px-6 py-12 text-center">
-      {icon ? <div className="text-muted">{icon}</div> : null}
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center gap-2 rounded border border-dashed border-white/12 px-6 py-10 text-center",
+        className,
+      )}
+    >
+      {icon ? <span className="rounded-full bg-white/5 p-2 text-muted">{icon}</span> : null}
       <p className="text-sm font-semibold text-zinc-200">{title}</p>
-      <p className="max-w-sm text-xs text-muted">{body}</p>
-      {action}
+      <p className="max-w-xs text-xs leading-relaxed text-muted">{body}</p>
+      {action ? <div className="mt-1">{action}</div> : null}
     </div>
   );
 }

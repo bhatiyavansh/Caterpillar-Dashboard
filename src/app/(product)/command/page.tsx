@@ -4,7 +4,7 @@ import { CommandCenter } from "@/components/command/command-center";
 import { LoadingState } from "@/components/ui/states";
 
 export const metadata: Metadata = {
-  title: "Command centre - CAT Copilot",
+  title: "Command centre",
   description: "Live situational awareness across every machine, worker and hazard on site.",
 };
 

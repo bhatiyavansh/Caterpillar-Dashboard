@@ -105,10 +105,16 @@ export function ArcGauge({
   const cx = size / 2;
   const cy = size / 2 + radius / 2;
 
+  // Coordinates are rounded before they reach the DOM. Trigonometry on the
+  // server and in the browser can differ in the last bit of a double, and an
+  // unrounded path prints those bits into the `d` attribute — which React then
+  // reports as a hydration mismatch on a value nobody can see.
+  const round = (n: number) => Number(n.toFixed(3));
+
   const arc = (from: number, to: number) => {
     const p = (t: number) => {
       const angle = Math.PI - t * Math.PI;
-      return [cx + radius * Math.cos(angle), cy - radius * Math.sin(angle)];
+      return [round(cx + radius * Math.cos(angle)), round(cy - radius * Math.sin(angle))];
     };
     const [x1, y1] = p(from);
     const [x2, y2] = p(to);
@@ -119,8 +125,8 @@ export function ArcGauge({
     <figure className="flex flex-col items-center">
       <svg
         width={size}
-        height={size * 0.72}
-        viewBox={`0 0 ${size} ${size * 0.72}`}
+        height={round(size * 0.72)}
+        viewBox={`0 0 ${size} ${round(size * 0.72)}`}
         role="img"
         aria-label={`${label}: ${value.toFixed(decimals)}${unit ?? ""}, ${token.label}`}
       >
@@ -141,10 +147,10 @@ export function ArcGauge({
               const t = Math.max(0, Math.min(1, (limit - min) / (max - min || 1)));
               const angle = Math.PI - t * Math.PI;
               return {
-                x1: cx + (radius - 8) * Math.cos(angle),
-                y1: cy - (radius - 8) * Math.sin(angle),
-                x2: cx + (radius + 8) * Math.cos(angle),
-                y2: cy - (radius + 8) * Math.sin(angle),
+                x1: round(cx + (radius - 8) * Math.cos(angle)),
+                y1: round(cy - (radius - 8) * Math.sin(angle)),
+                x2: round(cx + (radius + 8) * Math.cos(angle)),
+                y2: round(cy - (radius + 8) * Math.sin(angle)),
               };
             })()}
             stroke="rgba(255,255,255,0.5)"
@@ -297,6 +303,9 @@ export function DataTable<T>({
 }) {
   if (!rows.length && empty) return <>{empty}</>;
   return (
+    // A dense table must be allowed to scroll rather than squeeze its columns
+    // into unreadable slivers on a narrow viewport.
+    <div className="w-full overflow-x-auto">
     <table className="w-full border-collapse text-sm">
       <caption className="sr-only">{caption}</caption>
       <thead>
@@ -355,5 +364,6 @@ export function DataTable<T>({
         })}
       </tbody>
     </table>
+    </div>
   );
 }

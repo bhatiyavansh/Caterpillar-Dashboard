@@ -44,7 +44,7 @@ export default function MaintenancePage() {
         actions={<RunSimulationButton size="md" />}
       />
 
-      <div className="space-y-5 p-6">
+      <div className="space-y-4 p-4">
         <section className="grid gap-4 xl:grid-cols-[1fr_1fr_1.2fr]">
           <div className="panel-raised p-4">
             <p className="label-xs">{primary.name} · next service</p>

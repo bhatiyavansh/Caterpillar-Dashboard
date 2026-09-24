@@ -27,18 +27,30 @@ export function configureStream(options: Omit<StreamClientOptions, "store">): vo
   if (shared.users > 0) shared.client?.start();
 }
 
+/**
+ * Start (or join) the one shared connection, outside React. Returns the release function.
+ *
+ * React components go through the hooks below; imperative consumers (the product's
+ * `LiveFleetSource`, the twin's render loop) call this. Both share the same socket and the
+ * same store, so every surface sees byte-identical state — that is the whole point.
+ */
+export function acquireStream(): () => void {
+  const store = getStreamStore();
+  const s = shared!;
+  if (!s.client) s.client = new StreamClient({ store });
+  s.users += 1;
+  if (s.users === 1) s.client.start();
+  let released = false;
+  return () => {
+    if (released) return; // releasing twice must not close the socket out from under others
+    released = true;
+    s.users -= 1;
+    if (s.users === 0) s.client?.stop();
+  };
+}
+
 function useConnection(): void {
-  useEffect(() => {
-    const store = getStreamStore();
-    const s = shared!;
-    if (!s.client) s.client = new StreamClient({ store });
-    s.users += 1;
-    if (s.users === 1) s.client.start();
-    return () => {
-      s.users -= 1;
-      if (s.users === 0) s.client?.stop();
-    };
-  }, []);
+  useEffect(() => acquireStream(), []);
 }
 
 /** Generic selector hook. Pass a selector that returns a stable value (or wrap it in useShallow). */

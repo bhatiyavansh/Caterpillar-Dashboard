@@ -24,7 +24,7 @@ import type { Incident, TrainingModule } from "@/lib/api/contracts";
 import { ALERT_SEVERITY } from "@/lib/status";
 import { useIncidents, useTraining } from "@/lib/hooks/use-site";
 import { Button } from "@/components/ui/primitives";
-import { SectionHeader } from "@/components/ui/data";
+import { PageShell, Panel } from "@/components/ui/page";
 import { SeverityChip } from "@/components/ui/status";
 import { EmptyPanel, LoadingState } from "@/components/ui/states";
 import { cn } from "@/lib/utils";
@@ -175,8 +175,7 @@ export function TrainingHub() {
   const lessonsLeft = modules.reduce((sum, m) => sum + (m.lessons - m.lessonsDone), 0);
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-[1400px] space-y-5 px-4 py-5">
+    <PageShell>
         {/* The person, not the fleet */}
         <section className="flex flex-wrap items-center gap-5 rounded border border-white/10 bg-ink-900 px-5 py-4">
           <span className="grid size-14 shrink-0 place-items-center rounded-full bg-cat-500 text-xl font-black text-ink-950">
@@ -184,7 +183,7 @@ export function TrainingHub() {
           </span>
           <div className="min-w-0">
             <p className="label-xs">Operator record</p>
-            <h1 className="text-xl font-bold tracking-tight text-zinc-50">R. Subramanian</h1>
+            <h1 className="text-lg font-bold leading-tight tracking-tight text-zinc-50">R. Subramanian</h1>
             <p className="text-xs text-muted">OP-1042 · Expert class · Excavator, dozer, loader endorsed</p>
           </div>
 
@@ -207,18 +206,13 @@ export function TrainingHub() {
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           {/* Skill path */}
-          <section>
-            <SectionHeader
-              title="Skill path"
-              meta="Sequenced from your own telemetry"
-              className="rounded-t border border-b-0 border-white/10 bg-ink-900"
-            />
-            <div className="space-y-2.5 rounded-b border border-t-0 border-white/10 bg-ink-900 p-3">
+          <Panel title="Skill path" meta="Sequenced from your own telemetry">
+            <div className="space-y-2.5 p-3">
               {modules.map((m, i) => (
                 <ModuleCard key={m.id} module={m} index={i} />
               ))}
             </div>
-          </section>
+          </Panel>
 
           {/* Simulator */}
           <section className="flex flex-col gap-4">
@@ -285,13 +279,11 @@ export function TrainingHub() {
         </div>
 
         {/* Lessons from this site */}
-        <section>
-          <SectionHeader
-            title="Lessons from this site"
-            meta={`${incidents.filter((i) => i.replayable).length} incidents available to replay in 3D`}
-            className="rounded-t border border-b-0 border-white/10 bg-ink-900"
-          />
-          <div className="grid gap-3 rounded-b border border-t-0 border-white/10 bg-ink-900 p-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Panel
+          title="Lessons from this site"
+          meta={`${incidents.filter((i) => i.replayable).length} incidents available to replay in 3D`}
+        >
+          <div className="grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-4">
             {incidents.length ? (
               incidents.map((i) => <IncidentLesson key={i.id} incident={i} />)
             ) : (
@@ -303,8 +295,7 @@ export function TrainingHub() {
               />
             )}
           </div>
-        </section>
-      </div>
-    </div>
+        </Panel>
+    </PageShell>
   );
 }

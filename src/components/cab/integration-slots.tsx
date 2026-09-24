@@ -1,203 +1,262 @@
 "use client";
 
 /**
- * Integration slots for work owned by other tracks.
+ * The cab's two camera panels.
  *
- * Each slot renders a real, working resting state and documents the exact
- * component that replaces it. That way the cab is never broken-looking while
- * the avatar and the webcam detector are still being built, and dropping them
- * in is a one-line change.
+ * A real machine has two distinct cameras doing two distinct jobs: one
+ * mounted rear-facing for the blind spot, one facing the operator for
+ * fatigue. This demo has exactly one physical webcam, so both panels read
+ * from the same `useWebcam` stream (ref-counted, so opening both still asks
+ * for camera permission once) — but they are genuinely two independent
+ * detectors, each with its own model, its own video preview and its own
+ * status, not one feed doing double duty. Splitting them into separate
+ * sections is what makes that legible: the operator can see that proximity
+ * and fatigue are two different things being watched, not one generic
+ * "camera" block.
+ *
+ * Both degrade to a useful resting state rather than an error, because a
+ * camera that will not start must never take the cab HMI down mid-demo.
+ *
+ * The site assistant used to live in this file too, as a scripted one-line
+ * message with a mic button wired to nothing. It is now `AssistantPanel`
+ * (`@/components/assistant/assistant-panel`), a real conversation backed by
+ * the same `useVoice`/`useAssistant` stack this file already used for its
+ * state names — that capability existed all along, just not reachable from
+ * this screen.
  */
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { motion } from "motion/react";
-import { Camera, CameraOff, Mic, ShieldAlert, ShieldCheck, Volume2 } from "lucide-react";
+import { Camera, CameraOff, Eye, EyeOff, ShieldAlert, ShieldCheck } from "lucide-react";
 import type { ProximityLevel } from "@/lib/api/contracts";
-import { PROXIMITY } from "@/lib/status";
-import { Button } from "@/components/ui/primitives";
+import { PROXIMITY, MACHINE_STATUS } from "@/lib/status";
 import { cn } from "@/lib/utils";
+import type { CvFatigueEvent, CvProximityEvent } from "@web/components/cv";
+import { publishCvEvent } from "@web/lib/cv";
 
-export type AvatarState = "idle" | "listening" | "thinking" | "talking" | "alert";
+const PersonDetector = dynamic(() => import("@web/components/cv").then((m) => m.PersonDetector), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-ink-950" />,
+});
 
-const AVATAR_COPY: Record<AvatarState, { label: string; ring: string; text: string }> = {
-  idle: { label: "Ready", ring: "border-white/15", text: "text-muted" },
-  listening: { label: "Listening", ring: "border-status-info/60", text: "text-status-info" },
-  thinking: { label: "Thinking", ring: "border-cat-500/60", text: "text-cat-500" },
-  talking: { label: "Speaking", ring: "border-cat-500", text: "text-cat-500" },
-  alert: { label: "Alerting", ring: "border-status-crit", text: "text-status-crit" },
-};
+const FatigueDetector = dynamic(() => import("@web/components/cv").then((m) => m.FatigueDetector), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-ink-950" />,
+});
 
-/**
- * Where the 3D Caterpillar avatar mounts.
- *
- * Replace the inner block with the avatar component; keep the frame, the state
- * pill and the push-to-talk control so the cab layout does not shift.
- */
-export function AvatarSlot({
-  state,
-  message,
-  onPushToTalk,
+/** How long a fatigue alert stays shown after the last eyes-closed event. */
+const FATIGUE_ALERT_HOLD_MS = 8000;
+
+/** Shared chrome for a camera panel: label, on/off toggle, video area, status footer. */
+function CameraPanel({
+  label,
+  badge,
+  cameraOn,
+  onToggleCamera,
+  statusIcon,
+  statusTone,
+  statusLabel,
+  statusDetail,
+  trailing,
+  children,
   className,
 }: {
-  state: AvatarState;
-  /** The last thing the assistant said, so the panel is useful when silent. */
-  message: string;
-  onPushToTalk?: () => void;
+  label: string;
+  /** Small tag over the video, e.g. "Rear · 120°" or "Front · driver". */
+  badge: string;
+  cameraOn: boolean;
+  onToggleCamera: () => void;
+  statusIcon: React.ReactNode;
+  statusTone: "ok" | "critical";
+  statusLabel: string;
+  statusDetail: string;
+  /** Right-aligned reading, e.g. a distance in metres. */
+  trailing?: React.ReactNode;
+  /** The detector, rendered only while the camera is on. */
+  children: React.ReactNode;
   className?: string;
 }) {
-  const copy = AVATAR_COPY[state];
-  const speaking = state === "talking";
+  const alerting = statusTone === "critical";
+  const token = alerting ? MACHINE_STATUS.critical : MACHINE_STATUS.operating;
 
   return (
     <section
-      className={cn("flex min-h-0 flex-col overflow-hidden rounded border border-white/10 bg-ink-850", className)}
-      aria-label="Site assistant"
+      className={cn(
+        "flex flex-col overflow-hidden rounded border bg-ink-850",
+        alerting ? token.border : "border-white/10",
+        className,
+      )}
+      aria-label={label}
     >
-      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
-        <span className="label-xs">Site assistant</span>
-        <span className={cn("inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider", copy.text)}>
-          <span className={cn("size-1.5 rounded-full", state === "idle" ? "bg-zinc-500" : "bg-current")} aria-hidden />
-          {copy.label}
+      <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-2.5 py-1.5">
+        <span className="label-xs truncate">{label}</span>
+        <button
+          onClick={onToggleCamera}
+          className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted transition-colors hover:text-zinc-200"
+          aria-pressed={cameraOn}
+        >
+          {cameraOn ? <Camera className="size-3" aria-hidden /> : <CameraOff className="size-3" aria-hidden />}
+        </button>
+      </div>
+
+      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-ink-950">
+        {cameraOn ? (
+          children
+        ) : (
+          <div className="absolute inset-0 grid place-items-center">
+            <span className="text-[11px] text-muted">Camera off</span>
+          </div>
+        )}
+        <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-zinc-300">
+          {badge}
         </span>
       </div>
 
-      <div className="flex min-h-0 flex-1 items-center gap-3 p-3">
-        {/* Avatar mount point */}
-        <div
-          className={cn(
-            "relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full border-2 bg-ink-900",
-            copy.ring,
-          )}
-        >
-          <span className="text-2xl" aria-hidden>
-            👷
-          </span>
-          {speaking ? (
-            <motion.span
-              aria-hidden
-              className="absolute inset-0 rounded-full border-2 border-cat-500"
-              animate={{ scale: [1, 1.18, 1], opacity: [0.8, 0, 0.8] }}
-              transition={{ duration: 1.4, repeat: Infinity }}
-            />
-          ) : null}
-        </div>
-
+      <div className={cn("flex shrink-0 items-center gap-2 px-2.5 py-2", alerting && token.bg)}>
+        <span className={cn("shrink-0", alerting ? token.text : "text-muted")}>{statusIcon}</span>
         <div className="min-w-0 flex-1">
-          <p className="line-clamp-3 text-xs leading-relaxed text-zinc-200">{message}</p>
-          {speaking ? (
-            <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-cat-500">
-              <Volume2 className="size-3" aria-hidden />
-              Speaking
-            </span>
-          ) : null}
+          <p className={cn("truncate text-[11px] font-bold uppercase tracking-wider", alerting ? token.text : "text-zinc-300")}>
+            {statusLabel}
+          </p>
+          <p className="truncate text-[10px] text-muted">{statusDetail}</p>
         </div>
+        {trailing}
       </div>
-
-      {onPushToTalk ? (
-        <div className="border-t border-white/10 p-2">
-          <Button variant="secondary" size="touch" className="w-full" onClick={onPushToTalk}>
-            <Mic className="size-5" aria-hidden />
-            Hold to ask
-          </Button>
-        </div>
-      ) : null}
     </section>
   );
 }
 
-/**
- * Where the browser person-detection view mounts.
- *
- * Replace the video placeholder with the webcam canvas. The detection readout
- * below it is driven by machine telemetry, so it stays correct whether the
- * detection comes from the camera or from the simulator.
- */
-export function WebcamSlot({
+export function RearCameraPanel({
+  machineId,
   level,
   distanceM,
   zone,
   cameraOn,
   onToggleCamera,
+  onDetection,
   className,
 }: {
+  machineId: string;
   level: ProximityLevel;
   distanceM: number | null;
   zone: string | null;
   cameraOn: boolean;
   onToggleCamera: () => void;
+  /** Raised when the browser detector sees somebody. */
+  onDetection?: (e: CvProximityEvent) => void;
   className?: string;
 }) {
-  const token = PROXIMITY[level];
   const detected = level !== "safe" && distanceM !== null;
 
+  // A detection is a site event, not a cab-local one: publish it to the hub so the command
+  // centre, the twin, the alert ribbon, the database and the assistant all see it too. The
+  // local callback still fires first, so this panel never waits on the network.
+  const lastSeverity = React.useRef<string | null>(null);
+  const handleEvent = React.useCallback(
+    (e: CvProximityEvent) => {
+      onDetection?.(e);
+      const escalated = lastSeverity.current !== null && lastSeverity.current !== e.severity;
+      lastSeverity.current = e.severity;
+      void publishCvEvent(
+        {
+          event: e.event,
+          severity: e.severity,
+          machine_id: e.machine_id,
+          message: e.message,
+          data: e.data,
+        },
+        { force: escalated },
+      );
+    },
+    [onDetection],
+  );
+
   return (
-    <section
-      className={cn("flex flex-col overflow-hidden rounded border bg-ink-850", detected ? token.border : "border-white/10", className)}
-      aria-label="Person detection"
-    >
-      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
-        <span className="label-xs">Person detection</span>
-        <button
-          onClick={onToggleCamera}
-          className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted hover:text-zinc-200"
-          aria-pressed={cameraOn}
-        >
-          {cameraOn ? <Camera className="size-3" aria-hidden /> : <CameraOff className="size-3" aria-hidden />}
-          {cameraOn ? "Rear camera" : "Camera off"}
-        </button>
-      </div>
-
-      {/* Camera mount point */}
-      <div className="relative aspect-video w-full overflow-hidden bg-ink-950">
-        <div
-          className="absolute inset-0 opacity-25"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px)",
-          }}
-          aria-hidden
-        />
-        <div className="absolute inset-0 grid place-items-center">
-          {cameraOn ? (
-            detected ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="rounded border-2 border-status-crit px-8 py-10"
-              >
-                <span className="absolute -mt-7 rounded bg-status-crit px-1.5 py-0.5 text-[10px] font-bold text-white">
-                  PERSON {distanceM?.toFixed(1)}m
-                </span>
-              </motion.div>
-            ) : (
-              <span className="text-[11px] text-muted">Rear view clear</span>
-            )
-          ) : (
-            <span className="text-[11px] text-muted">Camera off</span>
-          )}
-        </div>
-        <span className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-zinc-300">
-          Rear · 120&deg;
-        </span>
-      </div>
-
-      <div className={cn("flex items-center gap-2.5 px-3 py-2.5", detected && token.bg)}>
-        <span className={cn("shrink-0", token.text)}>
-          {detected ? <ShieldAlert className="size-5" aria-hidden /> : <ShieldCheck className="size-5" aria-hidden />}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className={cn("text-xs font-bold uppercase tracking-wider", token.text)}>
-            {detected ? "Person detected" : "Clear"}
-          </p>
-          <p className="truncate text-[11px] text-muted">
-            {detected ? `${distanceM?.toFixed(1)} m ${zone ?? "near"} of the machine` : "No person inside the work envelope"}
-          </p>
-        </div>
-        {detected ? (
-          <span className={cn("shrink-0 font-mono text-xl font-bold tabular-nums", token.text)}>
+    <CameraPanel
+      label="Rear camera"
+      badge="Rear · 120°"
+      cameraOn={cameraOn}
+      onToggleCamera={onToggleCamera}
+      statusIcon={detected ? <ShieldAlert className="size-4" aria-hidden /> : <ShieldCheck className="size-4" aria-hidden />}
+      statusTone={detected ? "critical" : "ok"}
+      statusLabel={detected ? "Person detected" : "Clear"}
+      statusDetail={detected ? `${distanceM?.toFixed(1)} m ${zone ?? "near"} of the machine` : "No person behind the machine"}
+      trailing={
+        detected ? (
+          <span className="shrink-0 font-mono text-base font-bold tabular-nums text-status-crit">
             {distanceM?.toFixed(1)}m
           </span>
-        ) : null}
-      </div>
-    </section>
+        ) : null
+      }
+      className={className}
+    >
+      <PersonDetector machineId={machineId} onEvent={handleEvent} enabled={cameraOn} className="absolute inset-0 size-full" />
+      {/* Simulator-driven detections still need to read on screen when the model has not loaded. */}
+      {detected ? (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.94 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="pointer-events-none absolute inset-0 grid place-items-center"
+        >
+          <span className="rounded border-2 border-status-crit px-6 py-8" />
+        </motion.div>
+      ) : null}
+    </CameraPanel>
+  );
+}
+
+export function FrontCameraPanel({
+  machineId,
+  cameraOn,
+  onToggleCamera,
+  onDetection,
+  className,
+}: {
+  machineId: string;
+  cameraOn: boolean;
+  onToggleCamera: () => void;
+  /** Raised when the browser detector sees the operator's eyes closed past the threshold. */
+  onDetection?: (e: CvFatigueEvent) => void;
+  className?: string;
+}) {
+  // Fatigue has no simulated channel to fall back to the way proximity falls back to
+  // machine.proximity — this reflects only what the browser detector itself has seen,
+  // and clears itself out after a hold so a one-off blink does not stick.
+  const [fatigue, setFatigue] = React.useState<{ eyesClosedS: number; at: number } | null>(null);
+  const handleEvent = React.useCallback(
+    (e: CvFatigueEvent) => {
+      onDetection?.(e);
+      setFatigue({ eyesClosedS: e.data.eyes_closed_s, at: Date.now() });
+      void publishCvEvent({
+        event: e.event,
+        severity: e.severity,
+        machine_id: e.machine_id,
+        message: e.message,
+        data: e.data,
+      });
+    },
+    [onDetection],
+  );
+  React.useEffect(() => {
+    if (!fatigue) return;
+    const timer = setTimeout(() => setFatigue(null), FATIGUE_ALERT_HOLD_MS);
+    return () => clearTimeout(timer);
+  }, [fatigue]);
+  const alerting = fatigue !== null;
+
+  return (
+    <CameraPanel
+      label="Front camera"
+      badge="Front · driver"
+      cameraOn={cameraOn}
+      onToggleCamera={onToggleCamera}
+      statusIcon={alerting ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+      statusTone={alerting ? "critical" : "ok"}
+      statusLabel={alerting ? "Fatigue detected" : "Monitoring"}
+      statusDetail={alerting ? `Eyes closed ${fatigue?.eyesClosedS.toFixed(1)} s — take a break` : "Watching for microsleep"}
+      className={className}
+    >
+      <FatigueDetector machineId={machineId} onEvent={handleEvent} showVideo enabled={cameraOn} className="absolute inset-0 size-full" />
+    </CameraPanel>
   );
 }

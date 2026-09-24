@@ -1,9 +1,14 @@
 /**
  * Single entry point for site data.
  *
- * Set `NEXT_PUBLIC_API_URL` (and optionally `NEXT_PUBLIC_WS_URL`) to point the
- * product at the FastAPI hub. With nothing set, the simulated source runs, and
- * every screen behaves identically either way.
+ * Live by default: the product talks to the FastAPI hub (http://localhost:8000
+ * unless `NEXT_PUBLIC_API_URL` says otherwise) through the one shared stream
+ * client, and falls back to the simulated baseline per panel when the hub has
+ * not sent that data yet. Set `NEXT_PUBLIC_USE_MOCK=1` to force the pure mock —
+ * useful for design work and for demoing with no backend running.
+ *
+ * Every screen behaves identically either way; no component imports a concrete
+ * source.
  */
 import type { FleetSource } from "./source";
 import { MockFleetSource } from "./mock-source";
@@ -15,10 +20,8 @@ let instance: FleetSource | null = null;
 export function getFleetSource(): FleetSource {
   if (instance) return instance;
 
-  const http = process.env.NEXT_PUBLIC_API_URL;
-  const ws = process.env.NEXT_PUBLIC_WS_URL ?? (http ? `${http.replace(/^http/, "ws")}/ws/live` : undefined);
-
-  instance = http && ws ? new LiveFleetSource(http, ws) : new MockFleetSource();
+  const forceMock = process.env.NEXT_PUBLIC_USE_MOCK === "1";
+  instance = forceMock ? new MockFleetSource() : new LiveFleetSource();
   instance.start();
   return instance;
 }

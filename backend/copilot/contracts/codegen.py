@@ -204,7 +204,7 @@ def additive_violations(old: dict[str, str], new: dict[str, str]) -> list[str]:
 def changelog_has(version: str) -> bool:
     if not CHANGELOG_PATH.exists():
         return False
-    return re.search(rf"^## {re.escape(version)}\b", CHANGELOG_PATH.read_text(), re.M) is not None
+    return re.search(rf"^## {re.escape(version)}\b", CHANGELOG_PATH.read_text(encoding="utf-8"), re.M) is not None
 
 
 def _git_head_manifest() -> dict[str, Any] | None:
@@ -235,7 +235,7 @@ def write() -> int:
     files = render()
     new_manifest = json.loads(files[MANIFEST_PATH])
     if MANIFEST_PATH.exists():
-        old = json.loads(MANIFEST_PATH.read_text())
+        old = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
         problems = additive_violations(old["fields"], new_manifest["fields"])
         if problems:
             print("Refusing to write non-additive contract changes:\n  " + "\n  ".join(problems))
@@ -248,7 +248,7 @@ def write() -> int:
         return 1
     for path, text in files.items():
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text)
+        path.write_text(text, encoding="utf-8")
         print(f"wrote {path.relative_to(REPO_DIR)}")
     return 0
 
@@ -256,7 +256,7 @@ def write() -> int:
 def check() -> int:
     failures: list[str] = []
     for path, text in render().items():
-        if not path.exists() or path.read_text() != text:
+        if not path.exists() or path.read_text(encoding="utf-8") != text:
             failures.append(f"stale: {path.relative_to(REPO_DIR)} (run `make contracts`)")
     new_manifest = json.loads(render()[MANIFEST_PATH])
     head = _git_head_manifest()

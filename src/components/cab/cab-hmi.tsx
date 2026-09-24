@@ -12,7 +12,8 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { Fuel, Gauge, Hourglass, Thermometer } from "lucide-react";
 import { TaskPanel } from "./task-panel";
-import { AvatarSlot, WebcamSlot, type AvatarState } from "./integration-slots";
+import { FrontCameraPanel, RearCameraPanel } from "./integration-slots";
+import { AssistantPanel } from "@/components/assistant/assistant-panel";
 import { AlertRibbon, levelFor } from "@/components/alerts/alert-ribbon";
 import { ArcGauge, Readout } from "@/components/ui/data";
 import { MachineStatusChip } from "@/components/ui/status";
@@ -21,32 +22,6 @@ import { LIMITS, MACHINE_STATUS, thresholdStatus } from "@/lib/status";
 import { useAlerts, useMachine, useSnapshot, useTasks } from "@/lib/hooks/use-site";
 import { PRIMARY_MACHINE_ID } from "@/lib/api/seed";
 import { cn } from "@/lib/utils";
-
-/** What the assistant says, chosen from live state rather than a script. */
-function assistantLine(
-  alertTitle: string | null,
-  alertAction: string | null,
-  taskTitle: string | null,
-  weatherRain: boolean,
-): { state: AvatarState; message: string } {
-  if (alertTitle && alertAction) {
-    return { state: "alert", message: `${alertTitle}. ${alertAction}` };
-  }
-  if (weatherRain) {
-    return {
-      state: "talking",
-      message:
-        "Rain is moving in for the rest of the shift. I have pulled the truck load forward and pushed the backfill to 16:30. Haul road speeds are capped at 15 km/h.",
-    };
-  }
-  if (taskTitle) {
-    return {
-      state: "idle",
-      message: `You are on ${taskTitle}. Everything is inside limits — ask me anything about the machine, the plan or the manual.`,
-    };
-  }
-  return { state: "idle", message: "Ready when you are. Ask me about the machine, the plan or the manual." };
-}
 
 export function CabHmi() {
   const params = useSearchParams();
@@ -75,14 +50,7 @@ export function CabHmi() {
       />
     );
 
-  const lead = cabAlerts.find((a) => !a.acknowledged) ?? null;
   const level = levelFor(cabAlerts);
-  const assistant = assistantLine(
-    lead?.title ?? null,
-    lead?.action ?? null,
-    tasks.find((t) => t.state === "active")?.title ?? null,
-    snapshot?.weather === "rain",
-  );
 
   const fuelStatus = thresholdStatus(machine.fuel, LIMITS.fuel);
   const tempStatus = thresholdStatus(machine.hydraulicTemperature, LIMITS.hydraulicTemperature);
@@ -92,7 +60,11 @@ export function CabHmi() {
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col gap-2.5 p-2.5 transition-colors duration-500",
+        // At cab resolution everything fits without scrolling, which is the
+        // point: the operator takes it in at a glance. On a narrow screen the
+        // three panels stack, so the page has to be allowed to scroll rather
+        // than crush them into unreadable slivers.
+        "flex h-full flex-col gap-2.5 overflow-y-auto p-2.5 transition-colors duration-500 lg:min-h-0 lg:overflow-hidden",
         level === "critical" && "bg-status-crit/[0.07]",
       )}
     >
@@ -141,7 +113,7 @@ export function CabHmi() {
       />
 
       {/* Working area */}
-      <div className="grid min-h-0 flex-1 gap-2.5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)_minmax(0,0.85fr)]">
+      <div className="grid flex-1 gap-2.5 max-lg:shrink-0 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)_minmax(0,0.85fr)]">
         <TaskPanel tasks={tasks} className="min-h-0" />
 
         {/* Machine health */}
@@ -206,17 +178,26 @@ export function CabHmi() {
           </div>
         </section>
 
-        {/* Assistant + camera */}
+        {/* Assistant + two cameras */}
         <div className="flex min-h-0 flex-col gap-2.5">
-          <WebcamSlot
-            level={machine.proximity.level}
-            distanceM={machine.proximity.nearestPersonM}
-            zone={machine.proximity.zone}
-            cameraOn={cameraOn}
-            onToggleCamera={() => setCameraOn((v) => !v)}
-            className="shrink-0"
+          <div className="grid shrink-0 grid-cols-2 gap-2.5">
+            <RearCameraPanel
+              machineId={machine.id}
+              level={machine.proximity.level}
+              distanceM={machine.proximity.nearestPersonM}
+              zone={machine.proximity.zone}
+              cameraOn={cameraOn}
+              onToggleCamera={() => setCameraOn((v) => !v)}
+            />
+            <FrontCameraPanel machineId={machine.id} cameraOn={cameraOn} onToggleCamera={() => setCameraOn((v) => !v)} />
+          </div>
+          <AssistantPanel
+            surface="cab"
+            machineId={machine.id}
+            operatorId={machine.operator?.id}
+            alert={level === "critical"}
+            className="min-h-0 flex-1"
           />
-          <AvatarSlot state={assistant.state} message={assistant.message} onPushToTalk={() => {}} className="min-h-0 flex-1" />
         </div>
       </div>
     </div>

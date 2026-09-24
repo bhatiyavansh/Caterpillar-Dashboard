@@ -9,6 +9,7 @@ import type {
   TaskItem,
   Worksite,
 } from "./types";
+import { SITE_NAME } from "./api/seed";
 
 export const PRIMARY_MACHINE_ID = "CAT-320-014";
 
@@ -648,7 +649,7 @@ export const operator: Operator = {
 };
 
 export const worksite: Worksite = {
-  name: "Northgate Quarry",
+  name: SITE_NAME,
   sector: "Sector B",
   machines: [
     { id: PRIMARY_MACHINE_ID, name: "CAT 320", x: 48, y: 52, self: true, health: "healthy" },

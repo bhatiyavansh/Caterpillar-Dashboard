@@ -54,3 +54,8 @@ data/incident_tracks/
 data/runs/
 intelligence/models/*.joblib
 intelligence/models/*.txt
+
+# The hub DB path is relative, so launching from the repo root and from
+# backend/ produce different locations. Ignore both.
+backend/data/*.db
+backend/backend/

@@ -45,7 +45,7 @@ export default function DiagnosticsPage() {
         actions={<RunSimulationButton size="md" />}
       />
 
-      <div className="grid gap-5 p-6 xl:grid-cols-[320px_1fr]">
+      <div className="grid gap-4 p-4 xl:grid-cols-[320px_1fr]">
         <nav aria-label="Systems" className="space-y-2">
           {systems.map((s) => {
             const Icon = icons[s.id] ?? Cog;

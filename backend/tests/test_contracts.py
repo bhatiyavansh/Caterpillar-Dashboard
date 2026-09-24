@@ -1,11 +1,10 @@
 import json
 
-from simulator.schemas import MachineState
-
 from copilot.adapters.base import AdapterStats, validate_contract_frame
 from copilot.config import REPO_DIR
 from copilot.contracts import codegen
 from copilot.contracts.models import LiveEvent, LiveMachineState
+from simulator.schemas import MachineState
 
 C_FIXTURES = REPO_DIR / "fixtures"
 

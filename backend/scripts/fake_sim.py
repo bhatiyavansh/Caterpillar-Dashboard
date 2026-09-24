@@ -29,6 +29,8 @@ from pathlib import Path
 from typing import Any
 
 import websockets
+
+import copilot  # noqa: F401  -- import for its side effect: puts the repo root on sys.path
 from intelligence.risk import get_working_risk
 from simulator.config import FLEET
 from simulator.schemas import Event, MachineState, WorkerState

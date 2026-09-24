@@ -27,7 +27,8 @@ import {
 import type { Anomaly, MaintenanceItem, SeriesPoint } from "@/lib/api/contracts";
 import { ALERT_SEVERITY } from "@/lib/status";
 import { useAnomalies, useFleet, useMaintenance, useOwnerReport } from "@/lib/hooks/use-site";
-import { KpiRail, SectionHeader, type KpiItem } from "@/components/ui/data";
+import { KpiRail, type KpiItem } from "@/components/ui/data";
+import { PageShell, Panel } from "@/components/ui/page";
 import { Button } from "@/components/ui/primitives";
 import { SeverityChip } from "@/components/ui/status";
 import { EmptyPanel } from "@/components/ui/states";
@@ -262,10 +263,10 @@ export function OwnerPortal() {
   ];
 
   return (
-    <div className="h-full overflow-y-auto">
-      <KpiRail items={rail} />
+    <div className="flex h-full min-h-0 flex-col">
+      <KpiRail items={rail} className="shrink-0" />
 
-      <div className="mx-auto max-w-[1500px] space-y-5 px-4 py-5">
+      <PageShell>
         {/* The written position */}
         <section className="rounded border border-white/10 bg-ink-900">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
@@ -347,27 +348,24 @@ export function OwnerPortal() {
 
         {/* Decisions */}
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
-          <section className="overflow-hidden rounded border border-white/10 bg-ink-900">
-            <SectionHeader
-              title="Maintenance due"
-              meta={`${maintenance.filter((m) => m.dueInHours < 24).length} inside 24 hours`}
-              actions={
-                <Link href="/dashboard/maintenance" className="inline-flex items-center gap-1 text-[11px] font-semibold text-cat-500 hover:underline">
-                  Full schedule
-                  <ArrowUpRight className="size-3" aria-hidden />
-                </Link>
-              }
-            />
+          <Panel
+            title="Maintenance due"
+            meta={`${maintenance.filter((m) => m.dueInHours < 24).length} inside 24 hours`}
+            actions={
+              <Link href="/dashboard/maintenance" className="inline-flex items-center gap-1 text-[11px] font-semibold text-cat-500 hover:underline">
+                Full schedule
+                <ArrowUpRight className="size-3" aria-hidden />
+              </Link>
+            }
+          >
             <MaintenanceList items={maintenance} />
-          </section>
+          </Panel>
 
-          <section>
-            <SectionHeader
-              title="Detected anomalies"
-              meta={`${inr(wastedInr)} estimated impact`}
-              className="rounded-t border border-b-0 border-white/10 bg-ink-900"
-            />
-            <div className="grid gap-3 rounded-b border border-t-0 border-white/10 bg-ink-900 p-3 sm:grid-cols-2">
+          <Panel
+            title="Detected anomalies"
+            meta={`${inr(wastedInr)} estimated impact`}
+          >
+            <div className="grid gap-3 p-3 sm:grid-cols-2">
               {anomalies.length ? (
                 anomalies.map((a) => <AnomalyCard key={a.id} anomaly={a} />)
               ) : (
@@ -379,9 +377,9 @@ export function OwnerPortal() {
                 />
               )}
             </div>
-          </section>
+          </Panel>
         </div>
-      </div>
+      </PageShell>
     </div>
   );
 }

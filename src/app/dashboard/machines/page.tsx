@@ -36,7 +36,7 @@ export default function MachinesPage() {
         actions={<RunSimulationButton size="md" />}
       />
 
-      <div className="space-y-4 p-6">
+      <div className="space-y-4 p-4">
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             { label: "Registered machines", value: formatNumber(list.length) },

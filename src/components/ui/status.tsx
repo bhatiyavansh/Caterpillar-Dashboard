@@ -14,13 +14,14 @@ import {
   PauseCircle,
   PowerOff,
   Wrench,
+  type LucideIcon,
 } from "lucide-react";
 import type { AlertSeverity, MachineStatus } from "@/lib/api/contracts";
 import { ALERT_SEVERITY, MACHINE_STATUS } from "@/lib/status";
 import { cn } from "@/lib/utils";
 import type { IconComponent } from "@/components/ui/icon";
 
-const STATUS_ICON: Record<MachineStatus, IconComponent> = {
+const STATUS_ICON: Record<MachineStatus, LucideIcon> = {
   operating: CheckCircle2,
   idle: PauseCircle,
   warning: AlertTriangle,
@@ -29,7 +30,7 @@ const STATUS_ICON: Record<MachineStatus, IconComponent> = {
   offline: PowerOff,
 };
 
-const SEVERITY_ICON: Record<AlertSeverity, IconComponent> = {
+const SEVERITY_ICON: Record<AlertSeverity, LucideIcon> = {
   critical: OctagonAlert,
   warning: AlertTriangle,
   info: Info,
@@ -120,9 +121,19 @@ export function StatusLabel({
 }) {
   const token = MACHINE_STATUS[status];
   return (
-    <span className={cn("inline-flex items-center gap-1.5 text-xs font-semibold", token.text, className)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 text-xs font-semibold",
+        token.text,
+        className,
+      )}
+    >
       <span
-        className={cn("relative inline-flex size-2 shrink-0 rounded-full", token.dot, pulse && "pulse-ring")}
+        className={cn(
+          "relative inline-flex size-2 shrink-0 rounded-full",
+          token.dot,
+          pulse && "pulse-ring",
+        )}
         aria-hidden
       />
       {token.label}

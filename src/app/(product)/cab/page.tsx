@@ -4,7 +4,7 @@ import { CabHmi } from "@/components/cab/cab-hmi";
 import { LoadingState } from "@/components/ui/states";
 
 export const metadata: Metadata = {
-  title: "Operator cab - CAT Copilot",
+  title: "Operator cab",
   description: "In-cab assistant: task, machine health, safety and the site assistant.",
 };
 

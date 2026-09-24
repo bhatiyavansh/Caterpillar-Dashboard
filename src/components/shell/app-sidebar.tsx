@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DIRECTOR_NAV, NAV, type NavItem } from "./nav-config";
+import { NAV, activeNavItem, type NavItem } from "./nav-config";
 import { useAlerts, useConnection, useFleet } from "@/lib/hooks/use-site";
 import { Hint } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,7 @@ const CONNECTION_COPY = {
 } as const;
 
 function isActive(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`);
+  return activeNavItem(pathname)?.href === href;
 }
 
 function NavLink({
@@ -108,10 +108,14 @@ export function AppSidebar({
         ) : null}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 py-3">
-        {NAV.map((group) => (
-          <div key={group.id} className="mb-4 last:mb-0">
-            {!collapsed ? <p className="label-xs px-2.5 pb-1.5">{group.label}</p> : null}
+      <nav className="flex flex-1 flex-col overflow-y-auto px-2 py-3">
+        {NAV.map((group, i) => (
+          <div key={group.id} className={cn("mb-4 last:mb-0", group.id === "internal" && "mt-auto")}>
+            {!collapsed ? (
+              <p className="label-xs px-2.5 pb-1.5">{group.label}</p>
+            ) : i > 0 ? (
+              <div className="mx-2 mb-2 border-t border-white/8" aria-hidden />
+            ) : null}
             <ul className="space-y-0.5">
               {group.items.map((item) => (
                 <li key={item.href}>
@@ -149,8 +153,6 @@ export function AppSidebar({
             )}
           </div>
         </Hint>
-
-        <NavLink item={DIRECTOR_NAV} collapsed={collapsed} />
 
         {onToggle ? (
           <button

@@ -25,12 +25,12 @@ export default function LiveMonitoringPage() {
   return (
     <div className="pb-10">
       <PageHeader
-        title="Live Monitoring"
+        title="Live monitoring"
         subtitle="Real-time telemetry from the connected machine and its worksite neighbours."
         actions={<RunSimulationButton size="md" />}
       />
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 p-4">
         <div className="flex flex-wrap items-center gap-3 rounded border border-white/10 bg-ink-900 px-4 py-3">
           <span className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-100">
             <Radio className="size-4 text-status-ok" aria-hidden />

@@ -10,7 +10,13 @@
  */
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertTriangle, Check, CheckCircle2, OctagonAlert } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  OctagonAlert,
+  type LucideIcon,
+} from "lucide-react";
 import type { SiteAlert } from "@/lib/api/contracts";
 import { Button } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
@@ -21,7 +27,7 @@ export type RibbonLevel = "normal" | "info" | "warning" | "critical";
 
 const LEVEL: Record<
   RibbonLevel,
-  { wrap: string; icon: IconComponent; iconWrap: string; eyebrow: string }
+  { wrap: string; icon: LucideIcon; iconWrap: string; eyebrow: string }
 > = {
   normal: {
     wrap: "border-status-ok/30 bg-status-ok/8",
@@ -105,8 +111,19 @@ export function AlertRibbon({
         />
       ) : null}
 
-      <div className={cn("relative flex items-center gap-3", cab ? "px-5 py-4" : "px-4 py-3")}>
-        <span className={cn("grid shrink-0 place-items-center rounded", style.iconWrap, cab ? "size-12" : "size-9")}>
+      <div
+        className={cn(
+          "relative flex items-center gap-3",
+          cab ? "px-5 py-4" : "px-4 py-3",
+        )}
+      >
+        <span
+          className={cn(
+            "grid shrink-0 place-items-center rounded",
+            style.iconWrap,
+            cab ? "size-12" : "size-9",
+          )}
+        >
           <Icon className={cab ? "size-6" : "size-5"} aria-hidden />
         </span>
 
@@ -128,10 +145,20 @@ export function AlertRibbon({
             >
               {EYEBROW[level]}
             </p>
-            <p className={cn("truncate font-bold text-zinc-50", cab ? "text-2xl" : "text-sm")}>
+            <p
+              className={cn(
+                "truncate font-bold text-zinc-50",
+                cab ? "text-2xl" : "text-sm",
+              )}
+            >
               {lead ? lead.title : restingMessage}
             </p>
-            <p className={cn("truncate text-muted", cab ? "mt-0.5 text-sm" : "text-[11px]")}>
+            <p
+              className={cn(
+                "truncate text-muted",
+                cab ? "mt-0.5 text-sm" : "text-[11px]",
+              )}
+            >
               {lead ? lead.action : "Continue with the current task."}
             </p>
           </motion.div>

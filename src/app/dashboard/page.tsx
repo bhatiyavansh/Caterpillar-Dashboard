@@ -37,12 +37,12 @@ export default function OverviewPage() {
   return (
     <div className="pb-10">
       <PageHeader
-        title="Fleet Overview"
+        title="Fleet overview"
         subtitle="Monitor machine health, operations and maintenance."
         actions={<RunSimulationButton />}
       />
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 p-4">
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard
             label="Active machines"

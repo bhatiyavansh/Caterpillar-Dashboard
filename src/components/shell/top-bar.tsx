@@ -9,8 +9,16 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, CloudRain, CloudSun, Search, Sun, Waves } from "lucide-react";
-import { ALL_NAV } from "./nav-config";
+import {
+  Bell,
+  CloudRain,
+  CloudSun,
+  Search,
+  Sun,
+  Waves,
+  type LucideIcon,
+} from "lucide-react";
+import { activeNavItem } from "./nav-config";
 import { NavToggle } from "./app-shell";
 import { useAlerts, useSnapshot } from "@/lib/hooks/use-site";
 import { SITE_NAME } from "@/lib/api/seed";
@@ -24,7 +32,7 @@ import type { WeatherMode } from "@/lib/api/contracts";
 import { cn } from "@/lib/utils";
 import type { IconComponent } from "@/components/ui/icon";
 
-const WEATHER: Record<WeatherMode, { icon: IconComponent; label: string }> = {
+const WEATHER: Record<WeatherMode, { icon: LucideIcon; label: string }> = {
   clear: { icon: Sun, label: "Clear" },
   rain: { icon: CloudRain, label: "Rain" },
   fog: { icon: Waves, label: "Fog" },
@@ -45,7 +53,8 @@ function AlertBell() {
   React.useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", onClick);
@@ -70,7 +79,9 @@ function AlertBell() {
           <span
             className={cn(
               "absolute right-1 top-1 grid min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold ring-2 ring-ink-900",
-              worst === "critical" ? "bg-status-crit text-white" : "bg-status-warn text-ink-950",
+              worst === "critical"
+                ? "bg-status-crit text-white"
+                : "bg-status-warn text-ink-950",
             )}
           >
             {unread.length}
@@ -90,7 +101,10 @@ function AlertBell() {
             <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
               <span className="label-xs">Active alerts</span>
               {unread.length ? (
-                <button className="text-[11px] font-semibold text-cat-500 hover:underline" onClick={acknowledgeAll}>
+                <button
+                  className="text-[11px] font-semibold text-cat-500 hover:underline"
+                  onClick={acknowledgeAll}
+                >
                   Acknowledge all
                 </button>
               ) : null}
@@ -98,13 +112,22 @@ function AlertBell() {
             {alerts.length ? (
               <ul className="max-h-96 overflow-y-auto">
                 {alerts.map((a) => (
-                  <li key={a.id} className="border-b border-white/5 px-3 py-2.5 last:border-0">
+                  <li
+                    key={a.id}
+                    className="border-b border-white/5 px-3 py-2.5 last:border-0"
+                  >
                     <div className="flex items-center gap-2">
                       <SeverityChip severity={a.severity} size="sm" />
-                      <p className="min-w-0 flex-1 truncate text-xs font-semibold text-zinc-100">{a.title}</p>
-                      <span className="shrink-0 font-mono text-[10px] text-muted">{relativeTime(a.createdAt)}</span>
+                      <p className="min-w-0 flex-1 truncate text-xs font-semibold text-zinc-100">
+                        {a.title}
+                      </p>
+                      <span className="shrink-0 font-mono text-[10px] text-muted">
+                        {relativeTime(a.createdAt)}
+                      </span>
                     </div>
-                    <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted">{a.message}</p>
+                    <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted">
+                      {a.message}
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -131,24 +154,28 @@ export function TopBar({
 }) {
   const pathname = usePathname();
   const snapshot = useSnapshot();
-  const current = ALL_NAV.find((n) => pathname === n.href || pathname.startsWith(`${n.href}/`));
+  const current = activeNavItem(pathname);
   const weather = WEATHER[snapshot?.weather ?? "clear"];
   const WeatherIcon = weather.icon;
-  const riskStatus = snapshot ? thresholdStatus(snapshot.riskScore, { warn: 40, crit: 65 }) : "operating";
+  const riskStatus = snapshot
+    ? thresholdStatus(snapshot.riskScore, { warn: 40, crit: 65 })
+    : "operating";
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-white/10 bg-ink-900 px-3 sm:px-4">
       <NavToggle onClick={onOpenNav} />
 
       <div className="min-w-0">
-        <h1 className="truncate text-sm font-bold text-zinc-50">{current?.label ?? "CAT Copilot"}</h1>
+        <h1 className="truncate text-sm font-bold text-zinc-50">
+          {current?.label ?? "CAT Copilot"}
+        </h1>
         <p className="truncate text-[11px] text-muted">
           {SITE_NAME}
           {snapshot ? ` · ${snapshot.shift}` : ""}
         </p>
       </div>
 
-      {current?.demoOnly ? (
+      {current?.internal ? (
         <span className="hazard-stripe shrink-0 rounded px-0.5 py-0.5">
           <span className="block rounded bg-ink-950 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-cat-500">
             Demo control
@@ -166,11 +193,18 @@ export function TopBar({
             </span>
             <span className="flex items-center gap-1.5 px-2.5 py-1.5">
               <span className="text-muted">Site risk</span>
-              <span className={cn("font-mono font-bold tabular-nums", MACHINE_STATUS[riskStatus].text)}>
+              <span
+                className={cn(
+                  "font-mono font-bold tabular-nums",
+                  MACHINE_STATUS[riskStatus].text,
+                )}
+              >
                 {snapshot.riskScore}
               </span>
             </span>
-            <span className="px-2.5 py-1.5 font-mono tabular-nums text-zinc-300">{snapshot.clock}</span>
+            <span className="px-2.5 py-1.5 font-mono tabular-nums text-zinc-300">
+              {snapshot.clock}
+            </span>
           </div>
         ) : null}
 
@@ -201,7 +235,9 @@ export function TopBar({
             <span className="block truncate text-[11px] font-semibold leading-tight text-zinc-200">
               R. Subramanian
             </span>
-            <span className="block truncate text-[10px] leading-tight text-muted">OP-1042 · EXC001</span>
+            <span className="block truncate text-[10px] leading-tight text-muted">
+              OP-1042 · EXC001
+            </span>
           </span>
         </Link>
       </div>

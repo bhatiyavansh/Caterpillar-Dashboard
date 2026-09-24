@@ -27,6 +27,22 @@ def _env(name: str, default: str) -> str:
     return os.environ.get(f"COPILOT_{name}", default)
 
 
+def _path(name: str, default: Path) -> Path:
+    """A path setting. Relative values resolve against backend/, never the shell's cwd, so
+    `COPILOT_DB_PATH=data/copilot.db` means the same thing however the hub was started."""
+    raw = os.environ.get(f"COPILOT_{name}")
+    if not raw:
+        return default
+    p = Path(raw).expanduser()
+    if p.is_absolute():
+        return p
+    # tolerate a leading "backend/" written by someone thinking in repo-root terms
+    parts = p.parts
+    if parts and parts[0] == BACKEND_DIR.name:
+        p = Path(*parts[1:]) if len(parts) > 1 else Path()
+    return (BACKEND_DIR / p).resolve()
+
+
 @dataclass(frozen=True)
 class Settings:
     host: str = "0.0.0.0"
@@ -73,7 +89,7 @@ def load_settings(**overrides) -> Settings:
     s = Settings(
         host=_env("HOST", "0.0.0.0"),
         port=int(_env("PORT", "8000")),
-        db_path=Path(_env("DB_PATH", str(BACKEND_DIR / "data" / "copilot.db"))),
+        db_path=_path("DB_PATH", BACKEND_DIR / "data" / "copilot.db"),
         sim_url=os.environ.get("SIMULATOR_URL", _env("SIM_URL", "http://localhost:8100")),
         heartbeat_s=float(_env("HEARTBEAT_S", "5")),
         ring_size=int(_env("RING_SIZE", "10000")),
@@ -81,8 +97,8 @@ def load_settings(**overrides) -> Settings:
         slow_send_timeout_s=float(_env("SLOW_SEND_TIMEOUT_S", "5")),
         slow_progress_s=float(_env("SLOW_PROGRESS_S", "1")),
         source_silence_s=float(_env("SOURCE_SILENCE_S", "3")),
-        log_dir=Path(_env("LOG_DIR", str(BACKEND_DIR / "logs"))),
-        cache_dir=Path(_env("CACHE_DIR", str(BACKEND_DIR / "cache"))),
+        log_dir=_path("LOG_DIR", BACKEND_DIR / "logs"),
+        cache_dir=_path("CACHE_DIR", BACKEND_DIR / "cache"),
         llm_model=os.environ.get("LLM_MODEL", "main"),
         llm_fast_model=os.environ.get("LLM_FAST_MODEL", "fast"),
         ml_mode=os.environ.get("ML_MODE", "auto"),

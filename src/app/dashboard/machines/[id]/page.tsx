@@ -21,6 +21,7 @@ import { MachineVisualization, type MachinePart, PART_INFO } from "@/components/
 import { StatusIndicator } from "@/components/shared/status";
 import { CHART_COLORS, MultiBarChart, TrendAreaChart } from "@/components/charts/charts";
 import { Button, EmptyState } from "@/components/ui/primitives";
+import { SITE_NAME } from "@/lib/api/seed";
 import { ConfirmDialog } from "@/components/ui/overlays";
 import { Hint } from "@/components/ui/tooltip";
 import {
@@ -47,10 +48,10 @@ export default function MachineDetailPage() {
 
   if (!machine) {
     return (
-      <div className="p-6">
+      <div className="p-4">
         <EmptyState
           title="Machine not found"
-          body="This asset is not registered to Northgate Quarry. It may have been transferred to another site."
+          body={`This asset is not registered to ${SITE_NAME}. It may have been transferred to another site.`}
           action={
             <Button variant="outline" asChild>
               <Link href="/dashboard/fleet">Back to fleet</Link>
@@ -91,6 +92,11 @@ export default function MachineDetailPage() {
       <PageHeader
         title={`${machine.name} ${machine.type}`}
         subtitle={`${machine.id} · ${machine.model} · ${machine.location} · operator ${machine.operator}`}
+        crumbs={[
+          { label: "Machine records", href: "/dashboard" },
+          { label: "Machines", href: "/dashboard/machines" },
+          { label: machine.id },
+        ]}
         actions={
           <>
             <Button variant="ghost" asChild>
@@ -110,7 +116,7 @@ export default function MachineDetailPage() {
         }
       />
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 p-4">
         <section className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
           <div className="panel-raised p-4">
             <div className="flex items-center justify-between">

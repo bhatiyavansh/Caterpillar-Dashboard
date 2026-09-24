@@ -12,7 +12,6 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { useVehicleControls } from "@/hooks/twin/useVehicleControls";
 import { useLiveLink } from "@/hooks/twin/useLiveLink";
 import { useLocalControl } from "@/hooks/twin/useLocalControl";
@@ -106,18 +105,17 @@ export function TwinStage({
   );
 }
 
-/** Full-screen route at /twin. */
+/**
+ * The /twin route.
+ *
+ * It fills the app shell's content area rather than covering the viewport, so
+ * the primary navigation stays visible. The immersive full-screen view is one
+ * click away through the expand control in the twin's own HUD.
+ */
 export function TwinExperience() {
   return (
-    <main className="fixed inset-0 overflow-hidden bg-ink-950">
+    <div className="relative h-full min-h-0 overflow-hidden bg-ink-950">
       <TwinStage />
-
-      <Link
-        href="/dashboard"
-        className="pointer-events-auto absolute left-4 top-4 z-40 hidden text-[10px] uppercase tracking-[0.18em] text-zinc-600 transition hover:text-cat-500"
-      >
-        ← Back to dashboard
-      </Link>
-    </main>
+    </div>
   );
 }
