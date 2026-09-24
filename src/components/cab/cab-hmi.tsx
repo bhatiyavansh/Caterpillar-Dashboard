@@ -12,7 +12,7 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { Fuel, Gauge, Hourglass, Thermometer } from "lucide-react";
 import { TaskPanel } from "./task-panel";
-import { WebcamSlot } from "./integration-slots";
+import { FrontCameraPanel, RearCameraPanel } from "./integration-slots";
 import { AssistantPanel } from "@/components/assistant/assistant-panel";
 import { AlertRibbon, levelFor } from "@/components/alerts/alert-ribbon";
 import { ArcGauge, Readout } from "@/components/ui/data";
@@ -178,17 +178,19 @@ export function CabHmi() {
           </div>
         </section>
 
-        {/* Assistant + camera */}
+        {/* Assistant + two cameras */}
         <div className="flex min-h-0 flex-col gap-2.5">
-          <WebcamSlot
-            machineId={machine.id}
-            level={machine.proximity.level}
-            distanceM={machine.proximity.nearestPersonM}
-            zone={machine.proximity.zone}
-            cameraOn={cameraOn}
-            onToggleCamera={() => setCameraOn((v) => !v)}
-            className="shrink-0"
-          />
+          <div className="grid shrink-0 grid-cols-2 gap-2.5">
+            <RearCameraPanel
+              machineId={machine.id}
+              level={machine.proximity.level}
+              distanceM={machine.proximity.nearestPersonM}
+              zone={machine.proximity.zone}
+              cameraOn={cameraOn}
+              onToggleCamera={() => setCameraOn((v) => !v)}
+            />
+            <FrontCameraPanel machineId={machine.id} cameraOn={cameraOn} onToggleCamera={() => setCameraOn((v) => !v)} />
+          </div>
           <AssistantPanel
             surface="cab"
             machineId={machine.id}
