@@ -9,6 +9,7 @@ import { Terrain } from "./Terrain";
 import { Roads } from "./Roads";
 import { TaskZones } from "./TaskZone";
 import { SiteProps } from "./SiteProps";
+import { SiteDetails } from "./SiteDetails";
 
 export function Site() {
   return (
@@ -17,6 +18,7 @@ export function Site() {
       <Roads />
       <TaskZones />
       <SiteProps />
+      <SiteDetails />
     </group>
   );
 }

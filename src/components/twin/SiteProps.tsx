@@ -213,35 +213,6 @@ function LightMasts() {
   );
 }
 
-/* ---------------------------- spoil heaps ------------------------------ */
-
-const HEAPS: [number, number, number][] = [
-  [-20, -68, 2.2],
-  [8, -70, 1.7],
-  [-36, -50, 1.9],
-  [16, -38, 1.4],
-  [-48, 42, 2.4],
-  [40, 52, 1.6],
-];
-
-function SpoilHeaps() {
-  return (
-    <group>
-      {HEAPS.map(([x, z, r], i) => (
-        <mesh
-          key={i}
-          position={[x, terrainHeight(x, z) + r * 0.42, z]}
-          castShadow
-          receiveShadow
-        >
-          <coneGeometry args={[r * 1.7, r * 1.1, 9]} />
-          <meshStandardMaterial color={PALETTE.dirtDark} roughness={1} flatShading />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
 /* --------------------------- barrier run ------------------------------- */
 
 function HaulRoadBarriers() {
@@ -279,7 +250,6 @@ export function SiteProps() {
       <SiteOffice />
       <FuelStation />
       <LightMasts />
-      <SpoilHeaps />
       <HaulRoadBarriers />
     </group>
   );
