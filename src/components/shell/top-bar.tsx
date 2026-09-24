@@ -166,7 +166,7 @@ export function TopBar({
     <header className="relative z-20 flex h-13 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-ink-900/60 px-3 backdrop-blur-xl sm:px-5">
       <NavToggle onClick={onOpenNav} />
 
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <h1 className="truncate text-base font-bold tracking-tight text-zinc-50">
           {current?.label ?? "CAT Copilot"}
         </h1>
@@ -219,8 +219,8 @@ export function TopBar({
           aria-label="Search and jump to a screen"
         >
           <Search className="size-3.5" aria-hidden />
-          <span className="hidden md:inline">Jump to</span>
-          <kbd className="hidden rounded border border-white/15 bg-white/5 px-1 font-mono text-[10px] md:inline">
+          <span className="hidden 2xl:inline">Jump to</span>
+          <kbd className="hidden rounded border border-white/15 bg-white/5 px-1 font-mono text-[10px] 2xl:inline">
             Ctrl K
           </kbd>
         </Button>

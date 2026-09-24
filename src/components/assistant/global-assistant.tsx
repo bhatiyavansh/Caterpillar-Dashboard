@@ -42,7 +42,7 @@ export function AssistantDrawer() {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: "100%", opacity: 0.6 }}
           transition={{ type: "spring", stiffness: 320, damping: 34 }}
-          className="fixed bottom-0 right-0 top-16 z-40 flex w-full max-w-[420px] flex-col border-l border-white/12 bg-ink-900 shadow-2xl"
+          className="fixed bottom-0 right-0 top-13 z-40 flex w-full max-w-[420px] flex-col border-l border-white/12 bg-ink-900 shadow-[-24px_0_48px_-12px_rgb(0_0_0/0.6)]"
           aria-label="Site assistant drawer"
         >
           <AssistantPanel variant="drawer" className="min-h-0 flex-1 rounded-none border-0" onClose={() => setOpen(false)} />

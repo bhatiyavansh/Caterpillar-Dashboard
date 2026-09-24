@@ -13,6 +13,17 @@ import { useFaultView } from "@/lib/maintenance/fault-store";
 import { breakdownHref, inMaintenance } from "./fault-watcher";
 import { cn } from "@/lib/utils";
 
+/** One word for the phase, for top bars without room for the sentence. */
+const PILL_SHORT: Partial<Record<Phase, string>> = {
+  degrading: "Trend",
+  detected: "Leak",
+  safed: "Leak",
+  dispatched: "En route",
+  repairing: "Repair",
+  verifying: "Testing",
+  verified: "Verified",
+};
+
 const PILL_COPY: Partial<Record<Phase, string>> = {
   degrading: "hydraulic health trending down",
   detected: "hydraulic leak",
@@ -48,10 +59,15 @@ export function FaultPill() {
         <span className={cn("relative size-2 rounded-full", critical ? "bg-status-crit" : "bg-current")} />
       </span>
       <Wrench className="size-3.5" aria-hidden />
-      <span className="hidden md:inline">
+      {/* The top bar also holds the assistant, search and alerts, so the full
+          sentence only shows where there is room for it. */}
+      <span className="hidden 2xl:inline">
         {MACHINE.id}: {copy}
       </span>
-      <span className="md:hidden">{MACHINE.id}</span>
+      <span className="2xl:hidden" title={`${MACHINE.id}: ${copy}`}>
+        {MACHINE.id}
+        <span className="hidden md:inline"> · {PILL_SHORT[view.phase]}</span>
+      </span>
     </Link>
   );
 }

@@ -17,6 +17,7 @@ import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   AlertTriangle,
+  ArrowUpRight,
   BookOpen,
   Check,
   Mic,
@@ -138,8 +139,10 @@ function Bubble({ message }: { message: ChatMessage }) {
     <div className={cn("flex", isUser && "justify-end")}>
       <div
         className={cn(
-          "max-w-[92%] rounded px-3 py-2 text-[13px] leading-relaxed",
-          isUser ? "bg-white/8 text-zinc-100" : "border border-cat-500/25 bg-cat-500/[0.06] text-zinc-100",
+          "max-w-[88%] rounded-2xl border px-3.5 py-2.5 text-[13px] leading-relaxed",
+          isUser
+            ? "rounded-br-md border-cat-500/25 bg-cat-500/[0.12] text-zinc-50"
+            : "rounded-bl-md border-white/[0.08] bg-white/[0.04] text-zinc-100",
         )}
       >
         {!isUser ? <AnswerText text={message.text} /> : <p>{message.text}</p>}
@@ -238,22 +241,20 @@ export function AssistantPanel({
   return (
     <section
       ref={sectionRef}
-      className={cn("flex min-h-0 flex-col overflow-hidden rounded border border-white/10 bg-ink-850", className)}
+      className={cn("flex min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-ink-900", className)}
       aria-label="Site assistant"
     >
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-2.5 border-b border-white/10 px-3 py-2">
-        <Avatar2D state={voice.state} pulse={voice.pulse} size={28} label={false} />
-        <div className="min-w-0">
-          <p className="text-xs font-bold leading-tight text-zinc-100">Site assistant</p>
-          <p className="truncate text-[10px] leading-tight text-muted">{scope.label}</p>
+      <div className="flex shrink-0 items-center gap-3 border-b border-white/10 bg-ink-850/60 px-3.5 py-2.5">
+        <Avatar2D state={voice.state} pulse={voice.pulse} size={36} label={false} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold leading-tight text-zinc-50">Site assistant</p>
+          <p className="truncate text-[11px] leading-tight text-muted">
+            {scope.label}
+            {voice.specialist ? <span className="text-zinc-400"> · {voice.specialist.label}</span> : null}
+          </p>
         </div>
-        {voice.specialist ? (
-          <span className="rounded bg-white/6 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-muted">
-            {voice.specialist.label}
-          </span>
-        ) : null}
-        <span className={cn("ml-auto inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider", "text-muted")}>
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-300">
           <span className={cn("size-1.5 rounded-full", STATE_DOT[voice.state], voice.state !== "idle" && "animate-pulse")} aria-hidden />
           {STATE_LABEL[voice.state]}
         </span>
@@ -265,21 +266,25 @@ export function AssistantPanel({
       </div>
 
       {/* Conversation */}
-      <div ref={logRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3" role="log" aria-live="polite">
+      <div ref={logRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3.5 py-4" role="log" aria-live="polite">
         {voice.messages.length === 0 && !voice.draft ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3 px-2 text-center">
-            <Avatar2D state="idle" size={44} label={false} />
-            <p className="text-xs leading-relaxed text-muted">
-              Ask about this machine, the plan, an alert or the manual.
-            </p>
-            <div className="flex flex-wrap justify-center gap-1.5">
+          <div className="flex h-full flex-col items-center justify-center gap-4 px-2 text-center">
+            <Avatar2D state={voice.state === "alert" ? "alert" : "idle"} size={72} label={false} />
+            <div>
+              <p className="text-sm font-bold text-zinc-100">How can I help?</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-muted">
+                Ask about this machine, the plan, an alert or the manual. Type, or hold the mic to talk.
+              </p>
+            </div>
+            <div className="flex w-full max-w-sm flex-col gap-1.5">
               {starters.map((s) => (
                 <button
                   key={s}
                   onClick={() => submit(s)}
-                  className="rounded border border-white/12 bg-white/4 px-2 py-1 text-[11px] text-zinc-300 transition-colors hover:bg-white/10"
+                  className="group flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-xs text-zinc-200 transition-colors hover:border-cat-500/40 hover:bg-cat-500/[0.06]"
                 >
-                  {s}
+                  <span className="min-w-0 flex-1">{s}</span>
+                  <ArrowUpRight className="size-3.5 shrink-0 text-muted transition-colors group-hover:text-cat-500" aria-hidden />
                 </button>
               ))}
             </div>
@@ -297,7 +302,7 @@ export function AssistantPanel({
         {voice.draft ? (
           <Bubble message={{ id: "draft", role: "assistant", text: voice.draft }} />
         ) : busy ? (
-          <div className="flex items-center gap-1.5 px-1">
+          <div className="flex w-fit items-center gap-1.5 rounded-2xl rounded-bl-md border border-white/[0.08] bg-white/[0.04] px-3.5 py-3">
             {[0, 1, 2].map((i) => (
               <motion.span
                 key={i}
@@ -351,7 +356,7 @@ export function AssistantPanel({
             <button
               key={q}
               onClick={() => submit(q)}
-              className="shrink-0 rounded border border-white/12 bg-white/4 px-2 py-1 text-[11px] text-zinc-300 transition-colors hover:bg-white/10"
+              className="shrink-0 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-zinc-300 transition-colors hover:border-cat-500/40 hover:bg-cat-500/[0.06]"
             >
               {q}
             </button>
@@ -361,7 +366,7 @@ export function AssistantPanel({
 
       {/* Input row */}
       <form
-        className="flex shrink-0 items-center gap-1.5 border-t border-white/10 p-2"
+        className="flex shrink-0 items-center gap-1.5 border-t border-white/10 p-2.5"
         onSubmit={(e) => {
           e.preventDefault();
           submit(input);
@@ -377,8 +382,8 @@ export function AssistantPanel({
           aria-pressed={voice.listening}
           title={micLabel}
           className={cn(
-            "relative flex size-9 shrink-0 items-center justify-center rounded-full transition-colors",
-            voice.listening ? "bg-cat-500 text-ink-950" : "bg-white/8 text-zinc-300 hover:bg-white/14",
+            "relative flex size-10 shrink-0 items-center justify-center rounded-full transition-colors",
+            voice.listening ? "bg-cat-500 text-ink-950" : "bg-cat-500/15 text-cat-400 hover:bg-cat-500/25",
             !voice.sttSupported && "cursor-not-allowed opacity-40",
           )}
         >
@@ -399,7 +404,7 @@ export function AssistantPanel({
           disabled={voice.listening}
           placeholder="Ask the assistant…"
           aria-label="Message to the site assistant"
-          className="h-9 min-w-0 flex-1 rounded border border-white/12 bg-white/4 px-3 text-xs text-zinc-100 placeholder:text-muted focus:border-cat-500 focus:outline-none disabled:opacity-60"
+          className="h-10 min-w-0 flex-1 rounded-full border border-white/10 bg-ink-950/70 px-4 text-[13px] text-zinc-100 placeholder:text-muted focus:border-cat-500/70 focus:outline-none disabled:opacity-60"
         />
 
         {voice.messages.length > 0 ? (
@@ -416,7 +421,7 @@ export function AssistantPanel({
           </Button>
         ) : null}
 
-        <Button type="submit" variant="primary" size="icon" className="size-9 shrink-0" disabled={!input.trim() || busy} aria-label="Send">
+        <Button type="submit" variant="primary" size="icon" className="size-10 shrink-0 rounded-full" disabled={!input.trim() || busy} aria-label="Send">
           <Send className="size-4" aria-hidden />
         </Button>
       </form>
