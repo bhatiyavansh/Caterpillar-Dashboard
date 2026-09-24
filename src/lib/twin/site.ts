@@ -150,8 +150,6 @@ export const MOUNDS = [
   // machines have to go round them like any other heap.
   { x: 8, z: -84, r: 5, h: 1.8 },
   { x: -36, z: -86, r: 5.5, h: 2.1 },
-  { x: -48, z: 42, r: 4.5, h: 2.2 },
-  { x: 44, z: 56, r: 4, h: 1.6 },
 ];
 
 /** Graded, flat working pads. */
@@ -305,6 +303,7 @@ export interface RoadProjection {
 export function projectRoads(x: number, z: number): RoadProjection {
   let best = 0;
   let bestY = 0;
+  let bestDist = Infinity;
 
   for (const road of ROADS) {
     // Cheap reject: outside the segment's box grown by the shoulder.
@@ -324,9 +323,13 @@ export function projectRoads(x: number, z: number): RoadProjection {
     const half = road.width / 2;
     // Full influence on the surface, feathering out over a 7m shoulder.
     const influence = 1 - smoothstep(half, half + 7, dist);
-    if (influence > best) {
+    // Where two segments both fully cover a point (a spur's end cap over the
+    // head of the ramp it feeds), the nearer centreline wins — otherwise the
+    // listing order decides, and the ramp head gets a step in it.
+    if (influence > best || (influence === best && influence > 0 && dist < bestDist)) {
       best = influence;
       bestY = road.y1 + (road.y2 - road.y1) * t;
+      bestDist = dist;
     }
   }
 
@@ -376,6 +379,8 @@ export interface Waypoint {
   z: number;
   /** Seconds to hold here — loading, dumping, dozing. */
   dwell?: number;
+  /** Drive this leg in reverse: how trucks back into a tip or load point. */
+  reverse?: boolean;
 }
 
 /** Looping routes for the autonomous machines, so the site feels alive. */
@@ -396,31 +401,34 @@ export const MACHINE_ROUTES: Record<string, Waypoint[]> = {
     { x: -5, z: 8 },
     { x: 46, z: 8, dwell: 1.5 },
   ],
-  // Stockpile -> loading zone -> stockpile.
+  // Stockpile -> loading zone -> stockpile. It loads at the toe of the
+  // stockpile, where the ground is workable, and loads the truck from the
+  // west side of the loading pad, clear of the truck's reversing line.
   WHL001: [
-    { x: -50, z: 44, dwell: 3 },
+    { x: -52, z: 32, dwell: 3 },
     { x: -58, z: 20 },
     { x: -58, z: 8 },
-    { x: 34, z: 8 },
-    { x: 34, z: 40 },
-    { x: 34, z: 48, dwell: 3.5 },
-    { x: 34, z: 20 },
-    { x: 34, z: 8 },
+    { x: 27, z: 8 },
+    { x: 27, z: 30 },
+    { x: 27, z: 42, dwell: 3.5 },
+    { x: 27, z: 24 },
+    { x: 27, z: 8 },
     { x: -58, z: 8 },
     { x: -58, z: 24 },
   ],
-  // Loading zone -> stockpile -> loading zone.
+  // Load, haul, tip, return. Like a real haul truck it never turns round on
+  // a spur: it runs past the junction and reverses in to load and to tip.
   TRK001: [
-    { x: 40, z: 48, dwell: 4 },
+    { x: 36, z: 42, dwell: 4, reverse: true },
     { x: 34, z: 16 },
     { x: 20, z: 8 },
     { x: -40, z: 8 },
-    { x: -58, z: 14 },
-    { x: -58, z: 32, dwell: 3 },
+    { x: -74, z: 8 },
+    { x: -58, z: 30, dwell: 3, reverse: true },
     { x: -58, z: 10 },
     { x: -30, z: 8 },
     { x: 34, z: 8 },
-    { x: 34, z: 34 },
+    { x: 52, z: 8 },
   ],
 };
 
@@ -465,11 +473,15 @@ export const WORKER_ROUTES: Record<string, Waypoint[]> = {
   ],
 };
 
-/** Where EXC001 starts, and where `R` returns it to. */
+/**
+ * Where EXC001 starts, and where `R` returns it to: on the level ground west
+ * of the ramp head, facing the pit. Not on the spur itself — the ramp is the only way
+ * into the pit, and with real collision a parked excavator there blocks it.
+ */
 export const EXCAVATOR_HOME = {
-  x: -5,
-  z: -20,
-  heading: 0, // facing north, straight up the excavation spur
+  x: -21,
+  z: -14,
+  heading: 0,
 };
 
 /** Static props: containers, site office, barriers, signage. */
@@ -526,23 +538,24 @@ export const DUMP = { x: -100, z: -50, rx: 24, rz: 20, h: 6 };
  * The intact face — vertical-ish, crest at `intactCrestZ` — is made of loose
  * rock blocks the physics world stacks on that plane. Until a heavy machine
  * works too close to the edge, the blocks are locked in place; then they
- * break free and slide. One ground function either way.
+ * break free and slide. One ground function either way. The wedge between
+ * the two profiles is roughly 30 x 6.7 x 1.2 m: about 600 t of rock.
  */
 export const SHALLOW_FACE = {
   x1: 22,
   x2: 52,
   /** Crest of the intact face. */
   intactCrestZ: -92,
-  /** Toe of the intact face. */
+  /** Toe of the intact face: 5.5 m of fall in 1.5 m, about 75 degrees. */
   intactToeZ: -93.5,
-  /** Where the crest ends up after the failure. */
-  crestZ: -89,
-  /** Where the slump plane meets the floor. */
-  slumpToeZ: -99,
-  floorY: -3.5,
+  /** Where the crest ends up after the failure: 6 m of retreat. */
+  crestZ: -86,
+  /** Where the 21-degree slump plane meets the floor. */
+  slumpToeZ: -100,
+  floorY: -5.5,
   /** Floor runs north to here, then climbs back to natural ground. */
   floorEndZ: -112,
-  exitZ: -122,
+  exitZ: -125,
 };
 
 export interface LineFeature {
@@ -568,11 +581,13 @@ export const WINDROWS: LineFeature[] = [
     [4, 29],
     [45, 150],
   ].map(([a, b]) => ({ x1: a, z1: WINDROW_N, x2: b, z2: WINDROW_N, width: 2.6, h: 0.9 })),
+  // South side: wide gaps at the stockpile and loading spurs, where trucks
+  // run past and reverse in.
   ...[
-    [-104, -67],
-    [-49, -10.5],
-    [6.5, 25],
-    [43, 65.5],
+    [-104, -72],
+    [-44, -10.5],
+    [6.5, 18],
+    [50, 65.5],
     [82.5, 150],
   ].map(([a, b]) => ({ x1: a, z1: WINDROW_S, x2: b, z2: WINDROW_S, width: 2.6, h: 0.9 })),
 ];

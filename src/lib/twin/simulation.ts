@@ -8,6 +8,13 @@
  * The 3D layer never writes here. It reads `telemetryOf(id)` (stable object
  * identities, mutated in place) inside `useFrame`, which is what keeps sixty
  * frames a second from turning into sixty React renders a second.
+ *
+ * Physics: the local fleet runs on a Rapier rigid-body world
+ * (`physics/world.ts`), stepped inside `step()` alongside the telemetry tick.
+ * It loads asynchronously and only ever runs for locally simulated machines:
+ * with the live simulator attached (`source === "websocket"`) or a recorded
+ * incident replaying, the world is simply not stepped, and those paths behave
+ * exactly as they did before physics existed.
  */
 
 import type {
@@ -67,9 +74,11 @@ import {
   replays,
   type IncidentTrack,
 } from "@/lib/data/dataset";
+import { PhysicsWorld, type PhysicsStats } from "./physics/world";
 import {
   PROXIMITY,
   evaluateProximity,
+  proximityFromDistances,
   levelRank,
   proximityLevel,
   worstLevel,
@@ -160,6 +169,15 @@ export interface UiSnapshot {
     progress: number;
     durationS: number;
   } | null;
+  /** Rigid-body world status; null until the physics WASM has loaded. */
+  physics: (PhysicsStats & {
+    /** Stepping this frame (false in live / replay mode). */
+    active: boolean;
+    materialTonnes: number;
+    faceFailed: boolean;
+    /** Machine pairs in contact right now. */
+    contacts: string[];
+  }) | null;
 }
 
 const TASK_TEMPLATE: Omit<SiteTask, "progress" | "status">[] = [
@@ -256,8 +274,71 @@ export class SimulationEngine {
   private unsubscribeMock: (() => void) | null = null;
   private pendingFrame: MachineTelemetry | null = null;
 
+  /** The rigid-body world, once loaded. */
+  physics: PhysicsWorld | null = null;
+  private physicsLoading: Promise<PhysicsWorld | null> | null = null;
+  /** Whether the world was stepped on the last frame. */
+  private physicsActive = false;
+  /** Alerts raised by physical events, and the elapsed time they expire at. */
+  private timedAlerts = new Map<string, number>();
+  /** Per-machine AI state for physical traffic: seconds boxed in. */
+  private blockedFor = new Map<string, number>();
+  /** Seconds each machine has been pushing without moving. */
+  private stalledFor = new Map<string, number>();
+  /** Machines backing off an obstacle. */
+  private recovering = new Map<string, { left: number; steer: number }>();
+  /** Machines giving way to another: seconds of the manoeuvre left. */
+  private yielding = new Map<string, { left: number }>();
+  /** Wheeled machines part-way through a three-point turn. */
+  private turning = new Map<string, { dir: 1 | -1; legTime: number; stalled: number; x: number; z: number }>();
+  /**
+   * Per-machine scripted input from the scenario runner. While set, it
+   * replaces the machine's route AI (or the keyboard, for the primary).
+   */
+  readonly overrides = new Map<string, VehicleInput>();
+  /** Machines whose V2V braking a scenario has switched off. */
+  readonly avoidanceOff = new Set<string>();
+
   constructor() {
     this.build();
+    // The browser loads the physics world in the background; headless callers
+    // (tests, scripts) opt in with `await engine.enablePhysics()`.
+    if (typeof window !== "undefined") void this.enablePhysics();
+  }
+
+  /**
+   * Loads Rapier and moves the local fleet onto rigid bodies. Safe to call
+   * more than once; resolves to null if WASM is unavailable, in which case
+   * the kinematic model simply keeps running.
+   */
+  enablePhysics(): Promise<PhysicsWorld | null> {
+    if (this.physics) return Promise.resolve(this.physics);
+    if (!this.physicsLoading) {
+      this.physicsLoading = PhysicsWorld.create()
+        .then((world) => {
+          this.physics = world;
+          this.attachFleet();
+          this.pushEvent("Physics engine online — rigid bodies, contact and traction", "info");
+          return world;
+        })
+        .catch((err: unknown) => {
+          this.pushEvent(`Physics unavailable (${String(err)}) — kinematic model in use`, "warning");
+          return null;
+        });
+    }
+    return this.physicsLoading;
+  }
+
+  /** Gives every simulated machine a rigid body and lays out the site's loose spoil. */
+  private attachFleet(): void {
+    const world = this.physics;
+    if (!world) return;
+    for (const d of MACHINES) {
+      const body = world.addMachine(d.id, d.kind, this.telemetryOf(d.id));
+      this.modelOf(d.id).attachPhysics(body);
+    }
+    // Spoil on the pit floor, where the dozer works it.
+    world.material.scatter(-6, -63, 7, 18);
   }
 
   /* --------------------------------------------------------------------- */
@@ -298,6 +379,9 @@ export class SimulationEngine {
         payload: id === "TRK001" ? 12000 : 0,
       });
       this.register(t, TUNING[kind]);
+      // `register` settles the machine and empties it; the truck starts parked
+      // at the loading zone with a load on.
+      if (id === "TRK001") t.payload = 24000;
       this.routes.set(id, { index: 1, dwellLeft: 0 });
     }
 
@@ -427,10 +511,16 @@ export class SimulationEngine {
 
     this.stepEnvironment(step);
 
+    // Physics runs for the locally simulated fleet only. Live telemetry and
+    // recorded replays are the authority on pose; the world isn't touched.
+    const local = !this.replay && this.source !== "websocket";
+    this.syncPhysicsModes(local);
+
     if (this.driver) {
       this.stepFleet(step);
       this.stepWorkers(step);
       this.driver(step);
+      this.stepPhysics(step);
       this.stepSafety();
       this.stepTasks(step);
       return;
@@ -453,8 +543,152 @@ export class SimulationEngine {
     this.stepPrimary(step, input);
     this.stepFleet(step);
     this.stepWorkers(step);
+    this.stepPhysics(step);
     this.stepSafety();
     this.stepTasks(step);
+  }
+
+  /* --------------------------------------------------------------------- */
+  /*  Physics                                                               */
+  /* --------------------------------------------------------------------- */
+
+  /**
+   * Decides, per machine, whether the rigid body is simulated (dynamic) or
+   * follows telemetry from elsewhere (kinematic). The primary machine follows
+   * telemetry while a scenario frame driver or the mock IoT feed owns it.
+   * Everything is kinematic while physics is paused for live/replay mode, so
+   * the bodies pick up exactly where telemetry left them on return.
+   */
+  private syncPhysicsModes(local: boolean): void {
+    const world = this.physics;
+    if (!world) return;
+    for (const d of MACHINES) {
+      const body = world.machine(d.id);
+      if (!body) continue;
+      const external =
+        !local || (d.id === PRIMARY_MACHINE && (this.driver !== null || this.source === "mock_iot"));
+      body.setKinematic(external);
+    }
+    this.physicsActive = local;
+  }
+
+  private stepPhysics(dt: number): void {
+    const world = this.physics;
+    if (!world || !this.physicsActive) return;
+    world.wetness = this.wetness;
+    world.step(dt);
+    // Stability is a display metric fed by the physical attitude.
+    for (const d of MACHINES) {
+      if (this.modelOf(d.id).physical) {
+        const t = this.telemetryOf(d.id);
+        t.tipOverMargin = computeTipOverMargin(t);
+      }
+    }
+    this.pourMaterial();
+    this.reactToPhysics();
+  }
+
+  /** Material the excavator bucket lets go of lands as real parcels. */
+  private pourMaterial(): void {
+    const world = this.physics;
+    if (!world) return;
+    const model = this.modelOf(PRIMARY_MACHINE);
+    const body = world.machine(PRIMARY_MACHINE);
+    if (body && model.dumped >= 900) {
+      world.material.pour(body.toWorld(body.loadPoint), model.dumped, { x: 0, y: -0.5, z: 0 }, 0.4);
+      model.dumped = 0;
+    }
+  }
+
+  /** Turns physical events — contact, tip-over, face failure, slip — into alerts. */
+  private reactToPhysics(): void {
+    const world = this.physics;
+    if (!world) return;
+
+    for (const c of world.takeNewContacts()) {
+      const involvesPrimary = c.a === PRIMARY_MACHINE || c.b === PRIMARY_MACHINE;
+      this.raiseTimed(
+        {
+          id: `impact:${c.a}|${c.b}`,
+          kind: "collision",
+          severity: "critical",
+          title: "MACHINE CONTACT",
+          message: `${c.a} ↔ ${c.b}`,
+          machineId: involvesPrimary ? PRIMARY_MACHINE : c.a,
+          detail: {
+            Contact: `${c.partA.replace(/_/g, " ")} / ${c.partB.replace(/_/g, " ")}`,
+            Force: c.force > 0 ? `${Math.round(c.force / 1000)} kN` : "—",
+          },
+          recommendation: "STOP BOTH MACHINES — INSPECT FOR DAMAGE",
+        },
+        10,
+      );
+      this.pushEvent(`Contact: ${c.a} and ${c.b} (${c.partA} / ${c.partB})`, "critical");
+    }
+
+    for (const body of world.machines.values()) {
+      const id = body.id;
+      if (body.tippedOver && !this.alerts.has(`tipped:${id}`)) {
+        this.raiseTimed(
+          {
+            id: `tipped:${id}`,
+            kind: "tip_over",
+            severity: "critical",
+            title: "MACHINE OVERTURNED",
+            message: `${id} HAS TIPPED`,
+            machineId: id,
+            detail: { Tilt: `${Math.round(body.tilt / DEG)}°`, Payload: `${Math.round(body.telemetry.payload)} kg` },
+            recommendation: "ISOLATE AREA — CHECK OPERATOR — RECOVERY CREW",
+          },
+          3600,
+        );
+        this.pushEvent(`${id} overturned (${Math.round(body.tilt / DEG)}° tilt)`, "critical");
+      }
+      if (body.slip > 0.45 && Math.abs(body.speed) > 0.3 && !body.kinematic) {
+        this.raiseTimed(
+          {
+            id: `slip:${id}`,
+            kind: "weather",
+            severity: "warning",
+            title: "TRACTION LOSS",
+            message: `${id} SLIPPING`,
+            machineId: id,
+            detail: {
+              Grip: `μ ${body.groundFriction.toFixed(2)}`,
+              Speed: `${body.speed.toFixed(1)} m/s`,
+              Grade: `${(Math.abs(body.telemetry.pitch) / DEG).toFixed(1)}°`,
+            },
+            recommendation: "STOP — DO NOT CLIMB WET RAMP LOADED",
+          },
+          6,
+        );
+      }
+    }
+
+    const face = world.face;
+    if (face.failedBy) {
+      this.raiseTimed(
+        {
+          id: "slope:face-c",
+          kind: "tip_over",
+          severity: "critical",
+          title: "SLOPE FAILURE",
+          message: "BENCH FACE C HAS FAILED",
+          machineId: face.failedBy === "scenario" ? PRIMARY_MACHINE : face.failedBy,
+          detail: { Trigger: face.failedBy, Face: "C — 5.5 m, over-steep" },
+          recommendation: "EVACUATE FACE C — NO ENTRY BELOW CREST",
+        },
+        30,
+      );
+      this.pushEvent(`Bench face C failed under ${face.failedBy}`, "critical");
+      face.failedBy = null;
+    }
+  }
+
+  /** Raises an alert that clears itself after `seconds` of simulation time. */
+  private raiseTimed(alert: Omit<Alert, "createdAt">, seconds: number): void {
+    this.setAlert(alert);
+    this.timedAlerts.set(alert.id, this.elapsed + seconds);
   }
 
   private stepContext(): StepContext {
@@ -469,6 +703,13 @@ export class SimulationEngine {
   }
 
   private stepEnvironment(dt: number): void {
+    for (const [id, until] of this.timedAlerts) {
+      if (this.elapsed >= until) {
+        this.timedAlerts.delete(id);
+        this.clearAlert(id);
+      }
+    }
+
     // Injected faults decay back to normal on their own.
     this.hydraulicSpike = damp(this.hydraulicSpike, 0, 0.06, dt);
     if (this.engineWarningLeft > 0) this.engineWarningLeft -= dt;
@@ -500,7 +741,7 @@ export class SimulationEngine {
       return;
     }
 
-    model.step(input, dt, this.stepContext());
+    model.step(this.overrides.get(PRIMARY_MACHINE) ?? input, dt, this.stepContext());
   }
 
   private stepFleet(dt: number): void {
@@ -512,20 +753,26 @@ export class SimulationEngine {
       const route = MACHINE_ROUTES[id];
       const state = this.routes.get(id);
       if (!route || !state) continue;
+      const ctx = { ...this.stepContext(), emergencyStopped: false };
 
-      // Director override: aim the dozer straight at the excavator.
+      // A scenario is driving this machine.
+      const scripted = this.overrides.get(id);
+      if (scripted) {
+        model.step(this.withAvoidance(id, scripted, dt), dt, ctx);
+        continue;
+      }
+
+      // Director override: aim the dozer straight at the excavator. With
+      // physics on, this ends in real contact — V2V braking is off for it.
       if (this.forcedCollisionLeft > 0 && id === "DOZ001") {
         const p = this.primary;
-        model.step(steerToward(t, p.x, p.z, { cruise: 1, arriveRadius: 3 }), dt, {
-          ...this.stepContext(),
-          emergencyStopped: false,
-        });
+        model.step(steerToward(t, p.x, p.z, { cruise: 1, arriveRadius: 0.5 }), dt, ctx);
         continue;
       }
 
       if (state.dwellLeft > 0) {
         state.dwellLeft -= dt;
-        model.step(emptyInput(), dt, { ...this.stepContext(), emergencyStopped: false });
+        model.step(emptyInput(), dt, ctx);
         continue;
       }
 
@@ -534,26 +781,155 @@ export class SimulationEngine {
       if (dist < 4.5) {
         state.dwellLeft = target.dwell ?? 0;
         state.index = (state.index + 1) % route.length;
-        this.onWaypointReached(id, t);
+        this.onWaypointReached(id, t, target);
+      }
+
+      // Keep right on the haul roads so oncoming traffic passes, not meets.
+      let tx = target.x;
+      let tz = target.z;
+      const onRoad = zoneAt(t.x, t.z) === null && !target.reverse;
+      if (this.physics && onRoad && dist > 10) {
+        const ux = (target.x - t.x) / dist;
+        const uz = (target.z - t.z) / dist;
+        tx += -uz * 2.8;
+        tz += ux * 2.8;
       }
 
       const cruise = id === "TRK001" ? 0.85 : id === "WHL001" ? 0.78 : 0.62;
-      model.step(steerToward(t, target.x, target.z, { cruise }), dt, {
-        ...this.stepContext(),
-        emergencyStopped: false,
-      });
+      let input: VehicleInput;
+      if (target.reverse) {
+        input = steerReverse(t, tx, tz, cruise * 0.55, descriptor.kind === "bulldozer" || descriptor.kind === "excavator");
+      } else {
+        input = steerToward(t, tx, tz, { cruise });
+        if (model.physical && (descriptor.kind === "truck" || descriptor.kind === "loader")) {
+          input = this.threePointTurn(id, t, tx, tz, input);
+        }
+      }
+      model.step(this.withAvoidance(id, input, dt), dt, ctx);
     }
   }
 
-  /** Haul trucks fill and tip; loaders pick up and drop. Purely cosmetic. */
-  private onWaypointReached(id: string, t: MachineTelemetry): void {
+  /**
+   * Wheeled machines cannot spin on the spot. When the next waypoint is well
+   * behind, they turn round the way a haul truck does at a dump: reverse on
+   * opposite lock, then forward on full lock, alternating whenever a leg runs
+   * out of room (stalls against a windrow or heap) or has gone far enough,
+   * until the waypoint is roughly ahead.
+   */
+  private threePointTurn(
+    id: string,
+    t: MachineTelemetry,
+    tx: number,
+    tz: number,
+    input: VehicleInput,
+  ): VehicleInput {
+    const turn = angleDelta(t.heading, headingTo(t.x, t.z, tx, tz));
+    let k = this.turning.get(id);
+    if (!k && Math.abs(turn) > 1.75) {
+      k = { dir: -1, legTime: 0, stalled: 0, x: t.x, z: t.z };
+      this.turning.set(id, k);
+    }
+    if (!k) return input;
+    if (Math.abs(turn) < 0.7) {
+      this.turning.delete(id);
+      return input;
+    }
+    const dt = 1 / 60;
+    k.legTime += dt;
+    k.stalled = Math.abs(t.speed) < 0.15 && k.legTime > 1 ? k.stalled + dt : 0;
+    const travelled = Math.hypot(t.x - k.x, t.z - k.z);
+    if (k.stalled > 1.2 || travelled > 9 || k.legTime > 12) {
+      k.dir = k.dir === 1 ? -1 : 1;
+      k.legTime = 0;
+      k.stalled = 0;
+      k.x = t.x;
+      k.z = t.z;
+    }
+    const lock = Math.sign(turn) || 1;
+    return { ...input, throttle: 0.45 * k.dir, steer: k.dir === 1 ? lock : -lock };
+  }
+
+  /**
+   * V2V braking through the physics world: a shape cast of the machine's own
+   * footprint along its path. The machine slows for whatever it would hit
+   * and stops short — or, if a scenario has switched this off, doesn't.
+   * Boxed in for long enough, it backs off to let the other machine clear.
+   */
+  private withAvoidance(id: string, input: VehicleInput, dt: number): VehicleInput {
+    const world = this.physics;
+    const yielding = this.yielding.get(id);
+    if (yielding) {
+      // Giving way: back off, then hold while the other machine clears.
+      yielding.left -= dt;
+      if (yielding.left <= 0) this.yielding.delete(id);
+      return { ...input, throttle: yielding.left > 3.5 ? -0.45 : 0, steer: 0 };
+    }
+    if (!world || !this.physicsActive || this.avoidanceOff.has(id) || Math.abs(input.throttle) < 0.02) {
+      this.blockedFor.set(id, 0);
+      return input;
+    }
+    const body = world.machine(id);
+    if (!body) return input;
+
+    // Stalled against something that isn't a machine — a windrow end, a heap,
+    // a structure: back off on opposite lock and have another go.
+    const recovering = this.recovering.get(id);
+    if (recovering) {
+      recovering.left -= dt;
+      if (recovering.left <= 0) this.recovering.delete(id);
+      return { ...input, throttle: -Math.sign(input.throttle) * 0.5, steer: recovering.steer };
+    }
+    const stalled = Math.abs(body.speed) < 0.12 && Math.abs(input.throttle) > 0.2 ? (this.stalledFor.get(id) ?? 0) + dt : 0;
+    this.stalledFor.set(id, stalled);
+    if (stalled > 3) {
+      this.stalledFor.set(id, 0);
+      this.recovering.set(id, { left: 2.5, steer: -Math.sign(input.steer || 1) });
+    }
+    const v = Math.abs(body.speed);
+    const lookAhead = Math.max(6, (v * v) / 2 + 5);
+    const { distance: clear, other } = world.clearance(id, lookAhead);
+    if (clear >= lookAhead) {
+      this.blockedFor.set(id, 0);
+      return input;
+    }
+    const factor = clamp((clear - 1.5) / (lookAhead - 1.5), 0, 1);
+    const blocked = (this.blockedFor.get(id) ?? 0) + (factor < 0.05 ? dt : 0);
+    this.blockedFor.set(id, blocked);
+    // Right of way: haul truck, then loader, then dozer; the operator's
+    // machine always has it. After a few seconds nose to nose, the machine
+    // with less right of way backs off; the other waits for the gap.
+    if (blocked > 3 && other && rightOfWay(id) < rightOfWay(other)) {
+      this.yielding.set(id, { left: 7 });
+      this.blockedFor.set(id, 0);
+    }
+    return { ...input, throttle: input.throttle * factor };
+  }
+
+  /**
+   * Haul trucks fill and tip; loaders pick up and drop. With physics on, what
+   * is dropped lands as real material behind the bed or in front of the bucket.
+   */
+  private onWaypointReached(id: string, t: MachineTelemetry, wp: Waypoint): void {
+    const body = this.physics?.machine(id);
+    // The waypoint says what the stop is for; the machine may pull up just
+    // short of the zone boundary.
+    const zone = zoneAt(wp.x, wp.z);
     if (id === "TRK001") {
-      const zone = zoneAt(t.x, t.z);
-      if (zone?.kind === "stockpile") t.payload = 0;
-      else if (zone?.kind === "loading") t.payload = 24000;
+      if (zone?.kind === "stockpile") {
+        if (body && t.payload > 0) {
+          const back = body.toWorld({ x: 0, y: 0, z: 1 });
+          const origin = body.toWorld({ x: 0, y: 0, z: 0 });
+          this.physics?.material.pour(body.toWorld({ x: 0, y: 2.6, z: 5.3 }), t.payload, {
+            x: (back.x - origin.x) * 1.5,
+            y: -0.5,
+            z: (back.z - origin.z) * 1.5,
+          });
+        }
+        t.payload = 0;
+      } else if (zone?.kind === "loading") t.payload = 24000;
     }
     if (id === "WHL001") {
-      const zone = zoneAt(t.x, t.z);
+      // The loader's bucket goes into the truck at the loading zone.
       t.payload = zone?.kind === "stockpile" ? 3800 : 0;
     }
   }
@@ -830,22 +1206,28 @@ export class SimulationEngine {
 
   private stepSafety(): void {
     const workers = this.liveWorkers();
+    const world = this.physicsActive ? this.physics : null;
 
-    // Every machine reports its own nearest-person figure.
+    // Per-machine worker distances. With physics running they are measured to
+    // the machine's hull through the world's broadphase and narrowphase;
+    // otherwise (live, replay) to its centre on the ground plane.
+    const distances = new Map<string, { workerId: string; distance: number }[]>();
     for (const m of MACHINES) {
       const t = this.telemetryOf(m.id);
-      let nearest = Infinity;
-      for (const w of workers) {
-        const d = Math.hypot(w.x - t.x, w.z - t.z);
-        if (d < nearest) nearest = d;
-      }
-      t.nearestPerson = nearest;
+      const hull = world?.proximity(m.id, workers, 40);
+      const list = workers.map((w, i) => {
+        const d = hull?.[i]?.distance;
+        return { workerId: w.id, distance: d !== undefined && Number.isFinite(d) ? d : Math.hypot(w.x - t.x, w.z - t.z) };
+      });
+      distances.set(m.id, list);
+      t.nearestPerson = list.reduce((n, r) => Math.min(n, r.distance), Infinity);
     }
 
     // The site-level reading tracks the machine in focus: normally EXC001, but
     // the replayed machine while a recorded incident is playing.
     const subject = this.telemetryOf(this.focusMachineId);
-    this.proximity = evaluateProximity(subject, workers);
+    const subjectDistances = distances.get(this.focusMachineId);
+    this.proximity = subjectDistances ? proximityFromDistances(subjectDistances) : evaluateProximity(subject, workers);
     subject.nearestPerson = this.proximity.nearest;
 
     // Predicted paths and pairwise conflicts.
@@ -1231,6 +1613,15 @@ export class SimulationEngine {
             durationS: this.replay.track.durationS,
           }
         : null,
+      physics: this.physics
+        ? {
+            ...this.physics.stats,
+            active: this.physicsActive,
+            materialTonnes: this.physics.material.tonnes(),
+            faceFailed: this.physics.face.released,
+            contacts: Array.from(this.physics.touching.keys()),
+          }
+        : null,
     };
   }
 
@@ -1541,6 +1932,14 @@ export class SimulationEngine {
     this.fogAmount = 0;
     this.risks = [];
     this.paths.clear();
+    this.timedAlerts.clear();
+    this.blockedFor.clear();
+    this.turning.clear();
+    this.yielding.clear();
+    this.stalledFor.clear();
+    this.recovering.clear();
+    this.overrides.clear();
+    this.avoidanceOff.clear();
     this.flags = {
       moving: false,
       zoneId: "",
@@ -1551,7 +1950,33 @@ export class SimulationEngine {
       collision: false,
     };
     this.build();
+    if (this.physics) {
+      this.physics.resetSite();
+      this.attachFleet();
+    }
   }
+}
+
+/**
+ * Waypoint -> operator input for a leg driven in reverse: the machine backs
+ * its tail toward the target. Front-steered machines steer the opposite way
+ * when reversing; skid-steered ones do not.
+ */
+function steerReverse(t: MachineTelemetry, tx: number, tz: number, cruise: number, skid: boolean): VehicleInput {
+  const turn = angleDelta(t.heading + Math.PI, headingTo(t.x, t.z, tx, tz));
+  const dist = Math.hypot(tx - t.x, tz - t.z);
+  const steer = clamp(turn * 1.6, -1, 1);
+  return {
+    ...emptyInput(),
+    throttle: -cruise * (1 - Math.min(Math.abs(turn) / (Math.PI * 0.6), 0.7)) * Math.min(dist / 5, 1),
+    steer: skid ? steer : -steer,
+  };
+}
+
+/** Who gives way to whom in physical traffic: higher keeps going. */
+function rightOfWay(id: string): number {
+  if (id === PRIMARY_MACHINE) return 9;
+  return id.startsWith("TRK") ? 3 : id.startsWith("WHL") ? 2 : 1;
 }
 
 function severityRank(s: AlertSeverity): number {

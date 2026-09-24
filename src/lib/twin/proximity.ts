@@ -1,9 +1,12 @@
 /**
  * Simulated proximity-sensor ring around a machine.
  *
- * A real installation would fuse radar and camera returns; here we take the
- * ground-plane distance to every tracked worker, which produces the same
- * downstream signal: a level, a nearest distance, and who triggered it.
+ * A real installation would fuse radar and camera returns. With the physics
+ * world running, the distance is from the worker to the machine's actual hull
+ * (broadphase + narrowphase in Rapier — see `PhysicsWorld.proximity`); for
+ * live telemetry and replays, where there is no physics, it is the
+ * ground-plane distance to the machine centre. Either way the downstream
+ * signal is the same: a level, a nearest distance, and who triggered it.
  */
 
 import type {
@@ -36,19 +39,25 @@ export function evaluateProximity(
   t: MachineTelemetry,
   workers: SiteWorker[],
 ): ProximityResult {
+  return proximityFromDistances(workers.map((w) => ({ workerId: w.id, distance: distanceToWorker(t, w) })));
+}
+
+/** Builds the result from per-worker distances, however they were measured. */
+export function proximityFromDistances(
+  distances: { workerId: string; distance: number }[],
+): ProximityResult {
   const readings: ProximityReading[] = [];
   let nearest = Infinity;
   let nearestWorkerId: string | null = null;
 
-  for (const w of workers) {
-    const distance = distanceToWorker(t, w);
+  for (const { workerId, distance } of distances) {
     if (distance < nearest) {
       nearest = distance;
-      nearestWorkerId = w.id;
+      nearestWorkerId = workerId;
     }
     // Only surface workers that are actually inside the sensor ring.
     if (distance <= PROXIMITY.warning) {
-      readings.push({ workerId: w.id, distance, level: proximityLevel(distance) });
+      readings.push({ workerId, distance, level: proximityLevel(distance) });
     }
   }
 
