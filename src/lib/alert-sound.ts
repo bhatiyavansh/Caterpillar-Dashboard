@@ -49,11 +49,35 @@ let lastPlayedAt = 0;
 let lastCriticalAt = 0;
 
 /**
- * Open alert ids per reporting source. A source's first report primes it
- * instead of playing, and an id that leaves every source is forgotten — so an
- * advisory that clears and comes back is heard again.
+ * A sound that was asked for while the browser had not yet let audio start.
+ *
+ * Autoplay policy requires a user gesture on *this* page before any audio
+ * plays, and the HMI is often a display nobody touches — the director runs
+ * the scenario from a second tab or a second machine, exactly the workflow
+ * `MockFleetSource` is built for (see its `BroadcastChannel` use). If the very
+ * first alert of a session tried to play before that gesture happened, it was
+ * simply dropped and never retried, so a demo that starts with an untouched
+ * cab display stays silent through every alert until someone happens to tap
+ * it — indistinguishable from the sound not working at all. This remembers
+ * the most severe thing that was missed and plays it the moment audio
+ * actually becomes available, instead of losing it.
  */
-const seenBySource = new Map<string, Set<string>>();
+let pendingSeverity: string | undefined;
+let hasPending = false;
+
+function severityRank(severity: string | undefined): number {
+  return severity === "critical" ? 2 : severity === "warning" ? 1 : 0;
+}
+
+/**
+ * Open alert ids per reporting source, each with the severity it was last seen
+ * at there. A source's first report primes it instead of playing, and an id
+ * that leaves every source is forgotten — so an advisory that clears and comes
+ * back is heard again. Recording severity, not just presence, is what lets an
+ * alert that quietly escalates — a seatbelt warning going critical without a
+ * new id — sound again instead of registering as already announced.
+ */
+const seenBySource = new Map<string, Map<string, string | undefined>>();
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
@@ -79,12 +103,25 @@ function context(): AudioContext | null {
       ctx = new Ctor();
       // Any master chain belonged to the previous context.
       bus = null;
+      // The moment this context actually starts running — whether that is
+      // right now, after `.resume()` below settles, or after a much later
+      // gesture unblocks it — play whatever was missed in the meantime.
+      ctx.addEventListener("statechange", flushPending);
     } catch {
       return null;
     }
   }
   if (ctx.state === "suspended") void ctx.resume().catch(() => {});
   return ctx;
+}
+
+/** Play the most severe sound that was asked for while audio was unavailable. */
+function flushPending(): void {
+  if (!ctx || ctx.state !== "running" || !hasPending) return;
+  const severity = pendingSeverity;
+  hasPending = false;
+  pendingSeverity = undefined;
+  playAlertSound(severity);
 }
 
 /**
@@ -94,6 +131,12 @@ function context(): AudioContext | null {
 export function unlockAlertSound(): void {
   if (armed || !isBrowser()) return;
   armed = true;
+
+  // Try immediately, before waiting on any gesture. Plenty of the ways this
+  // page gets opened — a kiosk browser, an embedded frame, Firefox's default
+  // policy, a tab that itself was opened by a click — let this succeed with
+  // no further interaction at all.
+  context();
 
   const open = () => {
     context();
@@ -241,7 +284,15 @@ export function playAlertSound(severity?: string): void {
   if (isAlertSoundMuted()) return;
 
   const audio = context();
-  if (!audio || audio.state !== "running") return;
+  if (!audio || audio.state !== "running") {
+    // Not dropped — remembered. `flushPending` plays the worst of these the
+    // instant this context (or a later one, on autoplay's own retry) starts.
+    if (!hasPending || severityRank(severity) > severityRank(pendingSeverity)) {
+      pendingSeverity = severity;
+    }
+    hasPending = true;
+    return;
+  }
 
   const critical = severity === "critical";
   const now = Date.now();
@@ -268,12 +319,15 @@ export function playAlertSound(severity?: string): void {
   }
 }
 
-/** Is this id already open somewhere else on screen? */
-function known(id: string, exceptSource: string): boolean {
+/** The worst severity this id has been seen at by any other source, if any. */
+function knownSeverity(id: string, exceptSource: string): string | undefined {
+  let worst: string | undefined;
   for (const [source, ids] of seenBySource) {
-    if (source !== exceptSource && ids.has(id)) return true;
+    if (source === exceptSource || !ids.has(id)) continue;
+    const severity = ids.get(id);
+    if (worst === undefined || severityRank(severity) > severityRank(worst)) worst = severity;
   }
-  return false;
+  return worst;
 }
 
 /**
@@ -291,10 +345,24 @@ export function announceAlerts(alerts: readonly SoundableAlert[], source = "defa
 
   const previous = seenBySource.get(source);
   const fresh = previous
-    ? alerts.filter((a) => a && !a.acknowledged && !previous.has(a.id) && !known(a.id, source))
+    ? alerts.filter((a) => {
+        if (!a || a.acknowledged) return false;
+        const before = previous.get(a.id);
+        // New to this source, or has gotten worse since this source last saw
+        // it — an id staying in the set is not enough to call it "seen" once
+        // its severity has changed.
+        const newOrWorse = before === undefined || severityRank(a.severity) > severityRank(before);
+        if (!newOrWorse) return false;
+        // Unless another source already sounded it at least this badly.
+        const elsewhere = knownSeverity(a.id, source);
+        return elsewhere === undefined || severityRank(a.severity) > severityRank(elsewhere);
+      })
     : [];
 
-  seenBySource.set(source, new Set(alerts.filter((a) => a && !a.acknowledged).map((a) => a.id)));
+  seenBySource.set(
+    source,
+    new Map(alerts.filter((a) => a && !a.acknowledged).map((a) => [a.id, a.severity])),
+  );
 
   if (!previous) return;
   if (!fresh.length) return;
@@ -401,4 +469,6 @@ export function resetAlertSound(): void {
   lastAnnounced.clear();
   lastPlayedAt = 0;
   lastCriticalAt = 0;
+  hasPending = false;
+  pendingSeverity = undefined;
 }

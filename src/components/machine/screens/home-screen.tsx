@@ -1,9 +1,9 @@
 "use client";
 
-import { Droplets, Flame, Gauge, Timer, Waves } from "lucide-react";
+import { Droplets, Flame, Gauge, ShieldAlert, Timer, Waves } from "lucide-react";
 import { deriveAdvice } from "@/lib/advice";
 import { formatNumber } from "@/lib/utils";
-import { lowReadingStatus, readingStatus, useMachineStore } from "@/store/machine-store";
+import { lowReadingStatus, readingStatus, SEATBELT_ALERT_ID, useMachineStore } from "@/store/machine-store";
 import { MachineVisualization, type MachinePart } from "../machine-visualization";
 import { AssistantCard, MachineStatusCard, ScreenPad, SectionTitle, TouchButton } from "../touch";
 import type { MachineScreen } from "../machine-app";
@@ -12,12 +12,17 @@ import { PART_INFO } from "../machine-visualization";
 
 export function HomeScreen({ navigate }: { navigate: (s: MachineScreen) => void }) {
   const s = useMachineStore((st) => st.sensors);
+  const seatbeltFastened = useMachineStore((st) => st.seatbeltFastened);
+  const seatbeltAlert = useMachineStore((st) => st.alerts.find((a) => a.id === SEATBELT_ALERT_ID));
   const [part, setPart] = useState<MachinePart | null>(null);
   const advice = deriveAdvice(s).slice(0, 2);
 
   const engineStatus = readingStatus(s.engineTemperature, 92, 104);
   const hydStatus = readingStatus(s.hydraulicTemperature, 90, 100);
   const fuelStatus = lowReadingStatus(s.fuelLevel, 20, 10);
+  // Read off the same alert the store derived, rather than re-deriving the
+  // escalation here — one clock, one place it can disagree with itself.
+  const seatbeltStatus = seatbeltAlert ? (seatbeltAlert.severity === "critical" ? "critical" : "warning") : "healthy";
 
   return (
     <ScreenPad className="space-y-5">
@@ -117,7 +122,14 @@ export function HomeScreen({ navigate }: { navigate: (s: MachineScreen) => void 
         </section>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-4">
+        <MachineStatusCard
+          label="Seatbelt"
+          value={seatbeltFastened ? "Fastened" : "Unfastened"}
+          status={seatbeltStatus}
+          icon={<ShieldAlert className="size-6" />}
+          onClick={() => navigate("alerts")}
+        />
         <MachineStatusCard label="Battery" value={s.battery.toFixed(0)} unit="%" status={lowReadingStatus(s.battery, 40, 20)} icon={<Gauge className="size-6" />} />
         <MachineStatusCard label="DEF" value={s.defLevel.toFixed(0)} unit="%" status={lowReadingStatus(s.defLevel, 20, 10)} icon={<Droplets className="size-6" />} />
         <MachineStatusCard label="Ground speed" value={s.machineSpeed.toFixed(1)} unit="km/h" sub={`${s.engineLoad.toFixed(0)}% load`} icon={<Gauge className="size-6" />} />
