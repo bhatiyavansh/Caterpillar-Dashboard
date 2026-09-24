@@ -1,4 +1,4 @@
-"""make router-eval: 25 labelled questions through the real router (rules; LLM only if ambiguous).
+"""make router-eval: labelled questions (with their surface) through the real router (rules; LLM only if ambiguous).
 Prints a confusion table, accuracy and routing overhead. Without an LLM key, ambiguous questions fall
 back to `general` - that is reported, not hidden."""
 
@@ -23,7 +23,7 @@ async def evaluate(llm) -> dict:
     cases = yaml.safe_load((BACKEND_DIR / "data" / "router_eval.yaml").read_text())["questions"]
     rows, times, by = [], [], Counter()
     for c in cases:
-        r = await router.route(c["q"], "command")
+        r = await router.route(c["q"], c.get("surface", "command"))
         times.append(router.last_overhead_ms)
         by[r.routed_by] += 1
         rows.append((c["expect"], r.id, c["q"]))

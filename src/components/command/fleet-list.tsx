@@ -97,7 +97,7 @@ export function FleetList({
                     onClick={() => onSelect(m.id)}
                     aria-current={selected ? "true" : undefined}
                     className={cn(
-                      "relative flex w-full items-center gap-3 border-b border-white/5 px-3 py-2.5 text-left transition-colors",
+                      "relative flex w-full items-center gap-3 border-b border-white/5 px-3.5 py-3 text-left transition-colors",
                       selected ? "bg-cat-500/10" : "hover:bg-white/[0.04]",
                     )}
                   >

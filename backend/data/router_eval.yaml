@@ -1,4 +1,4 @@
-# make router-eval: 25 labelled questions -> expected specialist
+# make router-eval: labelled questions -> expected specialist (surface defaults to command)
 questions:
   - {q: "My seatbelt alarm is beeping, what do I do?", expect: safety}
   - {q: "There's a worker behind me, what should I do?", expect: safety}
@@ -25,3 +25,19 @@ questions:
   - {q: "How long is the loader queue right now?", expect: coordination}
   - {q: "Which trucks are on the haul road?", expect: coordination}
   - {q: "Hello, who are you?", expect: general}
+  # machine operations (any surface)
+  - {q: "Why can't I move?", surface: cab, expect: operations}
+  - {q: "How do I slew the upper structure?", surface: cab, expect: operations}
+  - {q: "What is my machine doing?", surface: cab, expect: operations}
+  # the training surface: the trainee's follow-ups are the instructor's; safety keywords still win
+  - {q: "What should I check before starting?", surface: training, expect: training}
+  - {q: "Why is that important?", surface: training, expect: training}
+  - {q: "Why did that warning appear?", surface: training, expect: training}
+  - {q: "What should I do next?", surface: training, expect: training}
+  - {q: "Explain that differently", surface: training, expect: training}
+  - {q: "What did I do wrong?", surface: training, expect: training}
+  - {q: "Can you give me an example?", surface: training, expect: training}
+  - {q: "What is happening right now?", surface: training, expect: training}
+  - {q: "How do I slew the upper structure?", surface: training, expect: training}
+  - {q: "My seatbelt is unfastened, what do I do?", surface: training, expect: safety}
+  - {q: "There's a worker behind me, what should I do?", surface: training, expect: safety}

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { AlertTriangle, Check, Circle, Mic, Send, Sparkles } from "lucide-react";
-import { useVoice } from "@web/lib/voice";
+import { useAssistantScope, useGlobalAssistant } from "@/components/assistant/assistant-provider";
 import { assistantChecks } from "@/lib/mock-data";
 import { deriveAdvice } from "@/lib/advice";
 import { PRIMARY_MACHINE_ID } from "@/lib/api/seed";
@@ -26,7 +26,9 @@ export function AssistantScreen({ navigate }: { navigate: (s: MachineScreen) => 
   const inspectionResults = useMachineStore((s) => s.inspectionResults);
   const advice = deriveAdvice(sensors);
 
-  const voice = useVoice({ surface: "cab", machineId: PRIMARY_MACHINE_ID });
+  // The in-cab device screen is one more view of the global assistant, scoped to its machine.
+  useAssistantScope({ surface: "cab", machineId: PRIMARY_MACHINE_ID, suggestions: SUGGESTIONS });
+  const { voice } = useGlobalAssistant();
   const [input, setInput] = React.useState("");
   const logRef = React.useRef<HTMLDivElement>(null);
 

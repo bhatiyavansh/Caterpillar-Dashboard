@@ -29,7 +29,8 @@ class ToolContext:
     surface: str
     machine_id: str | None = None
     operator_id: str | None = None
-    extras: dict[str, Any] = field(default_factory=dict)  # Phase C: rag, protocols, reports
+    extras: dict[str, Any] = field(default_factory=dict)  # Phase C: rag, protocols, reports (shared, read-only)
+    specialist: str | None = None  # set per turn by the agent: scopes retrieval (knowledge/retrieval.py)
 
 
 @dataclass

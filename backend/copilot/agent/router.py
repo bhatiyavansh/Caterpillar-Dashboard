@@ -1,8 +1,10 @@
 """Specialist routing (P2_SPEC §5c; VISION §11 scoped to one agent loop).
 
-rules first (weighted keyword regexes)  ->  if ambiguous: one fast-LLM classification (1.5 s)
+rules first (weighted keyword regexes, plus surface rules: a trainee's "why is that important?" on the
+training surface is the instructor's)  ->  if ambiguous: one fast-LLM classification (1.5 s)
 ->  on timeout/error/no LLM: the general profile with every tool on the surface.
-No agent-to-agent calls: a specialist is just a prompt + a tool subset on the single loop.
+No agent-to-agent calls: a specialist is a prompt + a tool subset + a context builder
+(copilot/agent/context.py) + a retrieval profile (copilot/knowledge/retrieval.py) on the single loop.
 
 The safety specialist is special: when the question names a safety event, the matching protocol is
 fetched by code (not by the model) and its steps are appended verbatim to the answer.
@@ -39,7 +41,7 @@ SPECIALISTS: dict[str, Specialist] = {s.id: s for s in (
         "yourself. Keep your own text to one short sentence."),
         ((r"seat ?belt|\bbelt\b|buckle", 2), (r"proximity|behind me|blind spot|worker (?:near|behind)|person (?:near|behind)|someone behind", 2),
          (r"fatigue|tired|sleepy|drows|eyes closed", 2), (r"\btip(?:ping)?\b|tip-over|rollover|overturn|stability|margin", 2),
-         (r"collision|crash|reversing", 2), (r"\bsafe\b|safety|danger|hazard|alarm|alert", 1),
+         (r"collision|crash|reversing", 2), (r"\bsafe\b|safety|danger|hazard|alarm|alert|warning", 1),
          (r"what (?:do|should) i do|what now", 1), (r"incident|near miss|injur", 1.5),
          (r"protocols?|\bsops?\b|procedures?|emergency", 1.5))),
     Specialist("planner", "Planner", (
@@ -54,9 +56,27 @@ SPECIALISTS: dict[str, Specialist] = {s.id: s for s in (
         ((r"service|maintenance|filter|\boil\b|fault|code|hyd-\d+|repair|work order|breakdown|\bwear\b|pump|engine|"
           r"hydraulic|coolant|overheat", 1.5),)),
     Specialist("training", "Training", (
-        "You are the training specialist: modules, skills and bookings. Recommend a module only from the "
-        "training modules the tools know."),
+        "You are the training specialist: the trainee's instructor, plus modules, skills and bookings.\n"
+        "- Teach from evidence: the retrieved passages in the tool results, the training context and the live "
+        "data. Explain why a step matters, give a concrete example when asked, and re-explain in simpler words "
+        "when asked to explain differently. Keep it to a few short sentences a trainee can act on.\n"
+        "- Whether a lesson step passed is decided only by the simulator's sensors. Read it from the training "
+        "context (phase, steps_passed, last_failure_reason); never tell the trainee they passed, completed or "
+        "did a step unless the training context says so, and never declare a machine or situation safe.\n"
+        "- For 'what did I do wrong', use last_failure_reason, the sensor diagnosis. For 'what should I do "
+        "next', use the current step instruction and keys from the training context.\n"
+        "- Passages marked synthetic are demo training notes written for this prototype, not an official "
+        "manual: call them 'the training notes', never a Caterpillar manual.\n"
+        "- Recommend a module only from the training modules the tools know."),
         ((r"training|\btrain\b|course|module|learn|practi[cs]e|instructor|lesson|skill|book (?:me|a|on)", 2),)),
+    Specialist("operations", "Machine operations", (
+        "You are the machine operations specialist: how the machine is operated, what it is doing right now, "
+        "and why it is or is not moving. Explain the machine's state using only the live context and tool "
+        "results. If an active safety alert explains it (a locked travel, a person in the bubble), say which "
+        "alert and call get_protocol so the site steps are appended; never tell the operator to override it."),
+        ((r"can'?t (?:i )?move|won'?t move|not moving|stopped moving|travel lock|locked out|"
+          r"how do i (?:drive|travel|steer|turn|slew|swing|dig|operate|reverse)|\bcontrols?\b|lever|joystick|pedal|"
+          r"what is (?:my|the|this) machine doing|my machine|machine (?:state|status)", 2),)),
     Specialist("reporting", "Reporting", (
         "You are the reporting specialist for owners and managers: costs, fuel, utilisation, anomalies and "
         "summaries. Lead with the number that matters most."),
@@ -73,6 +93,20 @@ SPECIALISTS: dict[str, Specialist] = {s.id: s for s in (
 )}
 GENERAL = Route(id="general", label="General", routed_by="fallback", confidence=0.0)
 
+#: Extra rules that apply only on one surface: on /training the trainee's follow-ups ("why is that
+#: important?", "what did I do wrong?") are the instructor's, and the lesson machine's operation
+#: questions go to the instructor too. Safety keywords still outrank this (weight 2 vs the prior).
+SURFACE_PRIOR: dict[str, tuple[str, float]] = {"training": ("training", 1.0)}
+SURFACE_RULES: dict[str, tuple[tuple[str, str, float], ...]] = {
+    "training": (
+        ("training", r"before (?:i )?(?:start|mov|operat|dig|travel)\w*|pre-?start|walk-?around|what should i check", 2),
+        ("training", r"explain (?:that|this|it)|differently|simpler|what did i do wrong|(?:an|for) example|"
+                     r"why (?:is|does) (?:that|this|it) (?:important|matter)|why (?:do|should) i", 2),
+        ("training", r"\bnext\b|what now|why did (?:that|the|this) (?:warning|alert|alarm)|"
+                     r"what(?:'s| is) happening|right now", 1.5),
+    ),
+}
+
 #: safety keyword -> the event whose protocol answers "what do I do"
 SAFETY_EVENT_RULES: tuple[tuple[str, str, dict[str, Any]], ...] = (
     (r"seat ?belt|\bbelt\b|buckle", "seatbelt_unfastened", {}),
@@ -84,9 +118,19 @@ SAFETY_EVENT_RULES: tuple[tuple[str, str, dict[str, Any]], ...] = (
 )
 
 
-def rule_scores(message: str) -> dict[str, float]:
+def rule_scores(message: str, surface: str | None = None) -> dict[str, float]:
     low = message.lower()
-    return {sid: sum(w for pat, w in s.rules if re.search(pat, low)) for sid, s in SPECIALISTS.items()}
+    scores = {sid: sum(w for pat, w in s.rules if re.search(pat, low)) for sid, s in SPECIALISTS.items()}
+    if surface in SURFACE_PRIOR:
+        sid, w = SURFACE_PRIOR[surface]
+        scores[sid] += w
+    for sid, pat, w in SURFACE_RULES.get(surface or "", ()):
+        if re.search(pat, low):
+            scores[sid] += w
+    if surface == "training":  # the lesson machine is the instructor's subject
+        scores["training"] += scores["operations"]
+        scores["operations"] = 0.0
+    return scores
 
 
 def safety_event(message: str) -> tuple[str, dict[str, Any]] | None:
@@ -115,7 +159,7 @@ class Router:
     async def route(self, message: str, surface: str) -> Route:
         t0 = time.perf_counter()
         try:
-            scores = rule_scores(message)
+            scores = rule_scores(message, surface)
             ranked = sorted(scores.items(), key=lambda kv: -kv[1])
             (top, top_s), (_, second_s) = ranked[0], ranked[1]
             if top_s > 0 and top_s - second_s >= MARGIN:

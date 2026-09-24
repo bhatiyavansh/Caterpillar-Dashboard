@@ -43,7 +43,7 @@ export function KpiRail({ items, className }: { items: KpiItem[]; className?: st
           <div
             key={item.label}
             className={cn(
-              "relative min-w-0 border-b border-white/8 px-4 py-3 lg:border-b-0",
+              "relative min-w-0 border-b border-white/8 px-4 py-2 lg:border-b-0",
               item.emphasis && "bg-white/[0.02]",
             )}
           >
@@ -51,10 +51,10 @@ export function KpiRail({ items, className }: { items: KpiItem[]; className?: st
               <span className={cn("absolute inset-y-0 left-0 w-0.5", token.dot)} aria-hidden />
             ) : null}
             <dt className="label-xs truncate">{item.label}</dt>
-            <dd className="mt-1 flex items-baseline gap-1.5">
+            <dd className="mt-0.5 flex items-baseline gap-1.5">
               <span
                 className={cn(
-                  "font-mono text-2xl font-bold leading-none tabular-nums",
+                  "font-mono text-xl font-bold leading-none tabular-nums",
                   token && item.status !== "operating" ? token.text : "text-zinc-50",
                 )}
               >
@@ -62,7 +62,7 @@ export function KpiRail({ items, className }: { items: KpiItem[]; className?: st
               </span>
               {item.unit ? <span className="text-xs font-medium text-muted">{item.unit}</span> : null}
             </dd>
-            {item.hint ? <p className="mt-1 truncate text-[11px] text-muted">{item.hint}</p> : null}
+            {item.hint ? <p className="mt-0.5 truncate text-[11px] text-muted">{item.hint}</p> : null}
           </div>
         );
       })}

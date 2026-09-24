@@ -20,7 +20,7 @@ from copilot.api.stubs import register_stubs
 from copilot.config import Settings, load_settings
 from copilot.contracts.assistant import AssistantRequest
 from copilot.hub.hub import Hub
-from copilot.knowledge.manuals import FastEmbedder, ManualIndex, corpus_text
+from copilot.knowledge.manuals import FastEmbedder, ManualIndex, corpus_dirs, corpus_text, fingerprint
 from copilot.knowledge.protocols import ProtocolLibrary
 from copilot.ml.auto import AutoML
 from copilot.ml.jobs import WhatIfJobs
@@ -28,19 +28,27 @@ from copilot.records.store import RecordStore
 from copilot.reports.service import Reports
 from copilot.sim_client import SimClient
 
+REPORT_DRAFT_BUDGET_S = 7.0  # < the create_incident / create_work_order tool timeout (10 s)
+
 
 def load_rag(data_dir, embedder_factory=None):
-    """Committed index (make index) if present, else an in-memory BM25-only index - labelled either way."""
+    """Committed index (make index) if it matches the corpus on disk; otherwise the corpus is indexed in
+    memory (dense too when the local embedder loads) so a new document is never silently missing.
+    The provenance says which it is."""
+    log = logging.getLogger("copilot.rag")
     index_dir = data_dir / "index"
+    dirs = corpus_dirs(data_dir)
     embedder = None
     if embedder_factory is not None:
         try:
             embedder = embedder_factory()
         except Exception as exc:  # model not downloaded yet / offline first run
-            logging.getLogger("copilot.rag").warning("embedding model unavailable (%r): BM25 only", exc)
+            log.warning("embedding model unavailable (%r): BM25 only", exc)
     if (index_dir / "chunks.json").exists():
-        return ManualIndex.load(index_dir, embedder)
-    return ManualIndex.build(data_dir / "manuals", None)
+        if ManualIndex.stored_fingerprint(index_dir) == fingerprint(dirs):
+            return ManualIndex.load(index_dir, embedder)
+        log.warning("RAG index is stale (corpus changed since `make index`): indexing in memory")
+    return ManualIndex.build(dirs, embedder)
 
 
 def create_app(settings: Settings | None = None, llm=None, ml=None, embedder_factory="default",
@@ -87,8 +95,11 @@ def create_app(settings: Settings | None = None, llm=None, ml=None, embedder_fac
 
         actions.registry, actions.context_factory = registry, context_factory
         llm_port = llm or build_llm()
+        # A draft must finish (or fall back to its labelled template) inside the confirm tools' 10 s timeout;
+        # with the agent's 20 s budget a slow LLM made a confirmed incident fail outright instead.
         reports = Reports(hub, llm_port, settings.llm_fast_model, protocols, records, ml_port, settings.cache_dir,
-                          first_token_s=settings.llm_first_token_s, total_s=max(settings.llm_total_s, 2.0))
+                          first_token_s=settings.llm_first_token_s,
+                          total_s=min(max(settings.llm_total_s, 2.0), REPORT_DRAFT_BUDGET_S))
         extras.update(reports=reports, llm=llm_port, vision_model=settings.llm_model)
         agent = Agent(llm_port, registry, hub, context_factory, AgentSettings(
             model=settings.llm_model, fast_model=settings.llm_fast_model, first_token_s=settings.llm_first_token_s,

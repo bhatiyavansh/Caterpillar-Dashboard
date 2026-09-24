@@ -26,13 +26,16 @@ async def protocol(request: Request, protocol_id: str) -> dict[str, Any]:
 
 
 @router.get("/api/rag/search")
-async def rag_search(request: Request, q: str, k: int = 5) -> dict[str, Any]:
+async def rag_search(request: Request, q: str, k: int = 5, specialist: str | None = None) -> dict[str, Any]:
+    """Hybrid search over manuals + synthetic knowledge; `specialist` applies that specialist's profile."""
     rag = request.app.state.extras.get("rag")
     if rag is None:
         raise HTTPException(503, "manual index not built: run `make index`")
     import asyncio
 
-    return await asyncio.to_thread(rag.search, q, k)
+    from copilot.knowledge.retrieval import PROFILES
+
+    return await asyncio.to_thread(rag.search, q, k, PROFILES.get(specialist) if specialist else None)
 
 
 @router.post("/api/incidents", status_code=201)

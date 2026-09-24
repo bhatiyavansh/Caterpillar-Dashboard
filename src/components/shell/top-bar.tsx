@@ -30,6 +30,7 @@ import { thresholdStatus } from "@/lib/status";
 import { MACHINE_STATUS } from "@/lib/status";
 import type { WeatherMode } from "@/lib/api/contracts";
 import { cn } from "@/lib/utils";
+import { AssistantDock } from "@/components/assistant/global-assistant";
 
 const WEATHER: Record<WeatherMode, { icon: LucideIcon; label: string }> = {
   clear: { icon: Sun, label: "Clear" },
@@ -161,7 +162,7 @@ export function TopBar({
     : "operating";
 
   return (
-    <header className="relative z-20 flex h-16 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-ink-900/60 px-3 backdrop-blur-xl sm:px-5">
+    <header className="relative z-20 flex h-13 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-ink-900/60 px-3 backdrop-blur-xl sm:px-5">
       <NavToggle onClick={onOpenNav} />
 
       <div className="min-w-0">
@@ -220,6 +221,9 @@ export function TopBar({
             Ctrl K
           </kbd>
         </Button>
+
+        {/* The one site assistant: open it, or hold the mic to talk, from any screen. */}
+        <AssistantDock />
 
         <AlertBell />
 

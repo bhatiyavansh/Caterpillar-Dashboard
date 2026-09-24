@@ -11,7 +11,7 @@
  *   script, so a Hindi answer followed by English protocol steps sounds right. Talking again interrupts.
  * "confirm" / "cancel" while an action is pending are resolved locally by useAssistant (never the LLM).
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { assistantApiBase } from "../assistant/client";
 import { useAssistant, type UseAssistantOptions } from "../assistant/hooks";
 
@@ -51,6 +51,19 @@ function recognitionCtor(): (new () => Recognition) | null {
 const canRecord = () =>
   typeof window !== "undefined" && typeof MediaRecorder !== "undefined" && !!navigator.mediaDevices?.getUserMedia;
 
+/**
+ * Browser capabilities, read hydration-safely: the server snapshot says "no", the client's first
+ * (hydrating) render agrees, and the real value lands right after. So this hook can live in a
+ * provider at the root of the app without a server/client mismatch.
+ */
+const noSubscribe = () => () => {};
+function useCapability(read: () => boolean): boolean {
+  return useSyncExternalStore(noSubscribe, read, () => false);
+}
+const readCanRecord = () => canRecord();
+const readCanRecognise = () => recognitionCtor() !== null;
+const readCanSpeak = () => typeof window !== "undefined" && "speechSynthesis" in window;
+
 /** Language of a piece of text from its script (Latin -> English). */
 export function scriptLang(text: string): string {
   if (/[ऀ-ॿ]/.test(text)) return "hi-IN"; // Devanagari (Hindi, Marathi)
@@ -61,9 +74,10 @@ export function scriptLang(text: string): string {
   return "en-IN";
 }
 
-/** Split into speakable chunks that each stay in one script. */
+/** Split into speakable chunks that each stay in one script. Markdown symbols are never read aloud. */
 export function speechChunks(text: string): { text: string; lang: string }[] {
-  const parts = text.split(/(?<=[.!?।])\s+|\n+/).map((s) => s.trim()).filter(Boolean);
+  const plain = text.replace(/\*\*|__|`/g, "").replace(/^#+\s*/gm, "");
+  const parts = plain.split(/(?<=[.!?।])\s+|\n+/).map((s) => s.trim()).filter(Boolean);
   const out: { text: string; lang: string }[] = [];
   for (const p of parts) {
     const lang = scriptLang(p);
@@ -96,13 +110,17 @@ export function useVoice(opts: UseVoiceOptions) {
   const [interim, setInterim] = useState("");
   const [pulse, setPulse] = useState(0); // increments on each spoken word: procedural lip sync
   const [micError, setMicError] = useState<string | null>(null);
-  const [engine, setEngine] = useState<"server" | "browser">(() => (canRecord() ? "server" : "browser"));
+  const recordable = useCapability(readCanRecord);
+  const recognisable = useCapability(readCanRecognise);
+  // null = follow the browser's capabilities; set when one engine fails and we switch to the other
+  const [engineOverride, setEngine] = useState<"server" | "browser" | null>(null);
+  const engine = engineOverride ?? (recordable ? "server" : "browser");
   const recRef = useRef<Recognition | null>(null);
   const mediaRef = useRef<{ rec: MediaRecorder; stream: MediaStream } | null>(null);
   const holdingRef = useRef(false);
   const spokenRef = useRef<string | null>(null);
-  const [sttSupported] = useState(() => canRecord() || recognitionCtor() !== null);
-  const ttsSupported = typeof window !== "undefined" && "speechSynthesis" in window;
+  const sttSupported = recordable || recognisable;
+  const ttsSupported = useCapability(readCanSpeak);
   const lang = opts.lang ?? "auto";
   const apiBase = opts.apiBase ?? assistantApiBase();
   const { send } = assistant;
@@ -258,6 +276,11 @@ export function useVoice(opts: UseVoiceOptions) {
           ? "thinking"
           : "idle";
 
+  const stopSpeaking = useCallback(() => {
+    if (ttsSupported) window.speechSynthesis.cancel();
+    setSpeaking(false);
+  }, [ttsSupported]);
+
   return { ...assistant, state, listening, transcribing, speaking, interim, pulse, micError, sttSupported, ttsSupported,
-    sttEngine: engine, startTalking, stopTalking, speak };
+    sttEngine: engine, startTalking, stopTalking, speak, stopSpeaking };
 }

@@ -17,8 +17,7 @@ import { TimelineBar } from "./timeline-bar";
 import { TwinViewport } from "@/components/twin/twin-viewport";
 import { AssistantPanel } from "@/components/assistant/assistant-panel";
 import { AlertCard } from "@/components/alerts/alert-card";
-import { KpiRail, SectionHeader, type KpiItem } from "@/components/ui/data";
-import { EmptyPanel, SkeletonRows } from "@/components/ui/states";
+import { KpiRail, type KpiItem } from "@/components/ui/data";
 import { Button } from "@/components/ui/primitives";
 import { useAlerts, useFleet, useTimelineMarkers } from "@/lib/hooks/use-site";
 import { PRIMARY_MACHINE_ID } from "@/lib/api/seed";
@@ -121,6 +120,9 @@ export function CommandCenter() {
         ))}
       </div>
 
+      {/* Primary workspace: fleet -> site/3D view -> inspector. This row gets
+          the majority of the vertical space; the site view is the dominant
+          column and is visible the moment the page loads. */}
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Fleet rail */}
         <FleetList
@@ -132,13 +134,13 @@ export function CommandCenter() {
           }}
           loading={loading}
           className={cn(
-            "shrink-0 transition-[width] max-lg:w-full lg:w-64",
+            "shrink-0 transition-[width] max-lg:w-full lg:w-52",
             pane === "fleet" ? "flex" : "hidden lg:flex",
             !railOpen && "xl:w-0 xl:overflow-hidden xl:border-0",
           )}
         />
 
-        {/* Twin + live alert strip */}
+        {/* Twin */}
         <div className={cn("min-w-0 flex-1 flex-col", pane === "site" ? "flex" : "hidden lg:flex")}>
           <div className="flex items-center gap-2 border-b border-white/10 bg-ink-900 px-2 py-1.5">
             <Button
@@ -167,14 +169,12 @@ export function CommandCenter() {
             loading={loading}
             className="min-h-0 flex-1"
           />
-
-          <TimelineBar now={snapshot.t} markers={markers} replayAt={replayAt} onReplayAtChange={setReplayAt} />
         </div>
 
         {/* Inspector / assistant — one column, one bordered container */}
         <div
           className={cn(
-            "shrink-0 flex-col border-l border-white/10 bg-ink-900 max-lg:w-full lg:flex lg:w-80 2xl:w-96",
+            "shrink-0 flex-col border-l border-white/10 bg-ink-900 max-lg:w-full lg:flex lg:w-72 2xl:w-80",
             pane === "inspector" ? "flex" : "hidden lg:flex",
           )}
         >
@@ -213,40 +213,34 @@ export function CommandCenter() {
         </div>
       </div>
 
-      {/* Alert deck — full width so nothing critical hides in a rail */}
-      <section className="shrink-0 border-t border-white/10 bg-ink-900" aria-label="Active alerts">
-        <SectionHeader
-          title="Active alerts"
-          meta={openAlerts.length ? `${openAlerts.length} awaiting acknowledgement` : "Site nominal"}
-          actions={
-            openAlerts.length ? (
-              <Button variant="outline" size="sm" onClick={acknowledgeAll}>
-                Acknowledge all
-              </Button>
-            ) : null
-          }
-        />
-        <div className="max-h-52 overflow-y-auto p-2.5">
-          {loading ? (
-            <SkeletonRows rows={2} />
-          ) : alerts.length ? (
-            <div className="grid gap-2.5 md:grid-cols-2 2xl:grid-cols-3">
-              <AnimatePresence initial={false}>
-                {alerts.map((a) => (
-                  <AlertCard key={a.id} alert={a} onAcknowledge={acknowledge} onSelect={(x) => setSelectedId(x.machineId)} />
-                ))}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <EmptyPanel
-              tone="good"
-              title="No active alerts"
-              body="Every machine on site is inside its safety, stability and health limits. The stream is live and rules are running."
-              className="!py-6"
+      {/* Timeline — full width, directly under the workspace */}
+      <TimelineBar now={snapshot.t} markers={markers} replayAt={replayAt} onReplayAtChange={setReplayAt} />
+
+      {/* Alerts as popups: nothing on-screen when the site is nominal, so the
+          workspace never loses space to an empty panel. An open alert floats
+          over the workspace until it is acknowledged, then it's gone. */}
+      <div className="pointer-events-none fixed right-3 top-15 z-40 flex w-90 flex-col gap-2" aria-label="Active alerts">
+        {openAlerts.length > 1 ? (
+          <div className="pointer-events-auto flex items-center justify-between gap-2 rounded border border-white/10 bg-ink-900/95 px-3 py-1.5 shadow-lg">
+            <span className="text-[11px] font-semibold text-zinc-300">{openAlerts.length} alerts awaiting acknowledgement</span>
+            <Button variant="outline" size="sm" onClick={acknowledgeAll}>
+              Acknowledge all
+            </Button>
+          </div>
+        ) : null}
+        <AnimatePresence initial={false}>
+          {openAlerts.map((a) => (
+            <AlertCard
+              key={a.id}
+              alert={a}
+              onAcknowledge={acknowledge}
+              onSelect={(x) => setSelectedId(x.machineId)}
+              compact
+              className="pointer-events-auto shadow-lg"
             />
-          )}
-        </div>
-      </section>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
