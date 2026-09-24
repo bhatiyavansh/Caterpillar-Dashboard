@@ -44,6 +44,19 @@ import type {
 import type { FleetSource } from "./source";
 import { MockFleetSource } from "./mock-source";
 import { KIND_LABEL } from "./seed";
+import {
+  LIVE_TASK_ID,
+  fetchRealAnomalies,
+  fetchRealMaintenance,
+  fetchRealOwnerReport,
+  fetchRealTaskEstimate,
+  type RealOwnerReport,
+  type RealTaskEstimate,
+} from "./real-ml";
+import type { Anomaly, MaintenanceItem, OwnerKpis, OwnerSeries, SiteTask } from "./contracts";
+
+/** How often to re-poll the real ML endpoints. None of this rides the WebSocket stream. */
+const ML_REFRESH_MS = 90_000;
 
 /* ------------------------------------------------------------------ mapping */
 
@@ -204,6 +217,16 @@ export class LiveFleetSource implements FleetSource {
   private unsubscribeMock: (() => void) | null = null;
   private snapshot: SiteSnapshot;
 
+  // Real ML results. `null` means "nothing real yet" — getters fall back to the
+  // mock baseline until a fetch succeeds, and keep the last good result if a
+  // later refresh fails rather than reverting to the mock underneath the user.
+  private realAnomalies: Anomaly[] | null = null;
+  private realMaintenance: MaintenanceItem[] | null = null;
+  private realOwnerReport: RealOwnerReport | null = null;
+  private taskEstimates = new Map<string, RealTaskEstimate>();
+  private fetchingTasks = new Set<string>();
+  private mlTimer: ReturnType<typeof setInterval> | null = null;
+
   constructor(
     private readonly httpBase: string = apiBase(),
     /** Accepted for compatibility; the shared client owns the socket URL. */
@@ -220,6 +243,8 @@ export class LiveFleetSource implements FleetSource {
     this.release = acquireStream();
     this.unsubscribeStore = getStreamStore().subscribe(() => this.recompute());
     this.recompute();
+    void this.refreshMl();
+    this.mlTimer = setInterval(() => void this.refreshMl(), ML_REFRESH_MS);
   }
 
   stop(): void {
@@ -227,7 +252,56 @@ export class LiveFleetSource implements FleetSource {
     this.unsubscribeMock?.();
     this.release?.();
     this.unsubscribeStore = this.unsubscribeMock = this.release = null;
+    if (this.mlTimer) clearInterval(this.mlTimer);
+    this.mlTimer = null;
     this.fallback.stop();
+  }
+
+  /** Polls the real anomaly, maintenance and owner-report endpoints. Fail-soft per field. */
+  private async refreshMl(): Promise<void> {
+    const [anomalies, maintenance, owner] = await Promise.all([
+      fetchRealAnomalies(this.httpBase),
+      fetchRealMaintenance(this.httpBase),
+      fetchRealOwnerReport(this.httpBase),
+    ]);
+    let changed = false;
+    if (anomalies) {
+      this.realAnomalies = anomalies;
+      changed = true;
+    }
+    if (maintenance) {
+      this.realMaintenance = maintenance;
+      changed = true;
+    }
+    if (owner) {
+      this.realOwnerReport = owner;
+      changed = true;
+    }
+    if (changed) this.touch();
+  }
+
+  /**
+   * Fetches a real task-time estimate the first time a live task_id is seen.
+   * The simulator's own task ids ("T-0001") are the only shape the model
+   * accepts; a machine on a task the mock invented has no such id and is left
+   * on its seeded estimate.
+   */
+  private maybeFetchTaskEstimate(taskId: string | null): void {
+    if (!taskId || !LIVE_TASK_ID.test(taskId)) return;
+    if (this.taskEstimates.has(taskId) || this.fetchingTasks.has(taskId)) return;
+    this.fetchingTasks.add(taskId);
+    void fetchRealTaskEstimate(this.httpBase, taskId).then((est) => {
+      this.fetchingTasks.delete(taskId);
+      if (!est) return;
+      this.taskEstimates.set(taskId, est);
+      this.touch();
+    });
+  }
+
+  /** Bumps the snapshot's identity so useSyncExternalStore-based hooks see the update. */
+  private touch(): void {
+    this.snapshot = { ...this.snapshot };
+    for (const l of this.listeners) l(this.snapshot);
   }
 
   private recompute(): void {
@@ -265,6 +339,7 @@ export class LiveFleetSource implements FleetSource {
         if (open.some((a) => a.severity === "critical")) next.status = "critical";
         else if (open.some((a) => a.severity === "warning")) next.status = "warning";
       }
+      if (hub) this.maybeFetchTaskEstimate(next.taskId ?? null);
       return next;
     });
 
@@ -272,9 +347,24 @@ export class LiveFleetSource implements FleetSource {
     return {
       ...base,
       machines,
+      tasks: this.overlayTaskEstimates(base.tasks, machines),
       alerts: effective,
       kpis: { ...base.kpis, openAlerts: effective.filter((a) => !a.acknowledged).length },
     };
+  }
+
+  /** Replaces a machine's active task's ETA and reasons with the real model's output, when we have it. */
+  private overlayTaskEstimates(tasks: SiteTask[], machines: Machine[]): SiteTask[] {
+    if (this.taskEstimates.size === 0) return tasks;
+    const machineById = new Map(machines.map((m) => [m.id, m]));
+    return tasks.map((t) => {
+      if (t.state !== "active") return t;
+      const machine = machineById.get(t.machineId);
+      const est = machine?.taskId ? this.taskEstimates.get(machine.taskId) : undefined;
+      if (!est) return t;
+      return { ...t, title: est.title, zone: est.zone, progress: est.progress, etaMinutes: est.etaMinutes,
+        etaRange: est.etaRange, reasons: est.reasons.length ? est.reasons : t.reasons };
+    });
   }
 
   getConnection(): ConnectionState {
@@ -316,17 +406,17 @@ export class LiveFleetSource implements FleetSource {
   getIncidents() {
     return this.fallback.getIncidents();
   }
-  getMaintenance() {
-    return this.fallback.getMaintenance();
+  getMaintenance(): MaintenanceItem[] {
+    return this.realMaintenance ?? this.fallback.getMaintenance();
   }
-  getAnomalies() {
-    return this.fallback.getAnomalies();
+  getAnomalies(): Anomaly[] {
+    return this.realAnomalies ?? this.fallback.getAnomalies();
   }
-  getOwnerKpis() {
-    return this.fallback.getOwnerKpis();
+  getOwnerKpis(): OwnerKpis {
+    return { ...this.fallback.getOwnerKpis(), ...this.realOwnerReport?.kpis };
   }
-  getOwnerSeries() {
-    return this.fallback.getOwnerSeries();
+  getOwnerSeries(): OwnerSeries {
+    return { ...this.fallback.getOwnerSeries(), ...this.realOwnerReport?.series };
   }
   getTrainingModules() {
     return this.fallback.getTrainingModules();
