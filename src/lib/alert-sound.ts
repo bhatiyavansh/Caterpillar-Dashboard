@@ -30,12 +30,23 @@ const STORAGE_KEY = "cat.alert-sound.muted";
  * that a chime finishes ringing before the next one can start on top of it.
  */
 const MIN_GAP_MS = 900;
+/**
+ * A critical is held back only by another critical, and only briefly.
+ *
+ * Escalation arrives as a pair: a reading goes amber and the rule behind it
+ * goes critical a moment later. Measuring the critical against the warning that
+ * just sounded means the operator hears that something is wrong and never hears
+ * that it got worse — exactly backwards. So criticals are timed against each
+ * other, on a gap long enough only to stop two of them stacking into noise.
+ */
+const MIN_GAP_CRITICAL_MS = 250;
 
 let ctx: AudioContext | null = null;
 let armed = false;
 /** `null` until the stored preference is read on first use. */
 let muted: boolean | null = null;
 let lastPlayedAt = 0;
+let lastCriticalAt = 0;
 
 /**
  * Open alert ids per reporting source. A source's first report primes it
@@ -232,11 +243,15 @@ export function playAlertSound(severity?: string): void {
   const audio = context();
   if (!audio || audio.state !== "running") return;
 
-  const now = Date.now();
-  if (now - lastPlayedAt < MIN_GAP_MS) return;
-  lastPlayedAt = now;
-
   const critical = severity === "critical";
+  const now = Date.now();
+  if (critical) {
+    if (now - lastCriticalAt < MIN_GAP_CRITICAL_MS) return;
+    lastCriticalAt = now;
+  } else if (now - lastPlayedAt < MIN_GAP_MS) {
+    return;
+  }
+  lastPlayedAt = now;
   const strikes = critical ? pick([4, 5]) : pick([2, 3]);
   // Dashboard-chime territory: high enough to carry, low enough not to shriek.
   const root = pick(critical ? [1046, 1174, 1318] : [784, 880, 932]);
@@ -287,6 +302,90 @@ export function announceAlerts(alerts: readonly SoundableAlert[], source = "defa
   playAlertSound(fresh.some((a) => a.severity === "critical") ? "critical" : fresh[0]!.severity);
 }
 
+/* ------------------------------ status signs ---------------------------- */
+
+/** Every level an indicator on the HMI can be in, reduced to what matters. */
+export type StatusLevel = "ok" | "warning" | "critical";
+
+const RANK: Record<StatusLevel, number> = { ok: 0, warning: 1, critical: 2 };
+
+/** The level each named indicator was last seen at. */
+const levels = new Map<string, StatusLevel>();
+/** When each one last made a noise, for the cooldown below. */
+const lastAnnounced = new Map<string, number>();
+
+/**
+ * How long one indicator must stay quiet before it can sound again.
+ *
+ * A reading sitting right on its threshold crosses it repeatedly — engine
+ * temperature hovering at 92°C will go amber, green, amber over and over. Each
+ * crossing is a genuine escalation, so the escalation rule alone would chime
+ * every few seconds, and an alarm that chatters is one the operator learns to
+ * ignore. Half a minute per indicator keeps a real change audible and a
+ * wobbling one quiet.
+ */
+const STATUS_COOLDOWN_MS = 30_000;
+
+/**
+ * Report what one indicator on the screen is showing.
+ *
+ * This is the other half of the alert sound: an alert record is not the only
+ * thing that turns a display amber. A gauge crossing its limit, a status chip
+ * going critical, a health dot turning red — to the operator those are the same
+ * event, and a sound that only follows alert records would stay quiet through
+ * most of them.
+ *
+ * It fires when a sign first appears at amber or red, and again whenever it
+ * gets worse. Going the other way is silent, because nobody needs to be told
+ * that something stopped being wrong, and a reading hovering on a threshold
+ * would otherwise chime every time it wobbled across.
+ *
+ * `key` identifies the *thing being shown*, not the component showing it, so
+ * the same reading on two screens is one sound and a level change is tracked
+ * across re-renders.
+ */
+export function announceStatus(key: string, level: StatusLevel): void {
+  if (!isBrowser() || !key) return;
+  if (!armed) unlockAlertSound();
+
+  const previous = levels.get(key);
+  levels.set(key, level);
+
+  if (level === "ok") return;
+  // Unseen and already bad, or worse than it was.
+  const escalated = previous === undefined || RANK[level] > RANK[previous];
+  if (!escalated) return;
+
+  const now = Date.now();
+  const since = now - (lastAnnounced.get(key) ?? -Infinity);
+  // A jump to critical always sounds, even inside the cooldown — that is the
+  // one case where being told twice is better than not being told.
+  if (since < STATUS_COOLDOWN_MS && level !== "critical") return;
+
+  lastAnnounced.set(key, now);
+  playAlertSound(level);
+}
+
+/** Forget one indicator, so it announces again if it comes back. */
+export function forgetStatus(key: string): void {
+  levels.delete(key);
+  lastAnnounced.delete(key);
+}
+
+/** Map any of the product's status vocabularies onto the three levels. */
+export function levelOf(status: string | null | undefined): StatusLevel {
+  switch (status) {
+    case "critical":
+      return "critical";
+    case "warning":
+    case "warn":
+    case "amber":
+      return "warning";
+    default:
+      return "ok";
+  }
+}
+
 /**
  * Drop a source's record, for when the screen reporting it unmounts. Alerts it
  * was the only one holding become audible again if they are raised afresh.
@@ -298,5 +397,8 @@ export function forgetAlertSource(source: string): void {
 /** Forget every announced alert. Used by tests and by the director's reset. */
 export function resetAlertSound(): void {
   seenBySource.clear();
+  levels.clear();
+  lastAnnounced.clear();
   lastPlayedAt = 0;
+  lastCriticalAt = 0;
 }

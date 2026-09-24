@@ -32,7 +32,6 @@ import { Button } from "@/components/ui/primitives";
 import { Hint } from "@/components/ui/tooltip";
 import { LoadingState } from "@/components/ui/states";
 import { cn } from "@/lib/utils";
-import type { IconComponent } from "@/components/ui/icon";
 
 const LAYER_CONTROLS: {
   key: keyof TwinLayers;

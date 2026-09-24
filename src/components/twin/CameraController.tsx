@@ -74,7 +74,7 @@ export function CameraController() {
     outPosition: THREE.Vector3,
     outTarget: THREE.Vector3,
   ): void => {
-    const p = engine.telemetryOf(subjectId);
+    const p = engine.telemetryOrPrimary(subjectId);
 
     switch (mode) {
       case "top": {

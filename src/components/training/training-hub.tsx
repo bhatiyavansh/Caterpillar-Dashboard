@@ -11,10 +11,12 @@ import * as React from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
+  ArrowRight,
   Award,
   CalendarPlus,
   CircleCheck,
   Ghost,
+  Keyboard,
   Gamepad2,
   Lock,
   PlayCircle,
@@ -203,6 +205,27 @@ export function TrainingHub() {
             ))}
           </dl>
         </section>
+
+        {/* Guided lesson — the simulation module */}
+        <Link
+          href="/training/lesson"
+          className="group flex flex-wrap items-center gap-5 rounded border border-cat-500/40 bg-cat-500/[0.07] px-5 py-4 transition hover:border-cat-500/70"
+        >
+          <span className="grid size-14 shrink-0 place-items-center rounded-lg bg-cat-500 text-ink-950">
+            <Keyboard className="size-7" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="label-xs !text-cat-500">Simulation module · AI coach</p>
+            <p className="text-lg font-bold text-zinc-50">Guided lesson: drive the excavator with your arrow keys</p>
+            <p className="text-xs text-muted">
+              Travel, steering, slew and arm, then working near people. Every step is checked by the machine&apos;s sensors
+              and coached by a local Llama model grounded in the site manuals.
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-cat-400">
+            Start <ArrowRight className="size-4 transition group-hover:translate-x-1" aria-hidden />
+          </span>
+        </Link>
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           {/* Skill path */}

@@ -33,7 +33,7 @@ export function SectionNav({
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center gap-3 border-b border-white/10 bg-ink-900/60 px-3",
+        "flex shrink-0 items-center gap-3 border-b border-white/[0.07] bg-ink-900/40 px-3 backdrop-blur-xl sm:px-5",
         className,
       )}
     >
@@ -51,9 +51,9 @@ export function SectionNav({
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-colors",
+                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
                     isActive
-                      ? "bg-cat-500/15 text-cat-500"
+                      ? "bg-gradient-cat text-ink-950 shadow-[0_4px_14px_-6px_rgb(255_205_17/0.6)]"
                       : "text-zinc-400 hover:bg-white/5 hover:text-zinc-100",
                   )}
                 >

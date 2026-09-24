@@ -12,7 +12,9 @@
     "sim:hub": "uv run python -m simulator --mode hub --hub ws://localhost:8000/ws/ingest",
     "ml:train": "uv run python -m intelligence.train",
     "data:gen": "uv run python data-gen/generate.py --days 30 --seed 42",
-    "sim:calm": "uv run python -m simulator --mode standalone --rate 60 --intensity 1"
+    "sim:calm": "uv run python -m simulator --mode standalone --rate 60 --intensity 1",
+    "llm": "C:\\Users\\mahen\\llama.cpp\\build\\bin\\Release\\llama-server.exe -m C:\\Users\\mahen\\llama.cpp\\models\\Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf -c 8192 --host 127.0.0.1 --port 8081 -ngl 99 --jinja",
+    "scenarios:export": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/export-scenarios.mts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

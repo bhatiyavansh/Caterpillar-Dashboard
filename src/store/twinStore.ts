@@ -136,13 +136,13 @@ export const useTwinStore = create<TwinState>()((set, get) => {
     /* ------------------------------------------------------------------ */
 
     moveMachine: (id, dx, dz) => {
-      const t = get().engine.telemetryOf(id);
+      const t = get().engine.telemetryOrPrimary(id);
       t.x += dx;
       t.z += dz;
     },
 
     rotateMachine: (id, delta) => {
-      const t = get().engine.telemetryOf(id);
+      const t = get().engine.telemetryOrPrimary(id);
       t.heading = normalizeHeading(t.heading + delta);
     },
 
@@ -171,7 +171,9 @@ export const useTwinStore = create<TwinState>()((set, get) => {
     },
 
     updateTelemetry: (id, patch) => {
-      Object.assign(get().engine.telemetryOf(id), patch, { machineId: id });
+      const engine = get().engine;
+      if (!engine.allTelemetry().some((t) => t.machineId === id)) return;
+      Object.assign(engine.telemetryOf(id), patch, { machineId: id });
     },
 
     triggerAlert: (alert) => {

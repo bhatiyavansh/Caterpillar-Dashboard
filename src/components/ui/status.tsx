@@ -19,7 +19,7 @@ import {
 import type { AlertSeverity, MachineStatus } from "@/lib/api/contracts";
 import { ALERT_SEVERITY, MACHINE_STATUS } from "@/lib/status";
 import { cn } from "@/lib/utils";
-import type { IconComponent } from "@/components/ui/icon";
+import { useStatusSoundFor } from "@/lib/hooks/use-status-sound";
 
 const STATUS_ICON: Record<MachineStatus, LucideIcon> = {
   operating: CheckCircle2,
@@ -49,15 +49,23 @@ export function MachineStatusChip({
   size = "md",
   label,
   className,
+  soundKey,
 }: {
   status: MachineStatus;
   size?: Size;
   label?: string;
   className?: string;
+  /**
+   * What this chip is reporting on, e.g. a machine id. Given one, the chip
+   * announces itself when it turns amber or red. Without one it stays silent,
+   * because a sound with nothing to attach it to would fire on every re-render.
+   */
+  soundKey?: string;
 }) {
   const token = MACHINE_STATUS[status];
   const Icon = STATUS_ICON[status];
   const s = SIZES[size];
+  useStatusSoundFor(soundKey ? `machine:${soundKey}` : undefined, status);
   return (
     <span
       className={cn(
@@ -80,15 +88,19 @@ export function SeverityChip({
   size = "md",
   label,
   className,
+  soundKey,
 }: {
   severity: AlertSeverity;
   size?: Size;
   label?: string;
   className?: string;
+  /** What this severity belongs to, e.g. an alert id. See `MachineStatusChip`. */
+  soundKey?: string;
 }) {
   const token = ALERT_SEVERITY[severity];
   const Icon = SEVERITY_ICON[severity];
   const s = SIZES[size];
+  useStatusSoundFor(soundKey ? `severity:${soundKey}` : undefined, severity);
   return (
     <span
       className={cn(
@@ -114,12 +126,16 @@ export function StatusLabel({
   status,
   className,
   pulse,
+  soundKey,
 }: {
   status: MachineStatus;
   className?: string;
   pulse?: boolean;
+  /** What this label is reporting on. See `MachineStatusChip`. */
+  soundKey?: string;
 }) {
   const token = MACHINE_STATUS[status];
+  useStatusSoundFor(soundKey ? `machine:${soundKey}` : undefined, status);
   return (
     <span
       className={cn(

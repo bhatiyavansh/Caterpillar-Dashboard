@@ -1,0 +1,32 @@
+[
+  {
+    "id": "blind_spot_reversal",
+    "frames": 2161,
+    "fps": 120,
+    "durationS": 18,
+    "firstSystemActionS": 5.691666666666666,
+    "unassistedOutcomeS": 8.883333333333333,
+    "assistedMinPersonDistM": 4.59,
+    "assistedMinTipMargin": 2.3
+  },
+  {
+    "id": "wet_slope_rollover",
+    "frames": 2401,
+    "fps": 120,
+    "durationS": 20,
+    "firstSystemActionS": 2.6,
+    "unassistedOutcomeS": 5.966666666666667,
+    "assistedMinPersonDistM": 14.21,
+    "assistedMinTipMargin": 1.26
+  },
+  {
+    "id": "fatigue_microsleep",
+    "frames": 2641,
+    "fps": 120,
+    "durationS": 22,
+    "firstSystemActionS": 3.15,
+    "unassistedOutcomeS": 11.616666666666667,
+    "assistedMinPersonDistM": 7.4,
+    "assistedMinTipMargin": 1.95
+  }
+]

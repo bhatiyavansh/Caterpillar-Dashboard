@@ -30,6 +30,12 @@ PROVIDERS: dict[str, dict[str, Any]] = {
                "key": ("GEMINI_API_KEY", "GOOGLE_API_KEY"),
                "main": "gemini-flash-latest", "fast": "gemini-flash-lite-latest", "vision": "gemini-flash-latest",
                "spare": "", "stt": ""},
+    # Local llama.cpp `llama-server` (`npm run llm`): offline, keyless, last in the auto chain.
+    # It serves whichever GGUF it was started with and ignores the model name. CPU-only here
+    # (~10 tok/s), hence the longer client timeout.
+    "llamacpp": {"base": os.environ.get("LLAMACPP_BASE_URL", "http://127.0.0.1:8081/v1"),
+                 "key": ("LLAMACPP_API_KEY",), "default_key": "local", "timeout": 90.0,
+                 "main": "local", "fast": "local", "vision": "", "spare": "", "stt": ""},
 }
 
 
@@ -79,7 +85,7 @@ class OpenAICompatLLM:
     def __init__(self, provider: str, api_key: str | None = None, main: str | None = None, fast: str | None = None):
         cfg = PROVIDERS[provider]
         self.name = provider
-        self._key = api_key or _key_from_env(cfg["key"])
+        self._key = api_key or _key_from_env(cfg["key"]) or cfg.get("default_key")
         self.base = cfg["base"]
         self.models = {"main": main or os.environ.get(f"{provider.upper()}_MODEL", cfg["main"]),
                        "fast": fast or os.environ.get(f"{provider.upper()}_FAST_MODEL", cfg["fast"])}
@@ -87,7 +93,7 @@ class OpenAICompatLLM:
         # free tiers rate-limit per model, so on a 429 the other models' quotas are still there
         self.spares = [m for m in (self.models["main"], self.models["fast"], cfg["spare"]) if m]
         self.disabled: str | None = None  # set when the key is rejected; the chain then skips us
-        self._client = httpx.AsyncClient(timeout=20.0) if self._key else None
+        self._client = httpx.AsyncClient(timeout=cfg.get("timeout", 20.0)) if self._key else None
 
     @property
     def available(self) -> bool:
@@ -251,10 +257,10 @@ class ChainLLM:
 
 
 def build_llm() -> Any:
-    """LLM_PROVIDER=auto (default): Groq -> Gemini -> Anthropic, whichever have keys."""
+    """LLM_PROVIDER=auto (default): Groq -> Gemini -> Anthropic, whichever have keys, then local llama.cpp."""
     from copilot.agent.llm import AnthropicLLM
 
     order = os.environ.get("LLM_PROVIDER", "auto").lower()
-    names = ["groq", "gemini", "anthropic"] if order == "auto" else [n.strip() for n in order.split(",")]
+    names = ["groq", "gemini", "anthropic", "llamacpp"] if order == "auto" else [n.strip() for n in order.split(",")]
     built = [AnthropicLLM() if n == "anthropic" else OpenAICompatLLM(n) for n in names if n in (*PROVIDERS, "anthropic")]
     return ChainLLM(built)

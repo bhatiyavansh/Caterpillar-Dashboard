@@ -1,0 +1,55 @@
+{
+  "id": "fatigue_microsleep",
+  "title": "Microsleep in the 10th hour",
+  "fps": 120,
+  "duration": 22,
+  "events": [
+    {
+      "t": 0.5,
+      "actor": "operator",
+      "level": 1,
+      "title": "Loading a dump truck",
+      "detail": "Loaded swing right to ~85°, 9 s cycle. Truck driver standing by his cab."
+    },
+    {
+      "t": 3.15,
+      "actor": "system",
+      "level": 1,
+      "title": "Fatigue signs detected",
+      "detail": "Cab camera: repeated yawning in the 10th hour of shift. Break suggested."
+    },
+    {
+      "t": 9.208333333333334,
+      "actor": "hazard",
+      "level": 3,
+      "title": "Microsleep: eyes closed 1.2 s",
+      "detail": "Loaded bucket swinging at 34°/s toward the truck driver."
+    },
+    {
+      "t": 9.208333333333334,
+      "actor": "system",
+      "level": 3,
+      "title": "Swing held, seat vibration and alarm",
+      "detail": "Hydraulics soft-stopped. Operator must acknowledge to continue."
+    },
+    {
+      "t": 11.616666666666667,
+      "actor": "outcome",
+      "level": 3,
+      "title": "Without assist: bucket strikes the truck driver",
+      "detail": "Swing continues past the dump point during the microsleep."
+    },
+    {
+      "t": 13.408333333333333,
+      "actor": "operator",
+      "level": 1,
+      "title": "Operator wakes and acknowledges",
+      "detail": "Bucket returned to the dump point. Break logged, supervisor notified."
+    }
+  ],
+  "outcome": {
+    "assisted": "Swing held at 92°, short of the driver at 125°. Operator woke, acknowledged and was rotated to a break.",
+    "unassisted": "Loaded bucket swings through the truck driver standing by his cab.",
+    "unassistedAt": 11.616666666666667
+  }
+}

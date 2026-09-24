@@ -26,7 +26,6 @@ import {
 import { Button } from "@/components/ui/primitives";
 import { PageShell } from "@/components/ui/page";
 import { cn } from "@/lib/utils";
-import type { IconComponent } from "@/components/ui/icon";
 
 interface Hotspot {
   id: string;

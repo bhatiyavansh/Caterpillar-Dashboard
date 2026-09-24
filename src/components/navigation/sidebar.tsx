@@ -86,7 +86,7 @@ export function Sidebar() {
         <div className="flex items-center justify-between">
           <span className="label-xs">System</span>
           <span className="inline-flex items-center gap-2 text-zinc-300">
-            <StatusDot status={health} pulse />
+            <StatusDot status={health} pulse soundKey="cab:machine-health" />
             {health === "healthy" ? "Nominal" : health === "warning" ? "Degraded" : "Attention"}
           </span>
         </div>

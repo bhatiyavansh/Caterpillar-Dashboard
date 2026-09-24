@@ -53,7 +53,7 @@ export function PredictedPath({ machineId }: { machineId: string }) {
   const arrowMat = useRef<THREE.MeshBasicMaterial>(null);
 
   useFrame((state) => {
-    const t = engine.telemetryOf(machineId);
+    const t = engine.telemetryOrPrimary(machineId);
     const moving = Math.abs(t.speed) > MOVING_THRESHOLD;
 
     if (mesh.current) mesh.current.visible = moving;

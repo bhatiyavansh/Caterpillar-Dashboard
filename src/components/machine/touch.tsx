@@ -4,6 +4,7 @@ import * as React from "react";
 import { motion } from "motion/react";
 import type { HealthStatus, Severity } from "@/lib/types";
 import { cn, severityStyles, statusStyles } from "@/lib/utils";
+import { useStatusSoundFor } from "@/lib/hooks/use-status-sound";
 
 /**
  * Minimum 56px high — sized for a gloved hand on a vibrating machine.
@@ -62,6 +63,7 @@ export function MachineStatusCard({
   className?: string;
 }) {
   const s = statusStyles[status];
+  useStatusSoundFor(label, status);
   const Wrapper = onClick ? "button" : "div";
   return (
     <Wrapper

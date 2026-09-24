@@ -257,7 +257,7 @@ export function DirectorPanel() {
                 {alerts.length ? (
                   alerts.slice(0, 5).map((a) => (
                     <div key={a.id} className="flex items-center gap-2">
-                      <SeverityChip severity={a.severity} size="sm" />
+                      <SeverityChip severity={a.severity} size="sm" soundKey={a.id} />
                       <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-300">{a.title}</span>
                       <span className="shrink-0 font-mono text-[10px] text-muted">{a.machineId}</span>
                     </div>

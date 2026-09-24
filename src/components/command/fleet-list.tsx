@@ -127,7 +127,7 @@ export function FleetList({
                       </span>
                       <span className="flex items-baseline justify-between gap-2">
                         <span className="truncate text-[11px] text-muted">{m.kindLabel}</span>
-                        <StatusLabel status={m.status} pulse={m.status === "critical"} />
+                        <StatusLabel status={m.status} pulse={m.status === "critical"} soundKey={m.id} />
                       </span>
                       <span className="mt-0.5 block truncate text-[11px] text-zinc-400">
                         {m.taskLabel ?? (m.status === "offline" ? "No telemetry" : "No task assigned")}

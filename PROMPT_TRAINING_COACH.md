@@ -105,9 +105,11 @@ That is a hard design constraint, not a tuning detail:
 
 ## Cut the live feed while a lesson runs — this will bite you
 
-`TwinStage` **auto-connects to the simulator** on mount (`useLiveLink.ts`): it
-probes `http://localhost:8100/health` and, if anything answers, switches the
-telemetry source to `websocket`.
+`TwinStage` **auto-connects to the live stream** on mount (`useLiveLink.ts`): it
+probes the hub's `/api/health` and, if the hub reports any attached source,
+switches the telemetry source to `websocket`. (It used to probe the simulator
+on :8100 directly; since the hub refactor the twin reads the shared
+`@web/lib/stream` store, so every surface shows the same reality.)
 
 That is right for `/twin` and wrong for training. In live mode the engine's
 `stepLive()` writes position, heading and every joint angle onto EXC001 from the
@@ -140,10 +142,10 @@ the bug this prevents.
 Keep that harness working as you build; if the arrow keys ever stop driving the
 machine in training, this is the first thing to check.
 
-Disconnect the **client link**, do not kill the Python process. `/command`,
-`/owner` and `/twin` may be open in other tabs reading the same simulator, and a
-training session has no business stopping a shared service. `engine.setSource()`
-already tears the socket down cleanly via `stopLive()`.
+Disconnect the **client link**, do not kill anything upstream. The stream is
+shared and reference-counted (`acquireStream()`), and `/command`, `/owner` and
+`/twin` may be open in other tabs reading it. `engine.setSource()` releases the
+twin's handle cleanly via `stopLive()`; the hub carries on serving everyone else.
 
 Show the state plainly in the coach header — `MACHINE: LOCAL CONTROL` during a
 lesson, `MACHINE: LIVE FEED` outside one. A learner who cannot tell whether they
@@ -171,72 +173,144 @@ Give it these tools (JSON-schema constrained, executed by your own code):
 
 ```ts
 say(text)                          // one short instruction or a correction
-start_lesson(moduleId)
-set_step(stepId)
-advance()                          // only callable after the validator passes
-remediate(reason, simplerStepId)   // it struggled; back off
-show_ghost(runId)                  // play expert_run.json as a demo
-set_camera(mode)                   // "driver" for pedal work, "follow" for travel
-spawn_hazard(scenario)             // fire a simulator scenario for hazard drills
+start_level(levelId)               // refused by code if `requires` is unmet
+set_drill(drillId)                 // move within the current level's drills
+add_remedial_drill(afterId, spec)  // they struggled; insert a simpler rung
+begin_check()                      // coaching goes quiet; the clock starts
+remediate(reason)                  // diagnose a failure in one line
+show_ghost(runId)                  // play the expert run as a demo
+set_camera(mode)                   // "driver" for arm work, "follow" for travel
+spawn_hazard(scenario)             // forceWorkerApproach() etc. for level 5
 reset_machine()
-finish(score, weakestSkill)
+praise(fact)                       // one line naming a real telemetry fact
+
+// Note there is no `pass_level`. Only the validator can pass a check, and only
+// stored results can unlock the next level.
 ```
 
-## The step-by-step mechanic
+## Levels, not a manual
 
-This is the core interaction. Example first lesson, exactly as the learner sees it:
+This is the part that matters most. It is **not** a document with a simulator
+next to it, and it is not one long lesson. It is a **ladder of levels the
+learner climbs**, the way a game teaches: one competency per level, earned by
+doing it, and the next level does not open until this one is passed.
 
 ```
-COACH   Lesson 1 of 4 — Travel control.
-        On a real 320 you'd push the travel pedals. Here, hold the UP ARROW.
-        Get her moving and hold about 3 km/h.
-
-        [ ↑ ]  hold to travel                      waiting…
-
-  →  learner holds ArrowUp, telemetry.speed climbs past 0.8 m/s
-
-COACH   ✓ That's it. Feel how long she takes to get going — forty tonnes
-        doesn't hurry. Now ease off and let her roll to a stop.
+  LEVEL 1  Move the machine          * * *   passed
+  LEVEL 2  Steer and place           * *     passed
+  LEVEL 3  The house and the arm     >       in progress
+  LEVEL 4  A full dig cycle          locked
+  LEVEL 5  People on site            locked
+  LEVEL 6  Working on a slope        locked
 ```
 
-Each step is:
+### Every level has the same three beats
+
+1. **Brief** - two lines. What this level teaches and why it matters on a real
+   site. Never more.
+2. **Drills** - two to five guided steps. The coach talks, hints when they
+   stall, unlimited retries, no score. This is where learning happens.
+3. **Check** - the same skill once more, **with the coaching turned off** and a
+   time or tolerance to beat. Passing the check is what unlocks the next level.
+
+That split is the whole design. Drills with hints prove nothing; a check with no
+hints proves they can actually do it. A learner who only succeeds while being
+told each keystroke has not learned to operate the machine.
 
 ```ts
-interface LessonStep {
+interface Level {
   id: string;
-  /** What the coach says. The LLM may rewrite this for the learner's level. */
+  index: number;                 // 1-based; the ladder is ordered
+  title: string;                 // "Move the machine"
+  why: string;                   // one line of site-real justification
+  drills: LessonStep[];          // coached, retryable, unscored
+  check: LessonCheck;            // uncoached, timed, gates the next level
+  /** Levels that must be passed first. Usually just the previous one. */
+  requires: string[];
+}
+
+interface LessonCheck {
   brief: string;
-  /** The real-machine control, for the lesson text. */
-  realControl: string;          // "travel pedals"
-  /** The sim key(s) shown in the HUD. */
-  keys: string[];               // ["ArrowUp"]
-  /** Deterministic pass condition over live telemetry. */
   success: (t: MachineTelemetry, ctx: StepContext) => boolean;
-  /** Must hold for this long, so a twitch doesn't count. */
-  holdMs: number;
-  /** Fail after this, then ask the LLM to remediate. */
+  /** Beat this for three stars; it is the level's par time. */
+  targetMs: number;
   timeoutMs: number;
-  /** Named failure modes, given to the LLM as diagnosis hints. */
-  hints: { when: (t, ctx) => boolean; reason: string }[];
+  /** Any of these during the check costs a star. */
+  penalties: { when: (t: MachineTelemetry, ctx: StepContext) => boolean; label: string }[];
 }
 ```
 
-Build the curriculum from the controls that already exist in
-`src/lib/twin/controls.ts` — **do not invent keys**:
+`LessonStep` keeps the shape defined above - `brief`, `realControl`, `keys`,
+`success`, `holdMs`, `timeoutMs`, `hints`.
 
-| Module | Real control | Sim keys |
-|---|---|---|
-| Travel | travel pedals | `ArrowUp` / `ArrowDown` |
-| Steering | track levers | `ArrowLeft` / `ArrowRight` |
-| Slew | swing joystick | `Shift` + `ArrowLeft/Right` |
-| Boom | right joystick fore/aft | `W` / `S` |
-| Stick | left joystick fore/aft | `A` / `D` |
-| Bucket | right joystick left/right | `Q` / `E` |
-| Emergency stop | cab e-stop | `Space` |
+### The ladder
 
-Suggested modules: **Travel control → Slew and arm → A full dig cycle →
-Working near people** (spawn `worker_behind`, learner must stop before the red
-bubble) → **Slope awareness** (watch `tipOverMargin`).
+| # | Level | Drills | Check passes when |
+|---|---|---|---|
+| 1 | **Move the machine** | hold up-arrow to travel; release and let it roll out; reverse | travel 15 m forward and stop inside a 2 m box |
+| 2 | **Steer and place** | turn on the spot; turn while travelling | park on a marker within 1.5 m and 10 deg of a heading |
+| 3 | **The house and the arm** | slew with shift+arrows; boom, stick, bucket | reach a called-out pose (boom 40, stick -30, bucket curled) and hold it 2 s |
+| 4 | **A full dig cycle** | dig, curl, lift, slew, dump, return | three clean cycles, payload over 1500 kg each, under par time |
+| 5 | **People on site** | read the bubble; stop for a worker; e-stop drill | worker walks in via `forceWorkerApproach()`, machine stopped before the red ring, zero red-zone seconds |
+| 6 | **Working on a slope** | approach a grade; watch `tipOverMargin`; retract before slewing | a loaded slew on the pit ramp with margin never below 1.5 |
+
+Levels 5 and 6 are the point of the product. Everything before them exists to
+give the learner enough control to be tested on safety.
+
+### Progression rules
+
+- **Sequential and gated.** `requires` is enforced by code, never by the LLM. A
+  locked level is not selectable, and the ladder states plainly why it is locked.
+- **Stars, not percentages.** Three stars = passed inside `targetMs` with no
+  penalties. Two = passed. One = passed after three or more attempts. Stars drive
+  replay; one star still unlocks the next level.
+- **Never hard-block a learner.** After three failed checks the coach offers
+  `show_ghost` - the expert run played in the scene - then lets them try again.
+  Frustration is the only failure that loses a learner for good.
+- **Persist progress** in `localStorage` under one versioned key
+  (`cat.training.v1`): levels passed, stars, attempts, best times. Re-entering
+  `/training` resumes at the first unpassed level.
+- **Replay is always allowed** on a passed level, to chase stars.
+
+### The level-complete moment
+
+Make this feel like something. On a check pass: stop the clock, freeze input,
+and show stars earned, time against par, what specifically improved, and one
+primary button - **Next level**. The coach writes a single line of praise that
+names the actual thing they did well, taken from telemetry rather than generic
+filler.
+
+Level 4 is the natural home for the ghost comparison: their cycle time against
+the expert's 19 s and the novice's 26 s from `data/runs/`.
+
+### What the LLM does and does not do here
+
+| The LLM | Code |
+|---|---|
+| Rewrites a drill's wording for someone struggling | Decides the check passed |
+| Chooses whether to add a remedial drill before the check | Enforces `requires` and unlocking |
+| Writes the praise line, naming a real telemetry fact | Computes stars, time, penalties |
+| Decides when to offer the ghost | Plays it |
+
+The model may **suggest** moving on. It may never **grant** a level. Unlocking is
+a pure function of stored results, so a learner can always see exactly why
+something is locked, and a hallucinating 8B model can never hand out a
+qualification.
+
+### Control mapping - do not invent keys
+
+Lesson text names the real control; the HUD shows the key.
+
+| Real control | Sim keys |
+|---|---|
+| travel pedals | `ArrowUp` / `ArrowDown` |
+| track levers | `ArrowLeft` / `ArrowRight` |
+| swing joystick | `Shift` + `ArrowLeft/Right` |
+| right joystick fore/aft (boom) | `W` / `S` |
+| left joystick fore/aft (stick) | `A` / `D` |
+| right joystick left/right (bucket) | `Q` / `E` |
+| cab e-stop | `Space` |
+| sim only | `R` resets the machine |
 
 ## Where it plugs in
 
@@ -272,15 +346,25 @@ Everything below already exists. Extend it; don't build a parallel twin.
    with the simulator running.
 2. `npm run llm` script + `/api/coach` route with schema-constrained output.
    Prove it round-trips a tool call before touching the UI.
-3. `src/lib/training/curriculum.ts` — steps and their success predicates, pure
-   and unit-testable. Test predicates against synthetic telemetry, no LLM.
-4. `src/lib/training/validator.ts` — the 60 Hz watcher: hold timers, timeouts,
-   failure-mode detection. Also pure.
-5. `useTrainingCoach()` hook — wires validator events to the LLM and applies the
+3. `src/lib/training/levels.ts` — the six levels, their drills and checks, with
+   success predicates as pure functions. Unit-test the predicates against
+   synthetic telemetry; no LLM, no React, no browser.
+4. `src/lib/training/progress.ts` — passed levels, stars, attempts, best times;
+   `isUnlocked(levelId, progress)` as a pure function; `localStorage` under
+   `cat.training.v1` with a version check so a schema change cannot crash a
+   returning learner. Test the unlock rules directly.
+5. `src/lib/training/validator.ts` — the 60 Hz watcher: hold timers, timeouts,
+   penalty detection, check scoring. Also pure.
+6. **Build level 1 end to end before writing level 2.** Drills, check, pass,
+   stars, unlock, and the Next-level hand-off. One level that genuinely works
+   beats six that half-work, and the shape of level 1 will change your mind
+   about the others.
+7. `useTrainingCoach()` hook — wires validator events to the LLM and applies the
    returned tool calls to the twin.
-6. Coach UI inside the training hub: instruction card, live key prompt (reuse
-   the `KeyHints` styling from `CommandCenter.tsx`), progress, ghost overlay.
-7. Wire the ghost comparison and the end-of-lesson score.
+8. Level-ladder UI in the training hub: the ladder with locked/unlocked/passed
+   and star counts, the instruction card, the live key prompt (reuse the
+   `KeyHints` styling from `CommandCenter.tsx`), and the level-complete panel.
+9. Levels 2–6, then the ghost comparison on level 4.
 
 ## Non-negotiables
 
@@ -302,8 +386,15 @@ Everything below already exists. Extend it; don't build a parallel twin.
 
 ## Done means
 
-A learner opens `/training`, clicks **Start guided lesson**, and is taught to
-drive the excavator one validated step at a time by a local LLM that watches
-what they actually do — adapting when they struggle, showing them the expert
-ghost when words aren't enough, and finishing with a score against their
-recorded skill profile.
+A learner opens `/training` and sees a ladder of six levels with one unlocked.
+They start level 1, are coached through its drills one validated step at a time,
+then take the check with the hints switched off. Passing it earns stars, unlocks
+level 2, and hands them straight into it.
+
+By level 5 they are stopping the machine for a worker who walks into the bubble;
+by level 6 they are watching the tip-over margin on a grade. They can close the
+tab and come back to where they left off.
+
+The coach adapts when they struggle and shows them the expert ghost when words
+are not enough — but every level they hold was earned against telemetry, not
+granted by a language model.

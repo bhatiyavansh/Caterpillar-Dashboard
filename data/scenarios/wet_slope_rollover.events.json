@@ -1,0 +1,69 @@
+{
+  "id": "wet_slope_rollover",
+  "title": "Rollover on a wet slope",
+  "fps": 120,
+  "duration": 20,
+  "events": [
+    {
+      "t": 0.5,
+      "actor": "operator",
+      "level": 1,
+      "title": "Lifting a 2.8 t pipe section",
+      "detail": "Wet clay, 12° cross-slope toward the trench."
+    },
+    {
+      "t": 2.6,
+      "actor": "hazard",
+      "level": 3,
+      "title": "Seatbelt released on a 12° slope",
+      "detail": "Operator unbuckles to lean out and see the trench edge."
+    },
+    {
+      "t": 2.6,
+      "actor": "system",
+      "level": 3,
+      "title": "Hydraulic lockout",
+      "detail": "Seatbelt interlock freezes boom, stick and slew with the load held."
+    },
+    {
+      "t": 5.4,
+      "actor": "operator",
+      "level": 1,
+      "title": "Operator re-fastens the belt",
+      "detail": "Hydraulics released."
+    },
+    {
+      "t": 5.966666666666667,
+      "actor": "outcome",
+      "level": 3,
+      "title": "Without assist: machine rolls downhill",
+      "detail": "Stability margin below 1.0× at full reach. Unbelted operator ejected."
+    },
+    {
+      "t": 6.158333333333333,
+      "actor": "system",
+      "level": 2,
+      "title": "Slew slowed: stability falling",
+      "detail": "Margin 1.55×. Slew speed cut to 30%."
+    },
+    {
+      "t": 7.816666666666666,
+      "actor": "system",
+      "level": 3,
+      "title": "Downhill slew blocked",
+      "detail": "Margin 1.30×. Retract the stick and lower the load to continue."
+    },
+    {
+      "t": 10.066666666666666,
+      "actor": "system",
+      "level": 1,
+      "title": "Load in close, slew released",
+      "detail": "Margin back above 1.6×. Pipe laid with the load tucked in."
+    }
+  ],
+  "outcome": {
+    "assisted": "Load laid safely. Stability never fell below 1.26×, and no load moved while the belt was open.",
+    "unassisted": "Machine rolls into the trench with an unbelted operator. Ejection and crush injury.",
+    "unassistedAt": 5.966666666666667
+  }
+}

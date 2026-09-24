@@ -7,6 +7,8 @@ import {
   FileBarChart,
   Gauge,
   GraduationCap,
+  House,
+  MonitorSmartphone,
   LayoutDashboard,
   type LucideIcon,
   MonitorCog,
@@ -41,6 +43,8 @@ export const NAV: NavGroup[] = [
     id: "operate",
     label: "Operate",
     items: [
+      { href: "/", label: "Home", audience: "Start here · every surface", icon: House },
+      { href: "/hmi", label: "Vehicle display", audience: "Operator screen simulator", icon: MonitorSmartphone },
       { href: "/command", label: "Command centre", audience: "Site manager", icon: LayoutDashboard },
       { href: "/cab", label: "Operator cab", audience: "Machine operator", icon: Truck },
       { href: "/twin", label: "Live 3D twin", audience: "Drivable site view", icon: Boxes },

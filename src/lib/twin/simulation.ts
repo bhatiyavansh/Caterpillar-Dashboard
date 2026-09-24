@@ -34,6 +34,7 @@ import {
   angleDelta,
   clamp,
   headingTo,
+  headingVector,
   lerp,
   normalizeHeading,
   zoneAt,
@@ -121,6 +122,8 @@ interface WorkerRuntime {
   approachCooldown: number;
   /** Seconds left of an active approach. */
   approachLeft: number;
+  /** Seconds a test-bench placement holds this worker still. */
+  pinnedLeft?: number;
 }
 
 export interface UiSnapshot {
@@ -205,6 +208,15 @@ export class SimulationEngine {
    * evaluates real recorded geometry, not a simulation of it.
    */
   private replay: { track: IncidentTrack; time: number; machineId: string } | null = null;
+
+  /**
+   * External frame driver (scenario playback). While set it replaces the
+   * primary machine's physics and the spotter's walking; the rest of the
+   * fleet and the whole safety layer keep running, so detections are real.
+   */
+  private driver: ((dt: number) => void) | null = null;
+  /** Shown instead of wall-clock time while a scenario sets its own time of day. */
+  private clockOverride: string | null = null;
 
   /** 0 -> 1 as rain soaks the ground; drives the wet-terrain look. */
   wetness = 0;
@@ -352,6 +364,15 @@ export class SimulationEngine {
     return t;
   }
 
+  /**
+   * Like telemetryOf, but never throws. Fleet IDs outside the twin's
+   * simulated set (e.g. EXC003 from the fleet fixtures) fall back to the
+   * primary machine so a stale or cross-view selection can't crash a frame.
+   */
+  telemetryOrPrimary(id: string): MachineTelemetry {
+    return this.telemetry.get(id) ?? this.primary;
+  }
+
   get primary(): MachineTelemetry {
     return this.telemetryOf(PRIMARY_MACHINE);
   }
@@ -405,6 +426,15 @@ export class SimulationEngine {
     this.tick++;
 
     this.stepEnvironment(step);
+
+    if (this.driver) {
+      this.stepFleet(step);
+      this.stepWorkers(step);
+      this.driver(step);
+      this.stepSafety();
+      this.stepTasks(step);
+      return;
+    }
 
     if (this.replay) {
       this.stepReplay(step);
@@ -534,6 +564,13 @@ export class SimulationEngine {
     for (const runtime of this.workers) {
       const w = runtime.worker;
       runtime.worker.phase += dt * (w.state === "walking" ? 6 : 2);
+
+      // Test-bench placement: stand still where the bench put them.
+      if (runtime.pinnedLeft && runtime.pinnedLeft > 0) {
+        runtime.pinnedLeft -= dt;
+        w.state = "working";
+        continue;
+      }
 
       // Periodic approach: this is what makes the proximity demo reliable.
       if (runtime.approachLeft > 0) {
@@ -1182,7 +1219,7 @@ export class SimulationEngine {
       linkDetail: this.linkDetail,
       liveMachines: this.liveTargets.size,
       fps: this.fps,
-      clock: new Date().toLocaleTimeString("en-GB", { hour12: false }),
+      clock: this.clockOverride ?? new Date().toLocaleTimeString("en-GB", { hour12: false }),
       replay: this.replay
         ? {
             incidentId: this.replay.track.incidentId,
@@ -1381,6 +1418,65 @@ export class SimulationEngine {
     runtime.approachLeft = 20;
     runtime.approachCooldown = 70;
     this.pushEvent(`${runtime.worker.id} entering ${PRIMARY_MACHINE} safety zone`, "warning");
+  }
+
+  /**
+   * Test bench: stand the spotter on one side of the primary machine at an
+   * exact distance, and hold them there. Sides are relative to the tracks'
+   * heading, so "rear" is behind the machine whichever way it faces.
+   */
+  placeWorker(side: "front" | "rear" | "left" | "right", distance: number, holdS = 25): void {
+    const p = this.primary;
+    const runtime = this.workers.find((w) => w.worker.id === SPOTTER_ID) ?? this.workers[0];
+    const offset = { front: 0, right: Math.PI / 2, rear: Math.PI, left: -Math.PI / 2 }[side];
+    const f = headingVector(p.heading + offset);
+    runtime.worker.x = clamp(p.x + f.x * distance, -SITE_HALF, SITE_HALF);
+    runtime.worker.z = clamp(p.z + f.z * distance, -SITE_HALF, SITE_HALF);
+    runtime.worker.heading = headingTo(runtime.worker.x, runtime.worker.z, p.x, p.z);
+    runtime.approachLeft = 0;
+    runtime.pinnedLeft = holdS;
+    runtime.approachCooldown = Math.max(runtime.approachCooldown, holdS + 30);
+    this.pushEvent(`${runtime.worker.id} placed ${distance.toFixed(1)} m ${side} of ${PRIMARY_MACHINE}`, "warning");
+  }
+
+  /** Scenario playback: hand the primary machine to an external frame driver, or take it back. */
+  setDriver(driver: ((dt: number) => void) | null, clock: string | null = null): void {
+    this.driver = driver;
+    this.clockOverride = driver ? clock : null;
+  }
+
+  get driven(): boolean {
+    return this.driver !== null;
+  }
+
+  /** Scenario playback: hold the spotter at an exact spot this frame. */
+  holdSpotterAt(x: number, z: number, heading: number, walking: boolean): void {
+    const runtime = this.workers.find((w) => w.worker.id === SPOTTER_ID) ?? this.workers[0];
+    runtime.worker.x = x;
+    runtime.worker.z = z;
+    runtime.worker.heading = heading;
+    runtime.worker.state = walking ? "walking" : "working";
+    runtime.pinnedLeft = 0.5;
+    runtime.approachLeft = 0;
+    runtime.approachCooldown = Math.max(runtime.approachCooldown, 60);
+  }
+
+  /** Test bench: send every worker well clear of the primary machine. */
+  clearWorkers(): void {
+    const p = this.primary;
+    for (const runtime of this.workers) {
+      const dx = runtime.worker.x - p.x;
+      const dz = runtime.worker.z - p.z;
+      const d = Math.hypot(dx, dz) || 1;
+      if (d < 25) {
+        runtime.worker.x = clamp(p.x + (dx / d) * 28, -SITE_HALF, SITE_HALF);
+        runtime.worker.z = clamp(p.z + (dz / d) * 28, -SITE_HALF, SITE_HALF);
+      }
+      runtime.pinnedLeft = 0;
+      runtime.approachLeft = 0;
+      runtime.approachCooldown = 90;
+    }
+    this.pushEvent(`Work zone around ${PRIMARY_MACHINE} cleared`, "info");
   }
 
   forceCollisionRisk(): void {

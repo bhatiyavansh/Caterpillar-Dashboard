@@ -74,7 +74,7 @@ export function CabHmi() {
           <span className="font-mono text-2xl font-bold leading-none text-zinc-50">{machine.id}</span>
           <span className="text-xs text-muted">{machine.model}</span>
         </div>
-        <MachineStatusChip status={machine.status} size="lg" />
+        <MachineStatusChip status={machine.status} size="lg" soundKey={machine.id} />
         <div className="hidden sm:block">
           <p className="label-xs">Operator</p>
           <p className="text-sm font-semibold text-zinc-100">

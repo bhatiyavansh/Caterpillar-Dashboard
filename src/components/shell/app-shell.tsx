@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
  * gives. The rail collapses to icons rather than disappearing, so navigation is
  * always one click away.
  */
-const FOCUSED_ROUTES = ["/cab", "/ar", "/director", "/twin", "/machine"];
+const FOCUSED_ROUTES = ["/hmi", "/training/lesson", "/cab", "/ar", "/director", "/twin", "/machine"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -58,7 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-ink-950">
+    <div className="flex h-dvh overflow-hidden">
       <div className="hidden lg:block">
         <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
       </div>
@@ -70,7 +70,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/70"
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setMobileOpen(false)}
             />
             <motion.div

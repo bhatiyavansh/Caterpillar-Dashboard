@@ -38,14 +38,23 @@ function NavLink({
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group relative flex items-center gap-3 rounded px-2.5 py-2 transition-colors",
+        "group relative flex items-center gap-3 rounded-xl px-2 py-1.5 transition-all",
         active
-          ? "bg-cat-500/12 text-cat-500 shadow-[inset_2px_0_0_0_var(--color-cat-500)]"
-          : "text-zinc-400 hover:bg-white/5 hover:text-zinc-100",
+          ? "bg-gradient-to-r from-cat-500/18 to-cat-500/[0.03] text-cat-400 ring-1 ring-cat-500/25"
+          : "text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-100",
         collapsed && "justify-center px-0",
       )}
     >
-      <Icon className="size-4.5 shrink-0" aria-hidden />
+      <span
+        className={cn(
+          "grid size-8 shrink-0 place-items-center rounded-lg transition-colors",
+          active
+            ? "bg-gradient-cat text-ink-950 shadow-[0_4px_14px_-4px_rgb(255_205_17/0.6)]"
+            : "bg-white/[0.04] text-zinc-400 group-hover:bg-white/[0.08] group-hover:text-zinc-100",
+        )}
+      >
+        <Icon className="size-4" aria-hidden />
+      </span>
       {!collapsed ? (
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold leading-tight">{item.label}</span>
@@ -90,17 +99,19 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        "flex h-full shrink-0 flex-col border-r border-white/10 bg-ink-900 transition-[width] duration-200",
-        collapsed ? "w-16" : "w-60",
+        "flex h-full shrink-0 flex-col border-r border-white/[0.07] bg-ink-900/70 backdrop-blur-xl transition-[width] duration-200",
+        collapsed ? "w-[72px]" : "w-64",
       )}
       aria-label="Primary"
     >
       {/* Brand */}
-      <div className={cn("flex items-center gap-2.5 border-b border-white/10 px-3 py-3.5", collapsed && "justify-center px-0")}>
-        <span className="grid size-9 shrink-0 place-items-center rounded bg-cat-500 font-black text-ink-950">CC</span>
+      <div className={cn("flex items-center gap-3 border-b border-white/[0.07] px-4 py-4", collapsed && "justify-center px-0")}>
+        <span className="bg-gradient-cat grid size-10 shrink-0 place-items-center rounded-xl text-sm font-black text-ink-950 shadow-[0_6px_20px_-6px_rgb(255_205_17/0.7)]">CAT</span>
         {!collapsed ? (
           <span className="min-w-0">
-            <span className="block truncate text-sm font-bold tracking-wide text-zinc-50">CAT Copilot</span>
+            <span className="block truncate text-[15px] font-bold tracking-tight text-zinc-50">
+              CAT <span className="text-gradient-cat">Copilot</span>
+            </span>
             <span className="block truncate text-[10px] uppercase tracking-[0.16em] text-muted">
               Site intelligence
             </span>
@@ -136,11 +147,11 @@ export function AppSidebar({
         <Hint label={conn.help}>
           <div
             className={cn(
-              "flex items-center gap-2 rounded border border-white/10 bg-ink-850 px-2.5 py-2",
+              "flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-2.5 py-2",
               collapsed && "justify-center px-0",
             )}
           >
-            <span className={cn("size-2 shrink-0 rounded-full", conn.dot)} aria-hidden />
+            <span className={cn("relative size-2 shrink-0 rounded-full pulse-ring", conn.dot)} aria-hidden />
             {!collapsed ? (
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[11px] font-semibold text-zinc-200">{conn.label}</span>

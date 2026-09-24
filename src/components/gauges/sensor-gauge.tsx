@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import type { HealthStatus } from "@/lib/types";
 import { cn, statusStyles } from "@/lib/utils";
+import { useStatusSoundFor } from "@/lib/hooks/use-status-sound";
 
 const ARC_START = 135;
 const ARC_SWEEP = 270;
@@ -59,6 +60,9 @@ export function SensorGauge({
   const ratio = Math.max(0, Math.min(1, (value - min) / (max - min)));
   const endDeg = ARC_START + ratio * ARC_SWEEP;
   const s = statusStyles[status];
+  // The reading's own name identifies it: "Hydraulic temp" is the same gauge
+  // wherever it is drawn, so it is one sound however many screens show it.
+  useStatusSoundFor(label, status);
 
   const ticks = Array.from({ length: 9 }, (_, i) => ARC_START + (i / 8) * ARC_SWEEP);
 
@@ -160,6 +164,7 @@ export function BarGauge({
 }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   const s = statusStyles[status];
+  useStatusSoundFor(label, status);
   return (
     <div>
       <div className="flex items-baseline justify-between">

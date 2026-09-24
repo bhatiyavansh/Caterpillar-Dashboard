@@ -84,7 +84,7 @@ function AnomalyCard({ anomaly, live }: { anomaly: Anomaly; live: boolean }) {
                 This shift
               </span>
             ) : null}
-            <SeverityChip severity={anomaly.severity} size="sm" />
+            <SeverityChip severity={anomaly.severity} size="sm" soundKey={anomaly.id} />
           </div>
           <p className="mt-0.5 text-[11px] text-muted">
             {anomaly.machineId} · {when(anomaly.detectedAt)} ·{" "}

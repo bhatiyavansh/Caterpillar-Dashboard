@@ -207,7 +207,7 @@ function AnomalyCard({ anomaly }: { anomaly: Anomaly }) {
   return (
     <article className={cn("flex flex-col overflow-hidden rounded border bg-ink-850", token.border)}>
       <div className="flex items-center gap-2 border-b border-white/8 px-3 py-2">
-        <SeverityChip severity={anomaly.severity} size="sm" />
+        <SeverityChip severity={anomaly.severity} size="sm" soundKey={anomaly.id} />
         <span className="font-mono text-xs font-bold text-zinc-100">{anomaly.machineId}</span>
         <span className="ml-auto truncate text-[11px] text-muted">{anomaly.deviation}</span>
       </div>

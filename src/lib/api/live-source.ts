@@ -53,7 +53,7 @@ import {
   type RealOwnerReport,
   type RealTaskEstimate,
 } from "./real-ml";
-import type { Anomaly, MaintenanceItem, OwnerKpis, OwnerSeries, SiteTask } from "./contracts";
+import type { Anomaly, Incident, MaintenanceItem, OwnerKpis, OwnerSeries, SiteTask } from "./contracts";
 
 /** How often to re-poll the real ML endpoints. None of this rides the WebSocket stream. */
 const ML_REFRESH_MS = 90_000;
@@ -405,6 +405,14 @@ export class LiveFleetSource implements FleetSource {
 
   getIncidents() {
     return this.fallback.getIncidents();
+  }
+  // Incidents are held client-side in both modes, so filing and reporting go
+  // to the same store `getIncidents` reads from.
+  fileIncident(incidentId: string, status: Incident["status"], note?: string) {
+    this.fallback.fileIncident(incidentId, status, note);
+  }
+  reportIncident(input: Parameters<FleetSource["reportIncident"]>[0]) {
+    return this.fallback.reportIncident(input);
   }
   getMaintenance(): MaintenanceItem[] {
     return this.realMaintenance ?? this.fallback.getMaintenance();

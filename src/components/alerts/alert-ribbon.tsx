@@ -21,7 +21,6 @@ import type { SiteAlert } from "@/lib/api/contracts";
 import { Button } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import { useAlertSound } from "@/lib/hooks/use-alert-sound";
-import type { IconComponent } from "@/components/ui/icon";
 
 export type RibbonLevel = "normal" | "info" | "warning" | "critical";
 

@@ -96,7 +96,7 @@ function IncidentRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-semibold text-zinc-50">{incident.title}</h3>
-            <SeverityChip severity={incident.severity} size="sm" />
+            <SeverityChip severity={incident.severity} size="sm" soundKey={incident.id} />
             <span
               className={cn(
                 "rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",

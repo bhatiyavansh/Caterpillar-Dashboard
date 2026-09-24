@@ -1,0 +1,62 @@
+{
+  "id": "blind_spot_reversal",
+  "title": "Blind-spot reversal",
+  "fps": 120,
+  "duration": 18,
+  "events": [
+    {
+      "t": 1,
+      "actor": "operator",
+      "level": 1,
+      "title": "Operator starts reversing",
+      "detail": "Repositioning for the next truck at ~3 km/h."
+    },
+    {
+      "t": 1.5,
+      "actor": "hazard",
+      "level": 1,
+      "title": "Banksman walks toward the path",
+      "detail": "Head down, looking for a dropped radio. Not in the operator's mirrors."
+    },
+    {
+      "t": 5.691666666666666,
+      "actor": "hazard",
+      "level": 2,
+      "title": "Person entering the rear blind spot",
+      "detail": "Rear radar + camera: banksman 10.0 m behind while reversing."
+    },
+    {
+      "t": 5.691666666666666,
+      "actor": "system",
+      "level": 2,
+      "title": "Travel speed limited to 1.2 km/h",
+      "detail": "Reverse alarm escalated. Travel governor applied."
+    },
+    {
+      "t": 7.975,
+      "actor": "system",
+      "level": 3,
+      "title": "Automatic travel stop",
+      "detail": "Person 6.0 m behind. Travel brakes applied, horn sounded, incident logged."
+    },
+    {
+      "t": 8.883333333333333,
+      "actor": "operator",
+      "level": 1,
+      "title": "Banksman hears the horn and steps clear",
+      "detail": "Moves out of the travel path toward the haul road."
+    },
+    {
+      "t": 8.883333333333333,
+      "actor": "outcome",
+      "level": 3,
+      "title": "Without assist: counterweight strikes the banksman",
+      "detail": "Machine still reversing at 3.2 km/h. Operator never saw him."
+    }
+  ],
+  "outcome": {
+    "assisted": "Machine stopped itself. Closest approach 4.6 m from the machine centre, 1.7 m from the counterweight. Near miss logged.",
+    "unassisted": "Counterweight strikes the banksman while reversing. Fatal struck-by.",
+    "unassistedAt": 8.883333333333333
+  }
+}

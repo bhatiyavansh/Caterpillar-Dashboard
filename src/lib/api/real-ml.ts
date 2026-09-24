@@ -10,7 +10,7 @@
  * real-data equivalent is simply left off the returned partial, so the
  * caller's existing baseline value survives untouched.
  */
-import type { Anomaly, AlertSeverity, MaintenanceItem, OwnerKpis, OwnerSeries, SeriesPoint } from "./contracts";
+import type { Anomaly, AnomalyPattern, AlertSeverity, MaintenanceItem, OwnerKpis, OwnerSeries, SeriesPoint } from "./contracts";
 
 const TIMEOUT_MS = 12_000;
 /** The weekly report's own LLM narrative step can be slow on a cold cache or an overloaded provider. */
@@ -86,7 +86,27 @@ function mapAnomaly(a: RawAnomaly): Anomaly {
     costInr: a.fuel_cost_inr,
     detectedAt: Date.parse(a.window.end) || Date.now(),
     severity: anomalySeverity(a),
+    pattern: toPattern(a.type),
+    related: a.related.map(toPattern),
+    score: a.score,
+    detectedBy: a.detected_by === "rules" ? "rules" : "baseline_deviation",
+    evidence: Object.fromEntries(Object.entries(a.evidence).map(([k, v]) => [k, String(v)])),
+    fuelWastedL: a.fuel_wasted_l,
   };
+}
+
+const PATTERNS: readonly AnomalyPattern[] = [
+  "excessive_idling",
+  "seatbelt_violation",
+  "overload",
+  "harsh_operation",
+  "temperature_anomaly",
+  "low_productivity",
+];
+
+/** The backend's anomaly types, narrowed to the patterns the screens know. */
+function toPattern(type: string): AnomalyPattern {
+  return (PATTERNS as readonly string[]).includes(type) ? (type as AnomalyPattern) : "unusual_pattern";
 }
 
 export async function fetchRealAnomalies(apiBase: string, sinceHours = 24 * 7): Promise<Anomaly[] | null> {

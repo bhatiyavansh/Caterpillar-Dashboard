@@ -8,12 +8,12 @@ import { cn } from "@/lib/utils";
 /* ---------------------------------------------------------------- Button */
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded font-semibold tracking-wide transition-colors disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-semibold tracking-wide transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        primary: "bg-cat-500 text-ink-950 hover:bg-cat-400 active:bg-cat-600",
-        secondary: "border border-white/10 bg-ink-700 text-zinc-100 hover:bg-ink-600",
+        primary: "bg-gradient-cat text-ink-950 shadow-[0_6px_20px_-8px_rgb(255_205_17/0.6)] hover:brightness-110",
+        secondary: "border border-white/10 bg-white/[0.06] text-zinc-100 hover:bg-white/10 hover:border-white/20",
         outline: "border border-white/15 bg-transparent text-zinc-200 hover:bg-white/5",
         ghost: "bg-transparent text-zinc-300 hover:bg-white/5",
         danger: "bg-status-crit text-white hover:bg-status-crit/85",
@@ -57,7 +57,7 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("flex items-start justify-between gap-3 border-b border-white/10 px-4 py-3", className)}
+      className={cn("flex items-start justify-between gap-3 border-b border-white/[0.07] px-5 py-3.5", className)}
       {...props}
     />
   );
@@ -72,7 +72,7 @@ export function CardDescription({ className, ...props }: React.HTMLAttributes<HT
 }
 
 export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-4", className)} {...props} />;
+  return <div className={cn("p-5", className)} {...props} />;
 }
 
 /* ----------------------------------------------------------------- Badge */
@@ -81,7 +81,7 @@ export function Badge({ className, ...props }: React.HTMLAttributes<HTMLSpanElem
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded border border-white/15 bg-white/5 px-2 py-0.5",
+        "inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5",
         "text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-300",
         className,
       )}

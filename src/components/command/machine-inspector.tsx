@@ -78,7 +78,7 @@ export function MachineInspector({
                 {machine.model} · {machine.kindLabel} · {machine.zone}
               </p>
             </div>
-            <MachineStatusChip status={machine.status} />
+            <MachineStatusChip status={machine.status} soundKey={machine.id} />
           </div>
           <p className="mt-2 text-[11px] leading-relaxed text-zinc-400">{token.description}</p>
         </div>

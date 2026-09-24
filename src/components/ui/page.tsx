@@ -45,7 +45,7 @@ export function PageShell({
 }) {
   return (
     <div className="h-full overflow-y-auto">
-      <div className={cn(WIDTH[width], "space-y-4 p-4 pb-10", className)}>{children}</div>
+      <div className={cn(WIDTH[width], "space-y-5 p-4 pb-12 sm:p-6", className)}>{children}</div>
     </div>
   );
 }
@@ -66,11 +66,11 @@ export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: 
       <ol className="flex flex-wrap items-center gap-1 text-[11px] text-muted">
         <li className="flex items-center gap-1">
           <Link
-            href="/command"
+            href="/"
             className="inline-flex items-center gap-1 rounded transition-colors hover:text-zinc-200"
           >
             <Home className="size-3" aria-hidden />
-            <span className="sr-only">Command centre</span>
+            <span className="sr-only">Home</span>
           </Link>
         </li>
         {items.map((crumb, i) => {
@@ -119,7 +119,7 @@ export function PageTitle({
     <header className={cn("flex flex-wrap items-end justify-between gap-x-4 gap-y-2", className)}>
       <div className="min-w-0">
         {crumbs?.length ? <Breadcrumbs items={crumbs} className="mb-1" /> : null}
-        <h1 className="truncate text-lg font-bold leading-tight tracking-tight text-zinc-50">{title}</h1>
+        <h1 className="truncate text-2xl font-bold leading-tight tracking-tight text-zinc-50">{title}</h1>
         {subtitle ? <p className="mt-0.5 text-xs leading-relaxed text-muted">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -148,7 +148,7 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section className={cn("overflow-hidden rounded border border-white/10 bg-ink-900", className)}>
+    <section className={cn("panel overflow-hidden", className)}>
       {title ? (
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5">
           <div className="flex min-w-0 items-center gap-2.5">

@@ -60,6 +60,11 @@ export interface TwinStageProps {
    * as long as it is mounted.
    */
   liveLink?: boolean;
+  /**
+   * Whether to draw the twin's own HUD (telemetry, fleet strip, key hints).
+   * Off for the guided lesson, which brings its own focused overlay.
+   */
+  hud?: boolean;
 }
 
 /** Fills its positioned parent. */
@@ -67,6 +72,7 @@ export function TwinStage({
   active = true,
   dense = false,
   liveLink = true,
+  hud = true,
 }: TwinStageProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -96,7 +102,7 @@ export function TwinStage({
           <div className="absolute inset-0 z-1">
             <SimulationScene />
           </div>
-          <CommandCenter dense={dense} />
+          {hud ? <CommandCenter dense={dense} /> : null}
         </>
       ) : (
         <BootScreen />

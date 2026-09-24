@@ -30,7 +30,6 @@ import { thresholdStatus } from "@/lib/status";
 import { MACHINE_STATUS } from "@/lib/status";
 import type { WeatherMode } from "@/lib/api/contracts";
 import { cn } from "@/lib/utils";
-import type { IconComponent } from "@/components/ui/icon";
 
 const WEATHER: Record<WeatherMode, { icon: LucideIcon; label: string }> = {
   clear: { icon: Sun, label: "Clear" },
@@ -162,11 +161,11 @@ export function TopBar({
     : "operating";
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-white/10 bg-ink-900 px-3 sm:px-4">
+    <header className="relative z-20 flex h-16 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-ink-900/60 px-3 backdrop-blur-xl sm:px-5">
       <NavToggle onClick={onOpenNav} />
 
       <div className="min-w-0">
-        <h1 className="truncate text-sm font-bold text-zinc-50">
+        <h1 className="truncate text-base font-bold tracking-tight text-zinc-50">
           {current?.label ?? "CAT Copilot"}
         </h1>
         <p className="truncate text-[11px] text-muted">
@@ -186,7 +185,7 @@ export function TopBar({
       <div className="ml-auto flex items-center gap-2">
         {/* Live site conditions — the reason a task got re-ordered. */}
         {snapshot ? (
-          <div className="hidden items-center divide-x divide-white/10 rounded border border-white/10 bg-ink-850 text-[11px] xl:flex">
+          <div className="hidden items-center divide-x divide-white/10 rounded-full border border-white/[0.08] bg-white/[0.03] px-1 text-[11px] xl:flex">
             <span className="flex items-center gap-1.5 px-2.5 py-1.5 text-zinc-300">
               <WeatherIcon className="size-3.5 text-cat-500" aria-hidden />
               {weather.label} · {snapshot.temperatureC}&deg;C
@@ -226,9 +225,9 @@ export function TopBar({
 
         <Link
           href="/cab"
-          className="flex items-center gap-2 rounded border border-white/10 bg-ink-850 py-1 pl-1.5 pr-2.5 transition-colors hover:border-white/20"
+          className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] py-1 pl-1 pr-3 transition-colors hover:border-cat-500/40"
         >
-          <span className="grid size-7 shrink-0 place-items-center rounded-full bg-ink-700 text-[10px] font-bold text-cat-500">
+          <span className="bg-gradient-cat grid size-8 shrink-0 place-items-center rounded-full text-[10px] font-bold text-ink-950">
             RS
           </span>
           <span className="hidden min-w-0 sm:block">

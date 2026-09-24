@@ -71,7 +71,7 @@ export function AlertCard({
 
       <div className="space-y-2 py-3 pl-4 pr-3">
         <div className="flex flex-wrap items-center gap-2">
-          <SeverityChip severity={alert.severity} size="sm" />
+          <SeverityChip severity={alert.severity} size="sm" soundKey={alert.id} />
           <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-50">{alert.title}</h3>
           <span className="shrink-0 font-mono text-[11px] text-muted">{relativeTime(alert.createdAt)}</span>
         </div>

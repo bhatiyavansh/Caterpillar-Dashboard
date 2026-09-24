@@ -138,7 +138,7 @@ export function MachineTopBar({
           s.text,
         )}
       >
-        <StatusDot status={health} pulse />
+        <StatusDot status={health} pulse soundKey="cab:machine-health" />
         <span className="text-sm font-bold uppercase tracking-[0.12em]">
           {health === "healthy" ? "Operational" : health === "warning" ? "Caution" : "Critical"}
         </span>
