@@ -94,6 +94,8 @@ function LiveBadge({ compact }: { compact?: boolean }) {
 
 const CAMERA_MODES: { mode: CameraMode; label: string; short: string }[] = [
   { mode: "follow", label: "Follow machine", short: "Follow" },
+  { mode: "chase", label: "Chase cam", short: "Chase" },
+  { mode: "orbit", label: "Orbit", short: "Orbit" },
   { mode: "site", label: "Site overview", short: "Site" },
   { mode: "top", label: "Top down", short: "Top" },
   { mode: "driver", label: "Driver view", short: "Cab" },

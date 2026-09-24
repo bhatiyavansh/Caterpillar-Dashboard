@@ -27,7 +27,7 @@ const LOOKS: Record<
   WeatherMode,
   { fogColor: string; sun: number; ambient: number; turbidity: number; rayleigh: number }
 > = {
-  clear: { fogColor: "#b9c6d4", sun: 2.5, ambient: 0.55, turbidity: 4, rayleigh: 1.2 },
+  clear: { fogColor: "#aebccb", sun: 2.7, ambient: 0.42, turbidity: 4, rayleigh: 1.2 },
   rain: { fogColor: "#4a5259", sun: 0.75, ambient: 0.4, turbidity: 12, rayleigh: 0.6 },
   fog: { fogColor: "#9aa3aa", sun: 1.0, ambient: 0.75, turbidity: 16, rayleigh: 0.35 },
   heat: { fogColor: "#d8c39a", sun: 3.2, ambient: 0.62, turbidity: 8, rayleigh: 2.4 },
@@ -53,23 +53,24 @@ export function SiteLighting() {
   return (
     <>
       <ambientLight ref={ambient} intensity={0.55} color="#c8d4e0" />
-      <hemisphereLight args={["#b4c8dc", "#5a4a34", 0.55]} />
+      <hemisphereLight args={["#b4c8dc", "#4a3c2a", 0.42]} />
       <directionalLight
         ref={sun}
-        position={[72, 96, 48]}
+        // A lower sun rakes across the benches, berms and heaps so relief reads.
+        position={[150, 105, 70]}
         intensity={2.5}
         color="#fff1d6"
         castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0008}
-        shadow-normalBias={0.04}
-        // Tight ortho box keeps shadow texels dense across the working area.
-        shadow-camera-left={-120}
-        shadow-camera-right={120}
-        shadow-camera-top={120}
-        shadow-camera-bottom={-120}
+        shadow-mapSize={[4096, 4096]}
+        shadow-bias={-0.0006}
+        shadow-normalBias={0.05}
+        // Covers the whole working site, not just the middle of it.
+        shadow-camera-left={-240}
+        shadow-camera-right={240}
+        shadow-camera-top={240}
+        shadow-camera-bottom={-240}
         shadow-camera-near={1}
-        shadow-camera-far={320}
+        shadow-camera-far={520}
       />
       {/* cool fill from the opposite side so shadowed faces keep their shape */}
       <directionalLight position={[-60, 40, -70]} intensity={0.35} color="#8fb4d8" />
@@ -241,7 +242,7 @@ export function Weather() {
   // object out from under the scene and lose the in-progress blend, so the
   // dependency is deliberately omitted.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const fog = useMemo(() => new THREE.FogExp2(look.fogColor, 0.0016), []);
+  const fog = useMemo(() => new THREE.FogExp2(look.fogColor, 0.0008), []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const target = useMemo(() => new THREE.Color(look.fogColor), []);
 
@@ -259,7 +260,7 @@ export function Weather() {
     fog.color.lerp(target, k);
 
     // Fog thickens with the eased ramp, so visibility closes in smoothly.
-    const density = 0.0016 + engine.fogAmount * 0.018 + engine.wetness * 0.004;
+    const density = 0.0008 + engine.fogAmount * 0.018 + engine.wetness * 0.004;
     fog.density += (density - fog.density) * k;
   });
 
@@ -268,7 +269,7 @@ export function Weather() {
     <>
       <Sky
         distance={4000}
-        sunPosition={[72, 96, 48]}
+        sunPosition={[150, 105, 70]}
         turbidity={look.turbidity}
         rayleigh={look.rayleigh}
         mieCoefficient={0.006}

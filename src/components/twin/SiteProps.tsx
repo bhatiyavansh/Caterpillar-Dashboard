@@ -10,7 +10,7 @@
 
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { PIT, STATIC_PROPS } from "@/lib/twin/site";
+import { PIT, RAMP_TOP, STATIC_PROPS, TRENCHES } from "@/lib/twin/site";
 import { terrainHeight } from "@/lib/twin/terrain";
 import { PALETTE, hazardTexture } from "./materials";
 
@@ -19,20 +19,42 @@ import { PALETTE, hazardTexture } from "./materials";
 function coneTransforms(): THREE.Matrix4[] {
   const out: THREE.Matrix4[] = [];
   const dummy = new THREE.Object3D();
-  const count = 40;
-
-  for (let i = 0; i < count; i++) {
-    const a = (i / count) * Math.PI * 2;
-    // Just outside the pit rim, where the ground starts to fall away.
-    const x = PIT.x + Math.cos(a) * (PIT.rx + 3.5);
-    const z = PIT.z + Math.sin(a) * (PIT.rz + 3.5);
-    // Leave a gap where the ramp enters.
-    if (Math.abs(x - PIT.x) < 9 && z > PIT.z) continue;
-
+  const place = (x: number, z: number, a: number) => {
     dummy.position.set(x, terrainHeight(x, z) + 0.38, z);
     dummy.rotation.set(0, a, 0);
     dummy.updateMatrix();
     out.push(dummy.matrix.clone());
+  };
+
+  // Along the pit crest, a couple of metres back from the edge.
+  const f = PIT.floor;
+  const o = PIT.wallWidth + 2.5;
+  const x0 = f.x0 - o;
+  const x1 = f.x1 + o;
+  const z0 = f.z0 - o;
+  const z1 = f.z1 + o;
+  const step = 7;
+  const edge = (ax: number, az: number, bx: number, bz: number) => {
+    const len = Math.hypot(bx - ax, bz - az);
+    for (let d = 0; d < len; d += step) {
+      const x = ax + ((bx - ax) * d) / len;
+      const z = az + ((bz - az) * d) / len;
+      // Leave the ramp mouth open.
+      if (Math.hypot(x - RAMP_TOP.x, z - RAMP_TOP.z) < 16) continue;
+      place(x, z, d);
+    }
+  };
+  edge(x0, z0, x1, z0);
+  edge(x1, z0, x1, z1);
+  edge(x1, z1, x0, z1);
+  edge(x0, z1, x0, z0);
+
+  // Pegging out the trench runs still to be dug.
+  for (const t of TRENCHES) {
+    const dugTo = t.x0 + (t.x1 - t.x0) * t.progress;
+    for (let x = dugTo + 3; x <= t.x1; x += 4) place(x, t.z + 1.6, x);
+    // and guarding the open trench
+    for (let x = t.x0; x <= dugTo; x += 5) place(x, t.z + 2.2, x);
   }
   return out;
 }
@@ -213,35 +235,6 @@ function LightMasts() {
   );
 }
 
-/* ---------------------------- spoil heaps ------------------------------ */
-
-const HEAPS: [number, number, number][] = [
-  [-20, -68, 2.2],
-  [8, -70, 1.7],
-  [-36, -50, 1.9],
-  [16, -38, 1.4],
-  [-48, 42, 2.4],
-  [40, 52, 1.6],
-];
-
-function SpoilHeaps() {
-  return (
-    <group>
-      {HEAPS.map(([x, z, r], i) => (
-        <mesh
-          key={i}
-          position={[x, terrainHeight(x, z) + r * 0.42, z]}
-          castShadow
-          receiveShadow
-        >
-          <coneGeometry args={[r * 1.7, r * 1.1, 9]} />
-          <meshStandardMaterial color={PALETTE.dirtDark} roughness={1} flatShading />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
 /* --------------------------- barrier run ------------------------------- */
 
 function HaulRoadBarriers() {
@@ -251,11 +244,11 @@ function HaulRoadBarriers() {
     return t;
   }, []);
 
-  // A short run of barriers guarding the pit-ramp junction.
+  // Barrier runs either side of the pit ramp mouth.
   const panels = useMemo(() => {
     const out: [number, number][] = [];
-    for (let i = 0; i < 5; i++) out.push([-16 - i * 3.4, -28]);
-    for (let i = 0; i < 5; i++) out.push([6 + i * 3.4, -28]);
+    for (let i = 0; i < 4; i++) out.push([RAMP_TOP.x - 10 - i * 3.4, RAMP_TOP.z - 4]);
+    for (let i = 0; i < 4; i++) out.push([RAMP_TOP.x + 10 + i * 3.4, RAMP_TOP.z - 4]);
     return out;
   }, []);
 
@@ -279,7 +272,6 @@ export function SiteProps() {
       <SiteOffice />
       <FuelStation />
       <LightMasts />
-      <SpoilHeaps />
       <HaulRoadBarriers />
     </group>
   );

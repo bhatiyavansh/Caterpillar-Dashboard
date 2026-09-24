@@ -14,7 +14,7 @@ export type MachineActivity =
   | "swinging"
   | "emergency_stop";
 
-export type MachineKind = "excavator" | "bulldozer" | "loader" | "truck";
+export type MachineKind = "excavator" | "bulldozer" | "loader" | "truck" | "grader";
 
 export interface MachineTelemetry {
   machineId: string;
@@ -138,7 +138,7 @@ export interface SimEvent {
 
 export type WeatherMode = "clear" | "rain" | "fog" | "heat";
 
-export type CameraMode = "follow" | "top" | "site" | "driver";
+export type CameraMode = "follow" | "chase" | "orbit" | "top" | "site" | "driver";
 
 export type TelemetrySource = "keyboard" | "mock_iot" | "websocket";
 

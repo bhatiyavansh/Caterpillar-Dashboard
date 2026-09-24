@@ -21,6 +21,16 @@ export const PALETTE = {
   dirtDark: "#4f412e",
   dirtLight: "#8a7557",
   road: "#31343a",
+  gravel: "#a29682",
+  gravelDark: "#7d7262",
+  topsoil: "#6e5236",
+  scrub: "#5c6532",
+  scrubDry: "#8c7f4c",
+  clay: "#54402e",
+  strataLight: "#b89468",
+  strataDark: "#5a3f2b",
+  water: "#3f5e5a",
+  concrete: "#a9a59b",
   safe: "#3ddc84",
   warn: "#ffb020",
   crit: "#ff3b30",
@@ -116,6 +126,93 @@ export function hazardTexture(color: string = PALETTE.catYellow): THREE.Texture 
     }
   });
   tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+/**
+ * Compacted haul-road gravel. `u` runs across the road, `v` along it, so the
+ * two worn wheel paths are vertical bands and the speckle tiles lengthwise.
+ */
+export function gravelTexture(): THREE.Texture {
+  const tex = fromCanvas("gravel", 256, 256, (ctx) => {
+    ctx.fillStyle = PALETTE.gravel;
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Seeded speckle so the texture is identical on every load.
+    let seed = 7;
+    const rand = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    for (let i = 0; i < 5200; i++) {
+      const shade = rand();
+      ctx.fillStyle =
+        shade < 0.45 ? "rgba(70,62,50,0.35)" : shade < 0.8 ? "rgba(175,165,145,0.35)" : "rgba(40,36,30,0.4)";
+      const s = 1 + rand() * 2.4;
+      ctx.fillRect(rand() * 256, rand() * 256, s, s);
+    }
+
+    // Wheel paths: packed darker, with a faint tread streak inside each.
+    for (const cx of [0.27, 0.73]) {
+      const grad = ctx.createLinearGradient((cx - 0.11) * 256, 0, (cx + 0.11) * 256, 0);
+      grad.addColorStop(0, "rgba(60,54,44,0)");
+      grad.addColorStop(0.5, "rgba(60,54,44,0.32)");
+      grad.addColorStop(1, "rgba(60,54,44,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect((cx - 0.11) * 256, 0, 0.22 * 256, 256);
+      ctx.fillStyle = "rgba(40,36,30,0.18)";
+      for (let k = -2; k <= 2; k++) ctx.fillRect(cx * 256 + k * 7, 0, 2, 256);
+    }
+
+    // Loose material pushed to the edges by traffic.
+    for (const edge of [0, 1]) {
+      const grad = ctx.createLinearGradient(edge * 256, 0, (edge ? 0.86 : 0.14) * 256, 0);
+      grad.addColorStop(0, "rgba(120,98,70,0.55)");
+      grad.addColorStop(1, "rgba(120,98,70,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(edge ? 0.86 * 256 : 0, 0, 0.14 * 256, 256);
+    }
+  });
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+/** Chain-link mesh with transparency, for the perimeter fence. */
+export function chainLinkTexture(): THREE.Texture {
+  const tex = fromCanvas("chainlink", 64, 64, (ctx) => {
+    ctx.clearRect(0, 0, 64, 64);
+    ctx.strokeStyle = "rgba(190,196,200,0.95)";
+    ctx.lineWidth = 2;
+    for (let i = -64; i <= 128; i += 16) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + 64, 64);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(i, 64);
+      ctx.lineTo(i + 64, 0);
+      ctx.stroke();
+    }
+  });
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+/** Rubber conveyor belt with cleats. Scrolled along `v` to run the belt. */
+export function beltTexture(): THREE.Texture {
+  const tex = fromCanvas("belt", 32, 128, (ctx) => {
+    ctx.fillStyle = "#1b1c1e";
+    ctx.fillRect(0, 0, 32, 128);
+    ctx.fillStyle = "#6b5a42";
+    // material riding on the belt
+    for (let y = 0; y < 128; y += 9) ctx.fillRect(6 + ((y * 7) % 9), y, 12 + ((y * 3) % 7), 5);
+    ctx.fillStyle = "#34373b";
+    for (let y = 0; y < 128; y += 32) ctx.fillRect(0, y, 32, 3);
+  });
+  tex.wrapS = THREE.ClampToEdgeWrapping;
   tex.wrapT = THREE.RepeatWrapping;
   return tex;
 }

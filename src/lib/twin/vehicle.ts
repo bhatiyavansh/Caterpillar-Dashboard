@@ -77,6 +77,17 @@ export const TUNING: Record<string, VehicleTuning> = {
     trackWidth: 3.0,
     hasArm: false,
   },
+  grader: {
+    maxSpeed: 3.2,
+    accel: 1.0,
+    brake: 1.8,
+    rollingDrag: 1.2,
+    maxYawRate: 0.45,
+    yawAccel: 1.0,
+    wheelbase: 6.2,
+    trackWidth: 2.6,
+    hasArm: false,
+  },
   truck: {
     maxSpeed: 6.4,
     accel: 1.7,

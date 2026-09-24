@@ -63,6 +63,14 @@ interface MachineState {
   scenario: SimulationScenario;
   mode: MachineMode;
   live: boolean;
+  /**
+   * True while the backend hub is actually streaming telemetry for the
+   * primary machine. Distinct from `live`, which just pauses/resumes the
+   * local drift model from the Controls panel. While this is true, `tick()`
+   * stops drifting the fields the backend covers so the two sources cannot
+   * fight each other; `applyLiveTelemetry` is what actually moves them.
+   */
+  backendConnected: boolean;
   simulationOpen: boolean;
   deviceSize: DeviceSizeKey;
   controlsOpen: boolean;
@@ -78,6 +86,19 @@ interface MachineState {
   setMode: (m: MachineMode) => void;
   setSensor: (key: keyof SensorData, value: number) => void;
   setLive: (v: boolean) => void;
+  /**
+   * Overlay real backend fields onto the sensor model. Only ever writes a
+   * field the caller actually supplied — never invents a value — so a
+   * partially-live backend still leaves the rest of the panel animating.
+   */
+  applyLiveTelemetry: (patch: {
+    fuelPct?: number;
+    hydraulicTemperature?: number;
+    coolantTemperature?: number;
+    speedKmh?: number;
+    engineHours?: number;
+  }) => void;
+  setBackendConnected: (v: boolean) => void;
   openSimulation: () => void;
   closeSimulation: () => void;
   setDeviceSize: (k: DeviceSizeKey) => void;
@@ -102,6 +123,7 @@ export const useMachineStore = create<MachineState>((set, get) => ({
   scenario: "normal",
   mode: "operating",
   live: true,
+  backendConnected: false,
   simulationOpen: false,
   deviceSize: "1280x800",
   controlsOpen: false,
@@ -113,28 +135,47 @@ export const useMachineStore = create<MachineState>((set, get) => ({
   voiceState: "idle",
 
   tick: () => {
-    const { sensors, scenario, mode, live } = get();
+    const { sensors, scenario, mode, live, backendConnected } = get();
     if (!live) return;
     const t = targets[scenario];
     const loadFactor = mode === "heavy-load" ? 1.06 : mode === "idle" ? 0.9 : mode === "maintenance" ? 0.7 : 1;
     const burn = mode === "heavy-load" ? 0.09 : mode === "operating" ? 0.05 : mode === "idle" ? 0.015 : 0;
 
+    // While the hub is streaming, these fields are driven by
+    // `applyLiveTelemetry` instead — drifting them here as well would just
+    // make the readout fight the real value every other frame.
+    const liveDriven = backendConnected;
+
     set({
       sensors: {
         ...sensors,
-        engineTemperature: clamp(drift(sensors.engineTemperature, (t.engineTemperature ?? 82) * loadFactor, 0.06, 0.6), 40, 125),
-        hydraulicTemperature: clamp(drift(sensors.hydraulicTemperature, (t.hydraulicTemperature ?? 78) * loadFactor, 0.06, 0.6), 30, 125),
-        coolantTemperature: clamp(drift(sensors.coolantTemperature, (t.coolantTemperature ?? 84) * loadFactor, 0.06, 0.5), 40, 125),
+        engineTemperature: liveDriven
+          ? sensors.engineTemperature
+          : clamp(drift(sensors.engineTemperature, (t.engineTemperature ?? 82) * loadFactor, 0.06, 0.6), 40, 125),
+        hydraulicTemperature: liveDriven
+          ? sensors.hydraulicTemperature
+          : clamp(drift(sensors.hydraulicTemperature, (t.hydraulicTemperature ?? 78) * loadFactor, 0.06, 0.6), 30, 125),
+        coolantTemperature: liveDriven
+          ? sensors.coolantTemperature
+          : clamp(drift(sensors.coolantTemperature, (t.coolantTemperature ?? 84) * loadFactor, 0.06, 0.5), 40, 125),
         hydraulicPressure: clamp(drift(sensors.hydraulicPressure, (t.hydraulicPressure ?? 3200) * loadFactor, 0.08, 40), 0, 4200),
         rpm: clamp(drift(sensors.rpm, modeRpm[mode], 0.15, 60), 0, 2400),
-        fuelLevel: clamp(Number((sensors.fuelLevel - burn).toFixed(2)), 0, 100),
-        fuelLitres: clamp(Number((sensors.fuelLitres - burn * 6.2).toFixed(1)), 0, 640),
+        fuelLevel: liveDriven
+          ? sensors.fuelLevel
+          : clamp(Number((sensors.fuelLevel - burn).toFixed(2)), 0, 100),
+        fuelLitres: liveDriven
+          ? sensors.fuelLitres
+          : clamp(Number((sensors.fuelLitres - burn * 6.2).toFixed(1)), 0, 640),
         battery: clamp(drift(sensors.battery, mode === "maintenance" ? 88 : 91, 0.05, 0.3), 0, 100),
         defLevel: clamp(Number((sensors.defLevel - burn * 0.12).toFixed(2)), 0, 100),
         oilPressure: clamp(drift(sensors.oilPressure, mode === "idle" ? 44 : 62, 0.1, 1.5), 0, 90),
         engineLoad: clamp(drift(sensors.engineLoad, mode === "heavy-load" ? 88 : mode === "idle" ? 12 : 58, 0.12, 4), 0, 100),
-        machineSpeed: clamp(drift(sensors.machineSpeed, mode === "operating" ? 4.2 : mode === "heavy-load" ? 2.6 : 0, 0.18, 0.4), 0, 12),
-        operatingHours: Number((sensors.operatingHours + (mode === "maintenance" ? 0 : 0.0006)).toFixed(4)),
+        machineSpeed: liveDriven
+          ? sensors.machineSpeed
+          : clamp(drift(sensors.machineSpeed, mode === "operating" ? 4.2 : mode === "heavy-load" ? 2.6 : 0, 0.18, 0.4), 0, 12),
+        operatingHours: liveDriven
+          ? sensors.operatingHours
+          : Number((sensors.operatingHours + (mode === "maintenance" ? 0 : 0.0006)).toFixed(4)),
       },
     });
   },
@@ -144,6 +185,38 @@ export const useMachineStore = create<MachineState>((set, get) => ({
   setSensor: (key, value) =>
     set((s) => ({ sensors: { ...s.sensors, [key]: value }, live: s.live })),
   setLive: (live) => set({ live }),
+
+  applyLiveTelemetry: (patch) =>
+    set((s) => ({
+      sensors: {
+        ...s.sensors,
+        ...(patch.fuelPct !== undefined
+          ? {
+              fuelLevel: clamp(patch.fuelPct, 0, 100),
+              // Tank capacity is the same 640 L used to seed the mock model,
+              // so the litres readout stays proportional to the real percent.
+              fuelLitres: clamp(Number(((patch.fuelPct / 100) * 640).toFixed(1)), 0, 640),
+            }
+          : null),
+        ...(patch.hydraulicTemperature !== undefined
+          ? { hydraulicTemperature: clamp(patch.hydraulicTemperature, 0, 200) }
+          : null),
+        ...(patch.coolantTemperature !== undefined
+          ? {
+              coolantTemperature: clamp(patch.coolantTemperature, 0, 200),
+              // The backend has no separate engine-block sensor; coolant temp
+              // is the closest real proxy, same trade-off the twin's liveFrame
+              // mapping makes for inferred fields. Purely cosmetic.
+              engineTemperature: clamp(patch.coolantTemperature, 0, 200),
+            }
+          : null),
+        ...(patch.speedKmh !== undefined ? { machineSpeed: Math.max(0, patch.speedKmh) } : null),
+        ...(patch.engineHours !== undefined ? { operatingHours: patch.engineHours } : null),
+      },
+    })),
+
+  setBackendConnected: (backendConnected) => set({ backendConnected }),
+
   openSimulation: () => set({ simulationOpen: true }),
   closeSimulation: () => set({ simulationOpen: false, controlsOpen: false }),
   setDeviceSize: (deviceSize) => set({ deviceSize }),
