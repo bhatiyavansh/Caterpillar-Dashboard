@@ -8,7 +8,7 @@ import pytest
 
 from copilot.agent.llm import FakeLLM, FakeStep
 from copilot.config import BACKEND_DIR
-from copilot.knowledge.manuals import HashEmbedder, ManualIndex, corpus_text
+from copilot.knowledge.manuals import HashEmbedder, ManualIndex, corpus_dirs, corpus_text
 from copilot.knowledge.protocols import SAFETY_EVENTS, ProtocolError, ProtocolLibrary
 from tests.conftest import FakeSimHTTP, event, machine
 
@@ -92,6 +92,12 @@ def index():
     return ManualIndex.build(MANUALS, HashEmbedder())
 
 
+@pytest.fixture(scope="module")
+def full_index():
+    """The production corpus: real manuals plus the synthetic demo knowledge."""
+    return ManualIndex.build(corpus_dirs(BACKEND_DIR / "data"), HashEmbedder())
+
+
 def test_fault_code_regex_hit_first(index):
     res = index.search("what does HYD-118 mean")
     assert res["hits"][0]["match"] == "fault_code"
@@ -99,10 +105,68 @@ def test_fault_code_regex_hit_first(index):
 
 
 def test_rag_eval_questions_hit_at_5(index):
-    from scripts.rag_eval import run
+    from scripts.rag_eval import is_synthetic, run
 
-    hits, n, lines = run(index)
+    hits, n, lines = run(index, lambda c: not is_synthetic(c))
     assert hits == n, "\n".join(line for line in lines if line.startswith("FAIL"))
+
+
+def test_synthetic_eval_questions_hit_at_5_on_the_full_corpus(full_index):
+    from scripts.rag_eval import is_synthetic, run
+
+    hits, n, lines = run(full_index, is_synthetic)
+    assert n >= 10 and hits == n, "\n".join(line for line in lines if line.startswith("FAIL"))
+
+
+def test_synthetic_knowledge_is_labelled_and_never_passes_for_official(full_index):
+    syn = [c for c in full_index.chunks if c.synthetic]
+    assert {c.domain for c in syn} >= {"training", "safety", "machine", "maintenance"}
+    for c in syn:
+        assert c.citation.startswith("Synthetic demo knowledge: ") and "(synthetic demo knowledge)" in c.title
+        assert "Not a Caterpillar publication" in c.source
+    hit = full_index.search("What should I check before starting the machine?")["hits"][0]
+    assert hit["synthetic"] is True and hit["domain"] == "training"
+    real = [c for c in full_index.chunks if not c.synthetic]
+    assert real and all(c.domain in ("regulation", "site_manual") for c in real)
+
+
+def test_protocol_quotes_are_checked_against_real_documents_only(tmp_path):
+    """A regulation quote that exists only in the synthetic corpus must not validate a protocol."""
+    synthetic_only = "People on foot should wear high-visibility clothing"
+    assert synthetic_only not in corpus_text(MANUALS)
+
+
+def test_specialist_profile_reorders_the_shared_index(full_index):
+    from copilot.knowledge.retrieval import PROFILES, profile_for
+
+    q = "why wear the seatbelt"
+    training = full_index.search(q, profile=PROFILES["training"])
+    maint = full_index.search(q, profile=PROFILES["maintenance"])
+    assert training["profile"] == "training" and training["hits"][0]["domain"] in ("training", "safety")
+
+    def rank(res, domain):
+        return next((i for i, h in enumerate(res["hits"]) if h["domain"] == domain), 99)
+
+    q2 = "hydraulic oil overheating what to do"
+    assert rank(full_index.search(q2, profile=PROFILES["maintenance"]), "maintenance") <= \
+        rank(full_index.search(q2, profile=PROFILES["training"]), "maintenance")
+    assert maint["hits"], "a profile re-weights; it does not empty the results"
+    assert profile_for("general", "training").name == "training" and profile_for(None, "cab").name == "general"
+
+
+def test_stale_index_is_rebuilt_not_served(tmp_path):
+    import shutil
+
+    from copilot.app import load_rag
+
+    data = tmp_path / "data"
+    shutil.copytree(BACKEND_DIR / "data" / "manuals", data / "manuals")
+    ManualIndex.build([data / "manuals"], None).save(data / "index")
+    (data / "synthetic" / "training").mkdir(parents=True)
+    shutil.copy(BACKEND_DIR / "data" / "synthetic" / "training" / "prestart_inspection.md",
+                data / "synthetic" / "training")
+    rag = load_rag(data, None)
+    assert any(c.synthetic for c in rag.chunks), "a document added after `make index` must still be searchable"
 
 
 def test_out_of_corpus_question_is_not_found(index):

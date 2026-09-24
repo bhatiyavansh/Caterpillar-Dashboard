@@ -58,6 +58,8 @@ export interface LessonState {
   results: StepResult[];
   coachLive: boolean | null;
   demo: boolean;
+  /** The validator's diagnosis of the last failed attempt at this step (never a model's opinion). */
+  lastReason: string | null;
 }
 
 const INITIAL: LessonState = {
@@ -73,6 +75,7 @@ const INITIAL: LessonState = {
   results: [],
   coachLive: null,
   demo: false,
+  lastReason: null,
 };
 
 const PASS_PAUSE_MS = 1800;
@@ -189,7 +192,10 @@ export function useTrainingCoach(learner: LearnerProfile) {
       if (step.setup === "spawn_worker" && attempt === 1) store.forceWorkerApproach();
       if (step.setup === "reset_machine") store.resetMachine();
       validator.current = new StepValidator(step, engine().primary, performance.now(), step.timeoutMs * timeoutScale);
-      setState((s) => ({ ...s, phase: "running", moduleIdx, stepIdx, attempt, hold: 0, elapsed: 0, demo: attempt > 2 || s.demo }));
+      setState((s) => ({
+        ...s, phase: "running", moduleIdx, stepIdx, attempt, hold: 0, elapsed: 0, demo: attempt > 2 || s.demo,
+        lastReason: attempt === 1 ? null : s.lastReason,
+      }));
       if (attempt === 1) speak("brief", mod, step, step.brief);
     },
     [speak],
@@ -261,7 +267,7 @@ export function useTrainingCoach(learner: LearnerProfile) {
       }
       if (ev.kind === "timeout") {
         const attempt = s.attempt + 1;
-        setState((p) => ({ ...p, phase: "retrying", hold: 0 }));
+        setState((p) => ({ ...p, phase: "retrying", hold: 0, lastReason: ev.reason }));
         speak("timeout", mod, step, step.brief, { reason: ev.reason, attempt: s.attempt });
         // Remediation relaxes the clock, never the pass condition.
         pauseTimer.current = setTimeout(() => beginStep(s.moduleIdx, s.stepIdx, attempt, 1.5), 1200);

@@ -8,6 +8,11 @@
  * input). The coach panel on the right shows one instruction, the live reading
  * the step is judged on, and a hold bar that fills while the learner is doing
  * it right. The ✓ comes from telemetry; the words come from the local model.
+ *
+ * Under the instruction the trainee can talk to the instructor: the one global
+ * site assistant, routed to its training specialist, which is told the lesson
+ * step, the validator's verdict and the lesson machine's readings with every
+ * question. It explains and teaches; it never decides whether a step passed.
  */
 import * as React from "react";
 import dynamic from "next/dynamic";
@@ -18,8 +23,10 @@ import {
   ChevronRight,
   Cpu,
   Keyboard,
+  ListOrdered,
   LoaderCircle,
   Lock,
+  MessageSquare,
   RotateCcw,
   SkipForward,
   Square,
@@ -42,6 +49,10 @@ import {
   type TrainingProgress,
 } from "@/lib/training/progress";
 import { LEARNERS, useTrainingCoach, type LearnerProfile } from "@/lib/training/use-training-coach";
+import { lessonContext, lessonSuggestions } from "@/lib/training/assistant-context";
+import { useTwinStore } from "@/store/twinStore";
+import { AssistantPanel } from "@/components/assistant/assistant-panel";
+import { useAssistantScope } from "@/components/assistant/assistant-provider";
 import { cn } from "@/lib/utils";
 
 // The twin is WebGL-only; never render it on the server.
@@ -379,6 +390,37 @@ export function GuidedLesson({ onExit }: { onExit?: () => void }) {
   const running =
     state.phase !== "idle" && state.phase !== "finished" && state.phase !== "levelDone";
 
+  // Tell the global assistant where the trainee is. Read only when a question is sent, so the
+  // 60 Hz lesson never re-renders anything on the assistant's account.
+  const alertOpen = useTwinStore((s) => s.snapshot.alerts.length > 0);
+  const lessonRef = React.useRef({ state, module, step, learner, progress });
+  React.useLayoutEffect(() => {
+    lessonRef.current = { state, module, step, learner, progress };
+  });
+  useAssistantScope({
+    surface: "training",
+    label: running ? `Instructor · ${module.title}` : "Training instructor",
+    suggestions: lessonSuggestions(state.phase, alertOpen),
+    getContext: () => {
+      const l = lessonRef.current;
+      const { engine, snapshot } = useTwinStore.getState();
+      return {
+        training: lessonContext({
+          lesson: l.state,
+          module: l.module,
+          step: l.step,
+          learner: { name: l.learner.name, skill: l.learner.skill, weakest_skill: l.learner.weakest_skill },
+          progress: l.progress,
+          telemetry: engine.primary,
+          emergencyStopped: engine.emergencyStopped,
+          alerts: snapshot.alerts,
+          events: snapshot.events,
+        }),
+      };
+    },
+  });
+  const [pane, setPane] = React.useState<"ask" | "log">("ask");
+
   // Bank the level the moment it is passed, so closing the tab keeps it.
   const bankedFor = React.useRef<string | null>(null);
   React.useEffect(() => {
@@ -571,14 +613,43 @@ export function GuidedLesson({ onExit }: { onExit?: () => void }) {
               ) : null}
             </div>
 
-            {/* Transcript */}
-            <ol className="min-h-0 flex-1 space-y-2 overflow-y-auto border-t border-white/10 px-4 py-3" aria-label="Coach transcript">
-              {[...state.history].reverse().slice(1).map((h) => (
-                <li key={h.id} className="text-xs leading-relaxed text-zinc-500">
-                  {h.text}
-                </li>
-              ))}
-            </ol>
+            {/* Ask the instructor (the global assistant) / the coach's transcript */}
+            <div className="flex min-h-0 flex-1 flex-col border-t border-white/10">
+              <div className="flex shrink-0 gap-1 px-3 pt-2" role="tablist" aria-label="Instructor">
+                {([
+                  { id: "ask", label: "Ask the instructor", icon: MessageSquare },
+                  { id: "log", label: `Coach log (${Math.max(0, state.history.length - 1)})`, icon: ListOrdered },
+                ] as const).map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    role="tab"
+                    aria-selected={pane === id}
+                    onClick={() => {
+                      setPane(id);
+                      releaseFocus();
+                    }}
+                    className={cn(
+                      "flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[11px] font-semibold transition-colors",
+                      pane === id ? "bg-white/10 text-zinc-100" : "text-zinc-500 hover:bg-white/5 hover:text-zinc-300",
+                    )}
+                  >
+                    <Icon className="size-3.5" aria-hidden />
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {pane === "ask" ? (
+                <AssistantPanel variant="inline" surface="training" releaseFocusOnSend persistentSuggestions className="m-3 mt-2 min-h-[220px] flex-1" />
+              ) : (
+                <ol className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3" aria-label="Coach transcript">
+                  {[...state.history].reverse().slice(1).map((h) => (
+                    <li key={h.id} className="text-xs leading-relaxed text-zinc-500">
+                      {h.text}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
 
             <div className="flex gap-2 border-t border-white/10 p-3">
               <button onClick={() => {

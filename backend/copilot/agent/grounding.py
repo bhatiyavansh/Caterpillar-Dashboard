@@ -5,6 +5,9 @@ Sources = tool results + live context + citations + the user's own message. A st
 for a whole number and |s| >= 100, is within 0.5 %. Variants of a source number: s, s*100 (fractions shown as %),
 s/60 and s%60 (minutes shown as hours + minutes). Small integers 0-10 are always allowed (counts,
 ordinals, "2 minutes" phrasing) - a documented trade-off.
+
+On the training surface an answer must also not claim a lesson step passed unless the telemetry
+validator's phase says so (`training_claims`).
 """
 
 from __future__ import annotations
@@ -23,10 +26,11 @@ class GroundingReport:
     grounded: bool
     ungrounded_numbers: list[str] = field(default_factory=list)
     ungrounded_ids: list[str] = field(default_factory=list)
+    uncertified_claims: list[str] = field(default_factory=list)
 
     @property
     def problems(self) -> list[str]:
-        return self.ungrounded_numbers + self.ungrounded_ids
+        return self.ungrounded_numbers + self.ungrounded_ids + self.uncertified_claims
 
 
 def _walk_numbers(obj: Any, out: set[float]) -> None:
@@ -52,7 +56,24 @@ def _strip_ids(text: str) -> str:
     return ID_RE.sub(" ", text)
 
 
-def check(answer: str, sources: list[Any], user_message: str = "") -> GroundingReport:
+#: A training answer must not certify a lesson step: only the telemetry validator does that.
+PASS_CLAIM_RE = re.compile(
+    r"\b(?:you(?:'ve| have)?|you've) (?:just )?(?:passed|completed|finished|cleared|nailed|done) "
+    r"(?:it|this|that|the|this step|that step|the step|the lesson|the level)\b"
+    r"|\b(?:step|lesson|level) (?:is |has been )?(?:passed|complete[d]?|done)\b", re.IGNORECASE)
+CERTIFIED_PHASES = {"passed", "levelDone", "finished"}
+
+
+def training_claims(answer: str, training: dict[str, Any] | None) -> list[str]:
+    """Pass/complete claims the validator has not made. Empty when there is no lesson context."""
+    if not training or training.get("phase") in CERTIFIED_PHASES:
+        return []
+    return [f"claims the step passed ({m.group(0)!r}) but the sensors say phase={training.get('phase') or 'none'}"
+            for m in PASS_CLAIM_RE.finditer(answer)]
+
+
+def check(answer: str, sources: list[Any], user_message: str = "",
+          training: dict[str, Any] | None = None) -> GroundingReport:
     blob = json.dumps(sources, default=str) + " " + user_message
     source_ids = set(ID_RE.findall(blob))
     nums: set[float] = set()
@@ -72,4 +93,5 @@ def check(answer: str, sources: list[Any], user_message: str = "") -> GroundingR
         d = len(clean.split(".")[1]) if "." in clean else 0
         if not any(round(s, d) == v or (d == 0 and abs(s) >= 100 and abs(v - s) <= abs(s) * 0.005) for s in allowed):
             bad_nums.append(raw)
-    return GroundingReport(not bad_ids and not bad_nums, sorted(set(bad_nums)), bad_ids)
+    claims = training_claims(answer, training)
+    return GroundingReport(not bad_ids and not bad_nums and not claims, sorted(set(bad_nums)), bad_ids, claims)

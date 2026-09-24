@@ -35,7 +35,7 @@ export async function streamAssistant(req: AssistantRequest, opts: StreamOptions
       body: JSON.stringify(req),
       signal: ctrl.signal,
     });
-    if (!res.ok || !res.body) throw new Error(`assistant HTTP ${res.status}`);
+    if (!res.ok || !res.body) throw Object.assign(new Error(`assistant HTTP ${res.status}`), { status: res.status });
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     const parser = new SseParser();

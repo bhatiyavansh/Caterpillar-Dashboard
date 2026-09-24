@@ -2,6 +2,7 @@
 doc_id: demo_site_manual
 title: "Demo site manual: CAT Copilot alerts and fault codes"
 citation: "Demo site manual (CAT Copilot hackathon)"
+domain: site_manual
 source: "Demo site SOP written by the CAT Copilot team from the simulator's own rules (simulator/safety.py, simulator/machine.py, simulator/physics.py). Not a Caterpillar publication."
 license: "Team-authored demo document"
 retrieved: "2026-09-23"
