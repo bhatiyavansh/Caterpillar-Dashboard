@@ -4,11 +4,36 @@ import * as React from "react";
 import { TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { deriveAdvice } from "@/lib/advice";
+import type { Severity } from "@/lib/types";
 import { cn, severityStyles } from "@/lib/utils";
+import { PRIMARY_MACHINE_ID } from "@/lib/mock-data";
 import { useMachineStore } from "@/store/machine-store";
 import { EmptyState } from "@/components/ui/primitives";
 import { ScreenPad, SectionTitle, TouchButton } from "../touch";
 import type { MachineScreen } from "../machine-app";
+
+/** The reading a temperature-based advisory is about, for the numeric panel. */
+const READING_FOR: Record<string, { label: string; unit: string; limit: string; read: (s: { hydraulicTemperature: number; engineTemperature: number }) => number }> = {
+  "hyd-crit": { label: "Hydraulic temperature", unit: "°C", limit: "< 90°C", read: (s) => s.hydraulicTemperature },
+  "hyd-warn": { label: "Hydraulic temperature", unit: "°C", limit: "< 90°C", read: (s) => s.hydraulicTemperature },
+  "eng-crit": { label: "Engine temperature", unit: "°C", limit: "< 92°C", read: (s) => s.engineTemperature },
+  "eng-warn": { label: "Engine temperature", unit: "°C", limit: "< 92°C", read: (s) => s.engineTemperature },
+};
+
+/**
+ * One shape for the headline banner, whichever of the two sources it came
+ * from. `alerts` (seatbelt, seeded faults) and live sensor advisories used to
+ * be handled as two unrelated lists, so a seatbelt alert could sit in the log
+ * below and never become the thing the big banner points at — the one place
+ * an operator glancing at the screen would actually see it.
+ */
+interface Headline {
+  id: string;
+  severity: Severity;
+  title: string;
+  body: string;
+  reading?: { label: string; value: string; limit: string };
+}
 
 export function AlertsScreen({ navigate }: { navigate: (s: MachineScreen) => void }) {
   const sensors = useMachineStore((s) => s.sensors);
@@ -16,9 +41,31 @@ export function AlertsScreen({ navigate }: { navigate: (s: MachineScreen) => voi
   const acknowledge = useMachineStore((s) => s.acknowledgeAlert);
   const [ackLive, setAckLive] = React.useState<string[]>([]);
 
-  const live = deriveAdvice(sensors).filter((a) => a.severity !== "info" && !ackLive.includes(a.id));
-  const headline = live[0];
-  const machineAlerts = alerts.filter((a) => a.machineId === "CAT-320-014");
+  const liveAdvice = deriveAdvice(sensors).filter((a) => a.severity !== "info" && !ackLive.includes(a.id));
+  const machineAlerts = alerts.filter((a) => a.machineId === PRIMARY_MACHINE_ID);
+  const openAlerts = machineAlerts.filter((a) => !a.acknowledged);
+
+  const candidates: Headline[] = [
+    ...openAlerts.map((a) => ({ id: a.id, severity: a.severity, title: a.title, body: a.recommendedAction })),
+    ...liveAdvice.map((a) => ({
+      id: a.id,
+      severity: a.severity,
+      title: a.title,
+      body: a.body,
+      reading: READING_FOR[a.id]
+        ? {
+            label: READING_FOR[a.id]!.label,
+            value: `${READING_FOR[a.id]!.read(sensors).toFixed(0)}${READING_FOR[a.id]!.unit}`,
+            limit: READING_FOR[a.id]!.limit,
+          }
+        : undefined,
+    })),
+  ];
+  // Critical first, then warning — whichever is worst is what the operator
+  // needs to see, not whichever source happened to update most recently.
+  const rank: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
+  candidates.sort((a, b) => rank[a.severity] - rank[b.severity]);
+  const headline = candidates[0];
 
   return (
     <ScreenPad className="space-y-5">
@@ -40,21 +87,18 @@ export function AlertsScreen({ navigate }: { navigate: (s: MachineScreen) => voi
             {headline.title}
           </h2>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="rounded border border-white/10 bg-ink-900 p-4">
-              <p className="label-xs">Current</p>
-              <p className="font-mono text-4xl font-bold text-zinc-50">
-                {sensors.hydraulicTemperature.toFixed(0)}
-                <span className="ml-1 text-xl text-muted">°C</span>
-              </p>
+          {headline.reading ? (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="rounded border border-white/10 bg-ink-900 p-4">
+                <p className="label-xs">{headline.reading.label}</p>
+                <p className="font-mono text-4xl font-bold text-zinc-50">{headline.reading.value}</p>
+              </div>
+              <div className="rounded border border-white/10 bg-ink-900 p-4">
+                <p className="label-xs">Recommended</p>
+                <p className="font-mono text-4xl font-bold text-status-ok">{headline.reading.limit}</p>
+              </div>
             </div>
-            <div className="rounded border border-white/10 bg-ink-900 p-4">
-              <p className="label-xs">Recommended</p>
-              <p className="font-mono text-4xl font-bold text-status-ok">
-                &lt; 90<span className="ml-1 text-xl text-muted">°C</span>
-              </p>
-            </div>
-          </div>
+          ) : null}
 
           <div className="mt-4 rounded border border-white/10 bg-ink-900 p-4">
             <p className="label-xs">Recommended action</p>
@@ -66,7 +110,11 @@ export function AlertsScreen({ navigate }: { navigate: (s: MachineScreen) => voi
               tone="primary"
               full
               onClick={() => {
-                setAckLive((v) => [...v, headline.id]);
+                if (openAlerts.some((a) => a.id === headline.id)) {
+                  acknowledge(headline.id);
+                } else {
+                  setAckLive((v) => [...v, headline.id]);
+                }
                 toast.success("Alert acknowledged");
               }}
             >

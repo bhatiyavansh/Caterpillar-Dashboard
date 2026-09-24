@@ -16,7 +16,19 @@ const modes: MachineMode[] = ["idle", "operating", "heavy-load", "maintenance"];
  * of the product surface an operator would ever see.
  */
 export function SimulationControls() {
-  const { scenario, setScenario, mode, setMode, sensors, setSensor, live, setLive, reset } = useMachineStore();
+  const {
+    scenario,
+    setScenario,
+    mode,
+    setMode,
+    sensors,
+    setSensor,
+    live,
+    setLive,
+    seatbeltFastened,
+    setSeatbeltFastened,
+    reset,
+  } = useMachineStore();
 
   const sliders = [
     { key: "engineTemperature" as const, label: "Engine temperature", min: 40, max: 120, unit: "°C", step: 1 },
@@ -88,6 +100,32 @@ export function SimulationControls() {
           Live sensor drift
         </label>
         <Switch id="live-toggle" checked={live} onCheckedChange={setLive} />
+      </div>
+
+      <div className="mt-3">
+        <p className="label-xs">Seatbelt</p>
+        <div className="mt-2 grid grid-cols-2 gap-1.5">
+          <button
+            onClick={() => setSeatbeltFastened(true)}
+            aria-pressed={seatbeltFastened}
+            className={cn(
+              "h-10 rounded text-xs font-bold uppercase tracking-wider transition-colors",
+              seatbeltFastened ? "bg-status-ok text-ink-950" : "bg-white/6 text-zinc-300 hover:bg-white/12",
+            )}
+          >
+            Fastened
+          </button>
+          <button
+            onClick={() => setSeatbeltFastened(false)}
+            aria-pressed={!seatbeltFastened}
+            className={cn(
+              "h-10 rounded text-xs font-bold uppercase tracking-wider transition-colors",
+              !seatbeltFastened ? "bg-status-crit text-white" : "bg-white/6 text-zinc-300 hover:bg-white/12",
+            )}
+          >
+            Unfastened
+          </button>
+        </div>
       </div>
 
       <div className="mt-5 space-y-5">

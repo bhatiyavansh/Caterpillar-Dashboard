@@ -5,6 +5,7 @@ import {
   alerts as seedAlerts,
   inspectionSteps,
   machineNotifications as seedNotifications,
+  PRIMARY_MACHINE_ID,
   taskItems as seedTasks,
 } from "@/lib/mock-data";
 import type {
@@ -71,6 +72,10 @@ interface MachineState {
    * fight each other; `applyLiveTelemetry` is what actually moves them.
    */
   backendConnected: boolean;
+  /** Whether the operator restraint is buckled. Ground truth for the seatbelt alert. */
+  seatbeltFastened: boolean;
+  /** Epoch ms the belt was last seen unfastened, or null while it is fastened. Drives escalation. */
+  seatbeltUnfastenedAt: number | null;
   simulationOpen: boolean;
   deviceSize: DeviceSizeKey;
   controlsOpen: boolean;
@@ -99,6 +104,8 @@ interface MachineState {
     engineHours?: number;
   }) => void;
   setBackendConnected: (v: boolean) => void;
+  /** Presenter/demo toggle — the equivalent of the director's "unbuckle" scenario for this device. */
+  setSeatbeltFastened: (v: boolean) => void;
   openSimulation: () => void;
   closeSimulation: () => void;
   setDeviceSize: (k: DeviceSizeKey) => void;
@@ -118,12 +125,57 @@ function drift(current: number, target: number, rate: number, jitter: number) {
   return Number(next.toFixed(1));
 }
 
+/** How long the belt has to stay open before the alert escalates to critical. */
+const SEATBELT_ESCALATE_S = 12;
+/** Stable id, so escalating the same event updates one record rather than stacking duplicates. Exported so screens can find this one alert without matching on its title. */
+export const SEATBELT_ALERT_ID = "ALR-SEATBELT";
+
+/**
+ * The seatbelt alert, derived fresh from the restraint state — never appended
+ * to by hand, so it can only ever exist when the belt is actually open and
+ * disappears the instant it is fastened. Mirrors the escalation the live
+ * fleet source (`mock-source.ts`) applies to the same event on `/cab`.
+ */
+function seatbeltAlert(
+  fastened: boolean,
+  unfastenedAt: number | null,
+  now: number,
+  previous: Alert | undefined,
+): Alert | null {
+  if (fastened || unfastenedAt === null) return null;
+
+  const heldS = (now - unfastenedAt) / 1000;
+  const escalated = heldS > SEATBELT_ESCALATE_S;
+  const severity: Alert["severity"] = escalated ? "critical" : "warning";
+
+  return {
+    id: SEATBELT_ALERT_ID,
+    severity,
+    machineId: PRIMARY_MACHINE_ID,
+    machineName: "CAT 320",
+    title: escalated ? "Seatbelt still unfastened" : "Seatbelt unfastened",
+    description: escalated
+      ? `The operator restraint has been open for ${Math.round(heldS)} seconds while the machine is running. Travel is locked.`
+      : "The operator restraint is open while the engine is running.",
+    recommendedAction: escalated
+      ? "Stop the machine and fasten the belt to release travel."
+      : "Fasten the seatbelt before moving.",
+    timestamp: "Live",
+    system: "Safety",
+    // Re-arm acknowledgement on escalation, same as the fleet source: an
+    // operator who dismissed the warning still has to see the critical.
+    acknowledged: previous && previous.severity === severity ? previous.acknowledged : false,
+  };
+}
+
 export const useMachineStore = create<MachineState>((set, get) => ({
   sensors: { ...baseSensors },
   scenario: "normal",
   mode: "operating",
   live: true,
   backendConnected: false,
+  seatbeltFastened: true,
+  seatbeltUnfastenedAt: null,
   simulationOpen: false,
   deviceSize: "1280x800",
   controlsOpen: false,
@@ -135,7 +187,25 @@ export const useMachineStore = create<MachineState>((set, get) => ({
   voiceState: "idle",
 
   tick: () => {
-    const { sensors, scenario, mode, live, backendConnected } = get();
+    const { sensors, scenario, mode, live, backendConnected, alerts, seatbeltFastened, seatbeltUnfastenedAt } = get();
+
+    // Runs every tick regardless of the "live sensor drift" toggle — a
+    // presenter turning that off to hold a reading steady should not also
+    // silence a safety alert.
+    const now = Date.now();
+    const previousSeatbeltAlert = alerts.find((a) => a.id === SEATBELT_ALERT_ID);
+    const nextSeatbeltAlert = seatbeltAlert(seatbeltFastened, seatbeltUnfastenedAt, now, previousSeatbeltAlert);
+    const seatbeltAlertChanged =
+      Boolean(nextSeatbeltAlert) !== Boolean(previousSeatbeltAlert) ||
+      (nextSeatbeltAlert && previousSeatbeltAlert && nextSeatbeltAlert.severity !== previousSeatbeltAlert.severity);
+    if (seatbeltAlertChanged) {
+      set({
+        alerts: nextSeatbeltAlert
+          ? [nextSeatbeltAlert, ...alerts.filter((a) => a.id !== SEATBELT_ALERT_ID)]
+          : alerts.filter((a) => a.id !== SEATBELT_ALERT_ID),
+      });
+    }
+
     if (!live) return;
     const t = targets[scenario];
     const loadFactor = mode === "heavy-load" ? 1.06 : mode === "idle" ? 0.9 : mode === "maintenance" ? 0.7 : 1;
@@ -217,6 +287,14 @@ export const useMachineStore = create<MachineState>((set, get) => ({
 
   setBackendConnected: (backendConnected) => set({ backendConnected }),
 
+  setSeatbeltFastened: (seatbeltFastened) =>
+    set((s) => ({
+      seatbeltFastened,
+      // Start the clock the moment it opens; don't restart it on a repeated
+      // "unfastened" call, or the escalation timer would never reach 12s.
+      seatbeltUnfastenedAt: seatbeltFastened ? null : (s.seatbeltUnfastenedAt ?? Date.now()),
+    })),
+
   openSimulation: () => set({ simulationOpen: true }),
   closeSimulation: () => set({ simulationOpen: false, controlsOpen: false }),
   setDeviceSize: (deviceSize) => set({ deviceSize }),
@@ -249,7 +327,7 @@ export const useMachineStore = create<MachineState>((set, get) => ({
   setVoiceState: (voiceState) => set({ voiceState }),
 
   reset: () =>
-    set({
+    set((s) => ({
       sensors: { ...baseSensors },
       scenario: "normal",
       mode: "operating",
@@ -257,7 +335,10 @@ export const useMachineStore = create<MachineState>((set, get) => ({
       inspectionResults: {},
       inspectionIndex: 0,
       voiceState: "idle",
-    }),
+      seatbeltFastened: true,
+      seatbeltUnfastenedAt: null,
+      alerts: s.alerts.filter((a) => a.id !== SEATBELT_ALERT_ID),
+    })),
 }));
 
 /** Derived health for a single reading against warn/crit thresholds. */
