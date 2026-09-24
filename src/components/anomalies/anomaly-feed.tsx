@@ -21,6 +21,7 @@ import { anomalyMetrics } from "@/lib/intel";
 import { SeverityChip } from "@/components/ui/status";
 import { EmptyState } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
+import { XrayLink } from "@/components/shared/xray-link";
 
 const PATTERN_LABEL: Record<AnomalyPattern, string> = {
   excessive_idling: "Excessive idling",
@@ -129,6 +130,10 @@ function AnomalyCard({ anomaly, live }: { anomaly: Anomaly; live: boolean }) {
           </p>
         </div>
       ) : null}
+
+      <div className="flex justify-end">
+        <XrayLink machineId={anomaly.machineId} issue={{ pattern: anomaly.pattern, text: anomaly.title }} label="Show on machine" />
+      </div>
     </motion.article>
   );
 }

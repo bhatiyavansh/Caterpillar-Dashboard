@@ -10,8 +10,10 @@
  * never asked for during SSR.
  */
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
+import { useTwinStore } from "@/store/twinStore";
 import { useVehicleControls } from "@/hooks/twin/useVehicleControls";
 import { useLiveLink } from "@/hooks/twin/useLiveLink";
 import { useLocalControl } from "@/hooks/twin/useLocalControl";
@@ -112,6 +114,22 @@ export function TwinStage({
 }
 
 /**
+ * `/twin?xray=<machine>&c=<component>` opens the X-ray inspection on arrival.
+ * Every anomaly and alert surface in the product links here (use-xray.ts).
+ */
+function XrayDeepLink() {
+  const params = useSearchParams();
+  const machine = params.get("xray");
+  const component = params.get("c");
+  useEffect(() => {
+    if (machine && /^[A-Z0-9-]{3,24}$/.test(machine)) {
+      useTwinStore.getState().openXray(machine, component && /^[a-z_]{2,40}$/.test(component) ? component : null);
+    }
+  }, [machine, component]);
+  return null;
+}
+
+/**
  * The /twin route.
  *
  * It fills the app shell's content area rather than covering the viewport, so
@@ -122,6 +140,9 @@ export function TwinExperience() {
   return (
     <div className="relative h-full min-h-0 overflow-hidden bg-ink-950">
       <TwinStage />
+      <Suspense fallback={null}>
+        <XrayDeepLink />
+      </Suspense>
     </div>
   );
 }

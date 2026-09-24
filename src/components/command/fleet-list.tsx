@@ -12,6 +12,7 @@ import { SectionHeader } from "@/components/ui/data";
 import { StatusLabel } from "@/components/ui/status";
 import { EmptyPanel, SkeletonRows } from "@/components/ui/states";
 import { cn } from "@/lib/utils";
+import { XrayLink } from "@/components/shared/xray-link";
 
 /** Attention first, then hardest-working, then the rest. */
 const ORDER: Record<MachineStatus, number> = {
@@ -92,12 +93,12 @@ export function FleetList({
               const selected = m.id === selectedId;
               const attentionRow = m.status === "critical" || m.status === "warning";
               return (
-                <li key={m.id}>
+                <li key={m.id} className="flex items-stretch border-b border-white/5">
                   <button
                     onClick={() => onSelect(m.id)}
                     aria-current={selected ? "true" : undefined}
                     className={cn(
-                      "relative flex w-full items-center gap-3 border-b border-white/5 px-3 py-2.5 text-left transition-colors",
+                      "relative flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left transition-colors",
                       selected ? "bg-cat-500/10" : "hover:bg-white/[0.04]",
                     )}
                   >
@@ -134,6 +135,11 @@ export function FleetList({
                       </span>
                     </span>
                   </button>
+                  {attentionRow ? (
+                    <span className={cn("flex items-center pr-2", selected && "bg-cat-500/10")}>
+                      <XrayLink machineId={m.id} issue={{ text: m.taskLabel ?? null }} compact />
+                    </span>
+                  ) : null}
                 </li>
               );
             })}

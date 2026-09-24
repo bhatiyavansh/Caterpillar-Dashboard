@@ -14,6 +14,7 @@ import type { MachineTelemetry } from "@/types/twin";
 import { PALETTE } from "./materials";
 import { useChassis, useRunningGear } from "./chassis";
 import { damp } from "@/lib/twin/vehicle";
+import { InternalBox, InternalTube, useXray } from "./xray";
 
 const WHEELS: [number, number][] = [
   [-1.45, -2.6],
@@ -28,6 +29,7 @@ export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
   const { root, tilt } = useChassis(telemetry);
   const { register } = useRunningGear(telemetry, 0.28);
   const bed = useRef<THREE.Group>(null);
+  const { handlers } = useXray(telemetry.machineId, root);
   const load = useRef<THREE.Mesh>(null);
   const tipping = useRef(0);
 
@@ -44,11 +46,11 @@ export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
   });
 
   return (
-    <group ref={root}>
+    <group ref={root} {...handlers}>
       <group ref={tilt}>
         {/* wheels */}
         {WHEELS.map(([x, z]) => (
-          <group key={`${x}:${z}`} ref={register} position={[x, 0.95, z]}>
+          <group key={`${x}:${z}`} ref={register} position={[x, 0.95, z]} userData={{ part: "undercarriage" }}>
             <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
               <cylinderGeometry args={[0.95, 0.95, 0.68, 16]} />
               <meshStandardMaterial color={PALETTE.track} roughness={0.95} />
@@ -60,18 +62,28 @@ export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
           </group>
         ))}
 
+        {/* X-ray internals */}
+        <InternalBox part="engine" position={[0, 1.6, -3.0]} size={[1.4, 0.9, 1.4]} />
+        <InternalBox part="hydraulic_pump" position={[0.5, 1.2, -1.2]} size={[0.4, 0.4, 0.5]} />
+        {[-1, 1].map((side) => (
+          <group key={side}>
+            <InternalTube part="hydraulic_lines" from={[0.5 * side, 1.2, -1.2]} to={[1.1 * side, 1.3, 1.0]} />
+            <InternalTube part="hydraulic_lines" from={[1.1 * side, 1.1, 1.0]} to={[1.1 * side, 2.0, 1.4]} radius={0.12} />
+          </group>
+        ))}
+
         {/* tractor chassis */}
-        <mesh position={[0, 1.15, -1.9]} castShadow receiveShadow>
+        <mesh position={[0, 1.15, -1.9]} castShadow receiveShadow userData={{ part: "engine" }}>
           <boxGeometry args={[2.6, 0.9, 3.4]} />
           <meshStandardMaterial color={PALETTE.catYellow} roughness={0.6} metalness={0.25} />
         </mesh>
         {/* bonnet */}
-        <mesh position={[0, 1.75, -3.2]} castShadow>
+        <mesh position={[0, 1.75, -3.2]} castShadow userData={{ part: "engine" }}>
           <boxGeometry args={[2.3, 0.85, 1.5]} />
           <meshStandardMaterial color={PALETTE.catYellow} roughness={0.6} metalness={0.25} />
         </mesh>
         {/* cab */}
-        <mesh position={[0, 2.35, -1.9]} castShadow>
+        <mesh position={[0, 2.35, -1.9]} castShadow userData={{ part: "cab" }}>
           <boxGeometry args={[2.0, 1.5, 1.7]} />
           <meshStandardMaterial
             color={PALETTE.glass}
@@ -81,24 +93,24 @@ export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
             opacity={0.6}
           />
         </mesh>
-        <mesh position={[0, 3.14, -1.9]} castShadow>
+        <mesh position={[0, 3.14, -1.9]} castShadow userData={{ part: "cab" }}>
           <boxGeometry args={[2.15, 0.12, 1.85]} />
           <meshStandardMaterial color={PALETTE.steelDark} roughness={0.8} />
         </mesh>
 
         {/* hitch */}
-        <mesh position={[0, 1.05, -0.1]} castShadow>
+        <mesh position={[0, 1.05, -0.1]} castShadow userData={{ part: "hitch" }}>
           <cylinderGeometry args={[0.4, 0.4, 0.8, 12]} />
           <meshStandardMaterial color={PALETTE.steelDark} roughness={0.7} metalness={0.5} />
         </mesh>
         {/* rear frame */}
-        <mesh position={[0, 1.0, 2.3]} castShadow>
+        <mesh position={[0, 1.0, 2.3]} castShadow userData={{ part: "undercarriage" }}>
           <boxGeometry args={[2.2, 0.5, 4.0]} />
           <meshStandardMaterial color={PALETTE.steel} roughness={0.85} metalness={0.35} />
         </mesh>
 
         {/* dump bed, hinged at the rear */}
-        <group ref={bed} position={[0, 1.35, 3.9]}>
+        <group ref={bed} position={[0, 1.35, 3.9]} userData={{ part: "dump_body" }}>
           <group position={[0, 0.45, -1.9]}>
             {/* floor */}
             <mesh castShadow receiveShadow>

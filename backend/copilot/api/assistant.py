@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 from copilot.agent.confirm import ActionError
 from copilot.agent.llm import LLMError
@@ -47,6 +47,25 @@ async def assistant(request: Request):
 @router.get("/api/actions")
 async def list_actions(request: Request, surface: str | None = None) -> dict[str, Any]:
     return {"actions": request.app.state.actions.list(surface)}
+
+
+class PrepareIn(BaseModel):
+    """Prepare a confirm-gated action directly (no assistant turn): the X-ray component popover uses this."""
+    model_config = ConfigDict(extra="forbid")
+    tool: Literal["create_incident", "create_work_order"]
+    args: dict[str, Any]
+    surface: Literal["command", "cab", "owner"] = "command"
+
+
+@router.post("/api/actions/prepare")
+async def prepare_action(request: Request, body: PrepareIn) -> dict[str, Any]:
+    """Runs the tool's prepare step and returns the pending action (summary + preview). Nothing executes
+    until `POST /api/actions/{id}/confirm`, exactly as when the agent proposes the same tool."""
+    ctx = request.app.state.context_factory(AssistantRequest(surface=body.surface, message="(prepare)"))
+    res, _ = await request.app.state.registry.call(body.tool, body.args, ctx)
+    if not res.ok or not res.pending_action:
+        raise HTTPException(422, res.data)
+    return res.pending_action
 
 
 @router.post("/api/actions/{action_id}/confirm")

@@ -3,6 +3,7 @@
 import { PageHeader, RunSimulationButton } from "@/components/navigation/dashboard-shell";
 import { IncidentLog } from "@/components/incidents/incident-log";
 import { useFleet, useIncidents } from "@/lib/hooks/use-site";
+import { DraftedReports } from "@/components/reports/drafted-reports";
 
 export default function IncidentsPage() {
   const { data: incidents, file, report } = useIncidents();
@@ -22,6 +23,9 @@ export default function IncidentsPage() {
           onFile={file}
           onReport={report}
         />
+        <div className="mt-6">
+          <DraftedReports kind="incident" />
+        </div>
       </div>
     </div>
   );

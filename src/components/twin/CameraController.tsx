@@ -8,6 +8,10 @@
  * SITE      three-quarter vantage framing every machine
  * DRIVER    locked to the cab, looking out over the boom
  *
+ * X-ray inspection reuses FOLLOW: the orbit target moves to the flagged
+ * component's focus point (components.ts) and the camera comes in close on a
+ * three-quarter angle, then follows the machine as usual.
+ *
  * Following works by translating the camera and the orbit target by the same
  * delta each frame. OrbitControls recomputes its offset from the target inside
  * `update()`, so moving both together preserves whatever angle and distance the
@@ -19,6 +23,7 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { MACHINES } from "@/lib/twin/simulation";
+import { componentSpec } from "@/lib/twin/components";
 import { useTwinStore } from "@/store/twinStore";
 
 /** Structural type — avoids depending on three-stdlib's exported types. */
@@ -49,6 +54,13 @@ export function CameraController() {
   // Follow whatever machine is selected, not always EXC001 — otherwise an
   // incident replay on another machine happens off-screen.
   const subjectId = useTwinStore((s) => s.selectedMachine);
+  const xray = useTwinStore((s) => s.xray);
+  const xrayFocus = useMemo(() => {
+    if (!xray?.shownOn) return null;
+    const kind = MACHINES.find((m) => m.id === xray.shownOn)?.kind;
+    const spec = kind ? componentSpec(kind, xray.componentId) : undefined;
+    return { machine: xray.shownOn, focus: spec?.focus ?? { x: 0, y: 1.8, z: 0 }, close: Boolean(spec) };
+  }, [xray]);
 
   const { camera } = useThree();
   const controls = useThree((s) => s.controls) as unknown as Controls | null;
@@ -76,6 +88,7 @@ export function CameraController() {
   ): void => {
     const p = engine.telemetryOrPrimary(subjectId);
 
+
     switch (mode) {
       case "top": {
         outTarget.set(0, 0, -6);
@@ -96,6 +109,14 @@ export function CameraController() {
         return;
       }
       default: {
+        if (xrayFocus && xrayFocus.machine === p.machineId) {
+          // X-ray: look at the component, from the front-right three-quarter.
+          const f = xrayFocus.focus;
+          outTarget.set(f.x, f.y, f.z).applyAxisAngle(UP, -p.heading).add(scratch.delta.set(p.x, p.y, p.z));
+          const eye = xrayFocus.close ? new THREE.Vector3(7, 5, -6) : new THREE.Vector3(11, 8, -10);
+          outPosition.copy(outTarget).add(eye.applyAxisAngle(UP, -p.heading));
+          return;
+        }
         // Behind and above the machine, looking down the boom.
         outTarget.set(p.x, p.y + 2.4, p.z);
         const back = new THREE.Vector3(0, 13, 25).applyAxisAngle(UP, -p.heading);
@@ -138,10 +159,10 @@ export function CameraController() {
     controls.enabled = mode !== "driver";
     controls.enableRotate = mode !== "driver";
     controls.enablePan = mode === "top" || mode === "site";
-    controls.minDistance = mode === "top" ? 40 : 8;
+    controls.minDistance = mode === "top" ? 40 : xrayFocus ? 3 : 8;
     controls.maxDistance = mode === "top" ? 420 : 240;
     controls.maxPolarAngle = Math.PI * 0.495;
-  }, [controls, mode]);
+  }, [controls, mode, xrayFocus]);
 
   useFrame((_, delta) => {
     const { target, position, delta: diff } = scratch;

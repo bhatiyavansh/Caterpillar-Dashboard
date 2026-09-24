@@ -25,6 +25,7 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import type { MachineTelemetry, ProximityLevel } from "@/types/twin";
 import { useTwinStore } from "@/store/twinStore";
+import { InternalBox, InternalTube, useXray } from "./xray";
 import { PALETTE, trackTexture } from "./materials";
 
 interface ExcavatorProps {
@@ -48,6 +49,7 @@ export function Excavator({ telemetry, safety = "safe" }: ExcavatorProps) {
   const sprockets = useRef<THREE.Group[]>([]);
 
   const engine = useTwinStore((s) => s.engine);
+  const { handlers } = useXray(telemetry.machineId, root);
 
   // Own texture instance so this machine's tracks scroll independently.
   const tracks = useMemo(() => {
@@ -101,53 +103,67 @@ export function Excavator({ telemetry, safety = "safe" }: ExcavatorProps) {
   });
 
   return (
-    <group ref={root}>
+    <group ref={root} {...handlers}>
       <group ref={tilt}>
         {/* ---------------- undercarriage ---------------- */}
-        <TrackAssembly side={-1} texture={tracks} sprockets={sprockets} />
-        <TrackAssembly side={1} texture={tracks} sprockets={sprockets} />
+        <group userData={{ part: "undercarriage" }}>
+          <TrackAssembly side={-1} texture={tracks} sprockets={sprockets} />
+          <TrackAssembly side={1} texture={tracks} sprockets={sprockets} />
 
-        {/* car body tying the tracks together */}
-        <mesh position={[0, 0.78, 0]} castShadow receiveShadow>
-          <boxGeometry args={[2.7, 0.52, 1.9]} />
-          <meshStandardMaterial color={PALETTE.steel} roughness={0.8} metalness={0.3} />
-        </mesh>
-        {/* swing bearing */}
-        <mesh position={[0, 1.06, 0]} castShadow>
-          <cylinderGeometry args={[0.92, 0.98, 0.22, 20]} />
-          <meshStandardMaterial color={PALETTE.steelDark} roughness={0.6} metalness={0.5} />
-        </mesh>
+          {/* car body tying the tracks together */}
+          <mesh position={[0, 0.78, 0]} castShadow receiveShadow>
+            <boxGeometry args={[2.7, 0.52, 1.9]} />
+            <meshStandardMaterial color={PALETTE.steel} roughness={0.8} metalness={0.3} />
+          </mesh>
+          {/* swing bearing */}
+          <mesh position={[0, 1.06, 0]} castShadow>
+            <cylinderGeometry args={[0.92, 0.98, 0.22, 20]} />
+            <meshStandardMaterial color={PALETTE.steelDark} roughness={0.6} metalness={0.5} />
+          </mesh>
+        </group>
 
         {/* ---------------- upper body ---------------- */}
         <group ref={house} position={[0, 1.14, 0]}>
           {/* main housing */}
-          <mesh position={[0, 0.7, 0.35]} castShadow receiveShadow>
+          <mesh position={[0, 0.7, 0.35]} castShadow receiveShadow userData={{ part: "house" }}>
             <boxGeometry args={[2.5, 1.35, 3.6]} />
             <meshStandardMaterial color={PALETTE.catYellow} roughness={0.55} metalness={0.25} />
           </mesh>
           {/* engine deck */}
-          <mesh position={[0, 1.55, 1.25]} castShadow>
+          <mesh position={[0, 1.55, 1.25]} castShadow userData={{ part: "engine" }}>
             <boxGeometry args={[2.3, 0.5, 1.7]} />
             <meshStandardMaterial color={PALETTE.catYellowDark} roughness={0.6} metalness={0.3} />
           </mesh>
           {/* counterweight */}
-          <mesh position={[0, 0.62, 2.28]} castShadow>
+          <mesh position={[0, 0.62, 2.28]} castShadow userData={{ part: "counterweight" }}>
             <boxGeometry args={[2.62, 1.25, 0.95]} />
             <meshStandardMaterial color={PALETTE.steel} roughness={0.85} metalness={0.35} />
           </mesh>
           {/* walkway */}
-          <mesh position={[0, 0.04, 0.35]} receiveShadow>
+          <mesh position={[0, 0.04, 0.35]} receiveShadow userData={{ part: "house" }}>
             <boxGeometry args={[2.72, 0.12, 3.7]} />
             <meshStandardMaterial color={PALETTE.steelDark} roughness={0.9} />
           </mesh>
 
-          <Cabin />
-          <Exhaust />
-          <Handrail x={-1.32} />
-          <Handrail x={1.32} />
+          <group userData={{ part: "cab" }}>
+            <Cabin />
+          </group>
+          <group userData={{ part: "engine" }}>
+            <Exhaust />
+          </group>
+          <group userData={{ part: "house" }}>
+            <Handrail x={-1.32} />
+            <Handrail x={1.32} />
+          </group>
+
+          {/* X-ray internals: pump, engine block and the main hydraulic run */}
+          <InternalBox part="hydraulic_pump" position={[0.7, 0.95, 0.9]} size={[0.5, 0.5, 0.75]} />
+          <InternalBox part="engine" position={[-0.25, 1.05, 1.35]} size={[1.3, 0.85, 1.15]} />
+          <InternalTube part="hydraulic_lines" from={[0.7, 0.95, 0.5]} to={[0.45, 0.95, -1.5]} radius={0.06} />
+          <InternalTube part="hydraulic_lines" from={[0.55, 0.95, 0.5]} to={[0.3, 0.95, -1.5]} radius={0.06} />
 
           {/* roof beacon */}
-          <mesh position={[-0.72, 2.42, -0.35]} castShadow>
+          <mesh position={[-0.72, 2.42, -0.35]} castShadow userData={{ part: "cab" }}>
             <cylinderGeometry args={[0.11, 0.13, 0.2, 10]} />
             <meshStandardMaterial ref={beacon} toneMapped={false} />
           </mesh>
@@ -155,7 +171,7 @@ export function Excavator({ telemetry, safety = "safe" }: ExcavatorProps) {
           {/* ---------------- boom ---------------- */}
           <group ref={boom} position={[0.45, 1.05, -1.55]}>
             {/* lower boom section, rising forward */}
-            <mesh position={[0, 0.488, -1.576]} rotation={[0.3, 0, 0]} castShadow>
+            <mesh position={[0, 0.488, -1.576]} rotation={[0.3, 0, 0]} castShadow userData={{ part: "boom" }}>
               <boxGeometry args={[0.62, 0.78, 3.3]} />
               <meshStandardMaterial
                 color={PALETTE.catYellow}
@@ -164,7 +180,7 @@ export function Excavator({ telemetry, safety = "safe" }: ExcavatorProps) {
               />
             </mesh>
             {/* upper boom section, falling away to the stick pivot */}
-            <mesh position={[0, 0.616, -4.4]} rotation={[-0.28, 0, 0]} castShadow>
+            <mesh position={[0, 0.616, -4.4]} rotation={[-0.28, 0, 0]} castShadow userData={{ part: "boom" }}>
               <boxGeometry args={[0.56, 0.66, 2.6]} />
               <meshStandardMaterial
                 color={PALETTE.catYellow}
@@ -173,19 +189,22 @@ export function Excavator({ telemetry, safety = "safe" }: ExcavatorProps) {
               />
             </mesh>
             {/* boom lift cylinder */}
-            <mesh position={[0, 0.05, -1.1]} rotation={[0.42, 0, 0]} castShadow>
+            <mesh position={[0, 0.05, -1.1]} rotation={[0.42, 0, 0]} castShadow userData={{ part: "boom_ram" }}>
               <cylinderGeometry args={[0.13, 0.13, 2.1, 10]} />
               <meshStandardMaterial color={PALETTE.steelLight} roughness={0.3} metalness={0.85} />
             </mesh>
+            {/* hydraulic lines along the top of the boom */}
+            <InternalTube part="hydraulic_lines" from={[0.2, 0.5, 0]} to={[0.2, 1.05, -3.2]} />
+            <InternalTube part="hydraulic_lines" from={[0.2, 1.05, -3.2]} to={[0.2, 0.55, -5.4]} />
             {/* stick cylinder riding on top of the boom */}
-            <mesh position={[0, 1.02, -3.1]} rotation={[0.16, 0, 0]} castShadow>
+            <mesh position={[0, 1.02, -3.1]} rotation={[0.16, 0, 0]} castShadow userData={{ part: "stick_ram" }}>
               <cylinderGeometry args={[0.11, 0.11, 2.3, 10]} />
               <meshStandardMaterial color={PALETTE.steelLight} roughness={0.3} metalness={0.85} />
             </mesh>
 
             {/* ---------------- stick ---------------- */}
             <group ref={stick} position={[0, 0.257, -5.65]}>
-              <mesh position={[0, 0, -1.45]} castShadow>
+              <mesh position={[0, 0, -1.45]} castShadow userData={{ part: "stick" }}>
                 <boxGeometry args={[0.46, 0.58, 2.9]} />
                 <meshStandardMaterial
                   color={PALETTE.catYellow}
@@ -193,8 +212,9 @@ export function Excavator({ telemetry, safety = "safe" }: ExcavatorProps) {
                   metalness={0.25}
                 />
               </mesh>
+              <InternalTube part="hydraulic_lines" from={[0.2, 0.35, 0]} to={[0.2, 0.4, -1.8]} />
               {/* bucket cylinder */}
-              <mesh position={[0, 0.42, -1.0]} rotation={[0.1, 0, 0]} castShadow>
+              <mesh position={[0, 0.42, -1.0]} rotation={[0.1, 0, 0]} castShadow userData={{ part: "bucket_ram" }}>
                 <cylinderGeometry args={[0.095, 0.095, 1.7, 10]} />
                 <meshStandardMaterial
                   color={PALETTE.steelLight}
@@ -204,7 +224,7 @@ export function Excavator({ telemetry, safety = "safe" }: ExcavatorProps) {
               </mesh>
 
               {/* ---------------- bucket ---------------- */}
-              <group ref={bucket} position={[0, 0, -2.9]}>
+              <group ref={bucket} position={[0, 0, -2.9]} userData={{ part: "bucket" }}>
                 <Bucket />
               </group>
             </group>

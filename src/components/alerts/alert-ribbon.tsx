@@ -21,6 +21,7 @@ import type { SiteAlert } from "@/lib/api/contracts";
 import { Button } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import { useAlertSound } from "@/lib/hooks/use-alert-sound";
+import { XrayLink } from "@/components/shared/xray-link";
 
 export type RibbonLevel = "normal" | "info" | "warning" | "critical";
 
@@ -172,6 +173,15 @@ export function AlertRibbon({
           >
             +{open.length - 1}
           </span>
+        ) : null}
+
+        {lead && lead.kind !== "proximity" && lead.kind !== "seatbelt" && lead.kind !== "fatigue" ? (
+          <XrayLink
+            machineId={lead.machineId}
+            issue={{ alertKind: lead.kind, text: lead.title }}
+            label="Where?"
+            className={cab ? "h-14 px-5 text-base" : undefined}
+          />
         ) : null}
 
         {lead && onAcknowledge ? (

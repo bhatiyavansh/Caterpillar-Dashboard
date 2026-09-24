@@ -23,7 +23,8 @@ import type {
   TelemetrySource,
   WeatherMode,
 } from "@/types/twin";
-import { SimulationEngine, PRIMARY_MACHINE, type UiSnapshot } from "@/lib/twin/simulation";
+import { MACHINES, SimulationEngine, PRIMARY_MACHINE, type UiSnapshot } from "@/lib/twin/simulation";
+import { kindOf } from "@/lib/twin/components";
 import { ARM_LIMITS, DEG } from "@/lib/twin/telemetry";
 import { clamp, normalizeHeading } from "@/lib/twin/site";
 
@@ -35,9 +36,35 @@ export function getEngine(): SimulationEngine {
   return engineSingleton;
 }
 
+/**
+ * An open X-ray inspection. `machineId` is the machine the issue belongs to;
+ * `shownOn` is the twin model it is drawn on — the same machine when the twin
+ * simulates it, otherwise the twin's machine of the same kind (the fleet has
+ * more machines than the twin models). `null` when no twin model fits.
+ */
+export interface XrayState {
+  machineId: string;
+  shownOn: string | null;
+  componentId: string | null;
+}
+
+/** The twin machine an X-ray for `machineId` is drawn on. */
+export function twinMachineFor(machineId: string): string | null {
+  if (MACHINES.some((m) => m.id === machineId)) return machineId;
+  const kind = kindOf(machineId);
+  return MACHINES.find((m) => m.kind === kind)?.id ?? null;
+}
+
 export interface TwinState {
   engine: SimulationEngine;
   snapshot: UiSnapshot;
+
+  /* --- X-ray inspection --- */
+  xray: XrayState | null;
+  /** One entry point for every anomaly/alert surface in the product. */
+  openXray: (machineId: string, componentId?: string | null) => void;
+  selectComponent: (componentId: string | null) => void;
+  closeXray: () => void;
 
   /* View state — plain React state, changes rarely. */
   cameraMode: CameraMode;
@@ -122,6 +149,22 @@ export const useTwinStore = create<TwinState>()((set, get) => {
   return {
     engine,
     snapshot: engine.snapshot(),
+
+    xray: null,
+    openXray: (machineId, componentId = null) => {
+      const shownOn = twinMachineFor(machineId);
+      set((s) => ({
+        xray: { machineId, shownOn, componentId: componentId ?? null },
+        selectedMachine: shownOn ?? s.selectedMachine,
+        cameraMode: "follow",
+        cameraResetNonce: s.cameraResetNonce + 1,
+      }));
+    },
+    selectComponent: (componentId) => {
+      const x = get().xray;
+      if (x) set((s) => ({ xray: { ...x, componentId }, cameraResetNonce: s.cameraResetNonce + 1 }));
+    },
+    closeXray: () => set((s) => ({ xray: null, cameraResetNonce: s.cameraResetNonce + 1 })),
 
     cameraMode: "follow",
     selectedMachine: PRIMARY_MACHINE,

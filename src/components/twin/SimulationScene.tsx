@@ -28,6 +28,7 @@ import { LabelProjector } from "./MachineLabel";
 import { IncidentMarkers } from "./IncidentMarkers";
 import { CameraController } from "./CameraController";
 import { PhysicsDebris } from "./PhysicsDebris";
+import { XrayAnchor } from "./XrayInspector";
 import { SiteLighting, Weather } from "./Weather";
 
 const FLEET_IDS = MACHINES.map((m) => m.id);
@@ -92,6 +93,7 @@ export function SimulationScene() {
         <Site />
         <Fleet />
         <PhysicsDebris />
+        <XrayAnchor />
         <WorkerCrew />
         <SafetyLayer />
         <IncidentMarkers />
