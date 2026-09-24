@@ -43,6 +43,7 @@ import type {
 } from "./contracts";
 import type { FleetSource } from "./source";
 import { MockFleetSource } from "./mock-source";
+import { siteToPlan } from "@web/lib/stream/geo";
 import { KIND_LABEL } from "./seed";
 import {
   LIVE_TASK_ID,
@@ -164,7 +165,9 @@ function toAlert(e: LiveEvent, acknowledged: boolean): SiteAlert {
 function toMachinePatch(m: HubMachine): Partial<Machine> {
   const patch: Partial<Machine> = {
     status: STATUS[m.status],
-    position: { x: m.pos.x, z: m.pos.y },
+    // The wire is site metres (SW origin, 0-400 x 0-300); every other position
+    // in the app, seed included, is the centred plan frame. Convert once, here.
+    position: siteToPlan(m.pos),
     heading: m.heading_deg,
     speedKmh: Number((m.speed_mps * 3.6).toFixed(1)),
     engineHours: m.engine_hours,
