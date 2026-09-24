@@ -1,24 +1,24 @@
 {
-  "p10": 223.8,
-  "p50": 312.2,
-  "p90": 395.8,
+  "p10": 218.1,
+  "p50": 300.4,
+  "p90": 341.3,
   "unit": "min",
   "model": "lightgbm_quantile",
   "reasons": [
     {
       "feature": "estimated_time_min",
-      "label": "Planner estimate 206.1",
-      "impact_min": 81
+      "label": "Planner estimate 217.7",
+      "impact_min": 97
     },
     {
       "feature": "volume_m3",
-      "label": "Job size 164",
-      "impact_min": 18
+      "label": "Job size 200",
+      "impact_min": 16
     },
     {
       "feature": "soil",
-      "label": "Clay",
-      "impact_min": 15
+      "label": "Mixed ground",
+      "impact_min": -14
     },
     {
       "feature": "weather",

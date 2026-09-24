@@ -3,7 +3,7 @@
 // envelope + hub messages from backend/copilot/contracts. Changes are additive only.
 /* eslint-disable */
 
-export const CONTRACT_VERSION = "1.3.0";
+export const CONTRACT_VERSION = "1.4.0";
 export const EVENT_CATALOGUE = ["seatbelt_unfastened", "seatbelt_fastened", "proximity_alert", "fatigue_alert", "tip_over_warning", "v2v_collision_risk", "v2i_suggestion", "anomaly_detected", "maintenance_due", "weather_change", "task_reordered", "working_risk_changed", "source_changed", "low_fuel", "engine_fault", "emergency_stop", "action_pending", "action_confirmed", "action_cancelled", "action_failed", "incident_created", "work_order_created", "training_booked"] as const;
 export const HUB_EVENT_KINDS = ["source_changed", "low_fuel", "engine_fault", "emergency_stop", "action_pending", "action_confirmed", "action_cancelled", "action_failed", "incident_created", "work_order_created", "training_booked"] as const;
 export const SEVERITIES = ["info", "low", "medium", "high", "critical"] as const;
@@ -153,6 +153,11 @@ export interface LiveMachineState {
   task_id?: string | null;
   task_progress: number;
   task_eta_min: number;
+  engine_rpm?: number | null;
+  battery_pct?: number | null;
+  def_level_pct?: number | null;
+  oil_pressure_psi?: number | null;
+  hydraulic_pressure_psi?: number | null;
 }
 
 /** C's worker_state + envelope. */
@@ -207,6 +212,11 @@ export interface MachineState {
   task_id?: string | null;
   task_progress: number;
   task_eta_min: number;
+  engine_rpm?: number | null;
+  battery_pct?: number | null;
+  def_level_pct?: number | null;
+  oil_pressure_psi?: number | null;
+  hydraulic_pressure_psi?: number | null;
 }
 
 export interface Pos {

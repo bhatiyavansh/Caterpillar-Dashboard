@@ -73,6 +73,14 @@ class MachineState(BaseModel):
     task_id: str | None = None
     task_progress: float = 0.0
     task_eta_min: float = 0.0
+    # Contract 1.4.0 - engine and hydraulic readings the in-cab HMI shows.
+    # Optional so older recordings, fixtures and fake sources still validate;
+    # None means "not reported", never zero.
+    engine_rpm: float | None = None
+    battery_pct: float | None = None
+    def_level_pct: float | None = None
+    oil_pressure_psi: float | None = None
+    hydraulic_pressure_psi: float | None = None
 
 
 class WorkerState(BaseModel):

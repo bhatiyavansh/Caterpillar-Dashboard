@@ -41,3 +41,9 @@ Sign-off column: who has to confirm. ✅ means confirmed, ⏳ means pending.
 |---|---|---|
 | `AssistantRequest.context?` (`AssistantContext {route?, training?}`) | The one global assistant tells the backend which screen it is on. On `/training` it carries `TrainingContext`: the lesson step, the validator's phase and diagnosis, the lesson machine's readings, and the lesson simulator's own alerts and events. The phase and steps passed come from the telemetry validator, never from the LLM. | A ⏳ D ⏳ |
 | `Citation.synthetic?` | Passages from the synthetic demo knowledge corpus (`backend/data/synthetic/`) are marked, so the UI can label them as not official documentation | D ⏳ |
+
+## 1.4.0 (2026-09-24): engine and hydraulic readings (upstream, C)
+
+| Addition | Why | Sign-off |
+|---|---|---|
+| `machine_state.engine_rpm?`, `battery_pct?`, `def_level_pct?`, `oil_pressure_psi?`, `hydraulic_pressure_psi?` (all `float \| None = None`) | The in-cab HMI (`/machine`, the `/simulation` tablet) showed these as locally animated values even with the hub live. The simulator now derives them from what already drives each machine (status, speed, payload, fuel burn, the hydraulic-spike offset). Optional, so older recordings, fixtures and fake sources still validate; `None` means not reported, never zero. Seeded from the machine id so no existing value moves. | C ⏳ D ⏳ A ⏳ |

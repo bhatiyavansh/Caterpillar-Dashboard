@@ -29,6 +29,7 @@ import type {
   WeatherMode,
 } from "./contracts";
 import type { FleetSource } from "./source";
+import { engineTargets } from "./engine-readings";
 import { ownerKpisFrom, ownerSeries } from "./owner-report";
 import {
   JOBS,
@@ -627,8 +628,27 @@ export class MockFleetSource implements FleetSource {
     const utilization = Math.round(clamp(drift(m.utilization, working ? m.utilization : 40, 0.02, 1.2), 0, 100));
     const load = Math.round(clamp(drift(m.load, working ? m.load : 0, 0.04, 2), 0, 100));
 
+    // Engine and hydraulic readings follow the same work signal as fuel burn,
+    // using the simulator's own formulas so the baseline moves like the feed.
+    const engineOn = m.status !== "maintenance";
+    const moving = Math.abs(m.speedKmh) > 0.5;
+    const targets = engineTargets({
+      engineOn,
+      effort: working ? Math.max(utilization / 100, 0.6) : moving ? 0.3 : 0,
+      loadRatio: load / 100,
+      coolantC: m.coolantTemperature,
+      hydraulicOffsetC: Math.max(hydraulicTarget - 72, 0),
+    });
+
     return {
       ...m,
+      engineRpm: Math.round(drift(m.engineRpm ?? targets.engineRpm, targets.engineRpm, 0.25, 12)),
+      oilPressurePsi: Number(drift(m.oilPressurePsi ?? targets.oilPressurePsi, targets.oilPressurePsi, 0.2, 0.6).toFixed(1)),
+      hydraulicPressurePsi: Math.round(
+        drift(m.hydraulicPressurePsi ?? targets.hydraulicPressurePsi, targets.hydraulicPressurePsi, 0.2, 30),
+      ),
+      batteryPct: Number(clamp((m.batteryPct ?? 95) + (engineOn ? 0.004 : -0.002), 0, 99.5).toFixed(2)),
+      defLevelPct: Number(clamp((m.defLevelPct ?? 70) - burn * 0.03, 0, 100).toFixed(2)),
       fuel: Number(clamp(m.fuel - burn, 0, 100).toFixed(2)),
       fuelUsedL: Number((m.fuelUsedL + burn * 6.4).toFixed(1)),
       hydraulicTemperature,

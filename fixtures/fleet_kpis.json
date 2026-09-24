@@ -1,13 +1,13 @@
 {
-  "ts": "2026-09-23T08:04:12Z",
+  "ts": "2026-09-24T06:49:49Z",
   "active_machines": 9,
   "total_machines": 10,
   "alerts_today": 30,
-  "critical_alerts_today": 3,
+  "critical_alerts_today": 4,
   "utilization_pct": 44,
   "fuel_today_l": 15.5,
   "idle_cost_today_inr": 271,
-  "near_misses_today": 1,
+  "near_misses_today": 6,
   "working_risk": {
     "score": 10,
     "level": "low"

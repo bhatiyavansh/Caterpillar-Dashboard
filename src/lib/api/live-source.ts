@@ -191,6 +191,15 @@ function toMachinePatch(m: HubMachine): Partial<Machine> {
   }
   if (m.zone) patch.zone = m.zone;
   if (m.task_id) patch.taskId = m.task_id;
+
+  // Contract 1.4.0. Only overlay what the source actually reported: `null`
+  // means "not reported", so an older source leaves the baseline in place
+  // rather than zeroing a gauge.
+  if (m.engine_rpm != null) patch.engineRpm = m.engine_rpm;
+  if (m.battery_pct != null) patch.batteryPct = m.battery_pct;
+  if (m.def_level_pct != null) patch.defLevelPct = m.def_level_pct;
+  if (m.oil_pressure_psi != null) patch.oilPressurePsi = m.oil_pressure_psi;
+  if (m.hydraulic_pressure_psi != null) patch.hydraulicPressurePsi = m.hydraulic_pressure_psi;
   return patch;
 }
 
@@ -206,6 +215,9 @@ const CONNECTION: Record<StreamStatus, ConnectionState> = {
 };
 
 /* ------------------------------------------------------------------- source */
+
+/** Longest a screen waits to see a new stream message. ~10 Hz. */
+const RECOMPUTE_MS = 100;
 
 export class LiveFleetSource implements FleetSource {
   readonly id = "live" as const;
@@ -238,12 +250,31 @@ export class LiveFleetSource implements FleetSource {
     this.snapshot = this.fallback.getSnapshot();
   }
 
+  /**
+   * Coalesces bursts of stream messages into one recompute.
+   *
+   * The simulator can stream at 60 Hz, and every message would otherwise merge
+   * the whole site snapshot and re-render every panel subscribed to it. Screens
+   * that read these records (dashboards, the HMI, alert lists) gain nothing past
+   * ~10 Hz; the 3D twin reads the stream store directly and interpolates, so it
+   * keeps the full rate.
+   */
+  private recomputeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private scheduleRecompute(): void {
+    if (this.recomputeTimer) return;
+    this.recomputeTimer = setTimeout(() => {
+      this.recomputeTimer = null;
+      this.recompute();
+    }, RECOMPUTE_MS);
+  }
+
   start(): void {
     this.fallback.start();
-    this.unsubscribeMock = this.fallback.subscribe(() => this.recompute());
+    this.unsubscribeMock = this.fallback.subscribe(() => this.scheduleRecompute());
     if (typeof window === "undefined") return; // SSR: baseline only, no socket
     this.release = acquireStream();
-    this.unsubscribeStore = getStreamStore().subscribe(() => this.recompute());
+    this.unsubscribeStore = getStreamStore().subscribe(() => this.scheduleRecompute());
     this.recompute();
     void this.refreshMl();
     this.mlTimer = setInterval(() => void this.refreshMl(), ML_REFRESH_MS);
@@ -256,6 +287,8 @@ export class LiveFleetSource implements FleetSource {
     this.unsubscribeStore = this.unsubscribeMock = this.release = null;
     if (this.mlTimer) clearInterval(this.mlTimer);
     this.mlTimer = null;
+    if (this.recomputeTimer) clearTimeout(this.recomputeTimer);
+    this.recomputeTimer = null;
     this.fallback.stop();
   }
 

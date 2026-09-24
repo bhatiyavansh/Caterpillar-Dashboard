@@ -1,21 +1,23 @@
 [
   {
     "type": "event",
-    "id": "evt_000029",
-    "ts": "2026-09-23T08:04:12Z",
+    "id": "evt_000030",
+    "ts": "2026-09-24T06:49:48Z",
     "event": "seatbelt_unfastened",
     "severity": "high",
     "machine_id": "EXC001",
     "source": "rules",
     "message": "Seatbelt unfastened - warning chime (EXC001)",
     "data": {
-      "escalation_level": 1
+      "escalation_level": 1,
+      "moving": false,
+      "speed_mps": 0.0
     }
   },
   {
     "type": "event",
-    "id": "evt_000038",
-    "ts": "2026-09-23T08:04:12Z",
+    "id": "evt_000040",
+    "ts": "2026-09-24T06:49:48Z",
     "event": "seatbelt_fastened",
     "severity": "info",
     "machine_id": "EXC001",
@@ -26,22 +28,22 @@
   {
     "type": "event",
     "id": "evt_000001",
-    "ts": "2026-09-23T08:04:11Z",
+    "ts": "2026-09-24T06:49:47Z",
     "event": "proximity_alert",
     "severity": "high",
-    "machine_id": "GRD001",
+    "machine_id": "EXC001",
     "source": "simulator",
-    "message": "Person detected 9.3 m front of GRD001",
+    "message": "Person detected 11.8 m rear of EXC001",
     "data": {
-      "distance_m": 9.3,
-      "zone": "front",
-      "worker_id": "W06"
+      "distance_m": 11.8,
+      "zone": "rear",
+      "worker_id": "W05"
     }
   },
   {
     "type": "event",
-    "id": "evt_000048",
-    "ts": "2026-09-23T08:04:12Z",
+    "id": "evt_000051",
+    "ts": "2026-09-24T06:49:48Z",
     "event": "fatigue_alert",
     "severity": "high",
     "machine_id": "EXC001",
@@ -54,8 +56,8 @@
   },
   {
     "type": "event",
-    "id": "evt_000058",
-    "ts": "2026-09-23T08:04:12Z",
+    "id": "evt_000062",
+    "ts": "2026-09-24T06:49:48Z",
     "event": "tip_over_warning",
     "severity": "critical",
     "machine_id": "EXC001",
@@ -69,8 +71,8 @@
   },
   {
     "type": "event",
-    "id": "evt_000051",
-    "ts": "2026-09-23T08:04:12Z",
+    "id": "evt_000055",
+    "ts": "2026-09-24T06:49:48Z",
     "event": "v2v_collision_risk",
     "severity": "high",
     "machine_id": "EXC001",
@@ -177,8 +179,8 @@
   },
   {
     "type": "event",
-    "id": "evt_000073",
-    "ts": "2026-09-23T08:04:12Z",
+    "id": "evt_000077",
+    "ts": "2026-09-24T06:49:48Z",
     "event": "v2i_suggestion",
     "severity": "info",
     "machine_id": "TRK003",
@@ -194,7 +196,7 @@
   {
     "type": "event",
     "id": "evt_000003",
-    "ts": "2026-09-23T08:04:12Z",
+    "ts": "2026-09-24T06:49:48Z",
     "event": "anomaly_detected",
     "severity": "medium",
     "machine_id": "WHL001",
@@ -209,8 +211,8 @@
   },
   {
     "type": "event",
-    "id": "evt_000062",
-    "ts": "2026-09-23T08:04:12Z",
+    "id": "evt_000066",
+    "ts": "2026-09-24T06:49:48Z",
     "event": "maintenance_due",
     "severity": "medium",
     "machine_id": "EXC001",
@@ -224,8 +226,8 @@
   },
   {
     "type": "event",
-    "id": "evt_000018",
-    "ts": "2026-09-23T08:04:12Z",
+    "id": "evt_000019",
+    "ts": "2026-09-24T06:49:48Z",
     "event": "weather_change",
     "severity": "medium",
     "machine_id": null,
@@ -240,7 +242,7 @@
   {
     "type": "event",
     "id": "evt_000009",
-    "ts": "2026-09-23T08:04:12Z",
+    "ts": "2026-09-24T06:49:48Z",
     "event": "task_reordered",
     "severity": "info",
     "machine_id": null,
@@ -263,8 +265,8 @@
   },
   {
     "type": "event",
-    "id": "evt_000019",
-    "ts": "2026-09-23T08:04:12Z",
+    "id": "evt_000020",
+    "ts": "2026-09-24T06:49:48Z",
     "event": "working_risk_changed",
     "severity": "medium",
     "machine_id": null,
@@ -283,7 +285,7 @@
   {
     "type": "event",
     "id": "evt_999001",
-    "ts": "2026-09-23T08:04:12Z",
+    "ts": "2026-09-24T06:49:48Z",
     "event": "incident_created",
     "severity": "high",
     "machine_id": "EXC001",

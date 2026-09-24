@@ -71,6 +71,7 @@ export interface LiveMachineState {
   task_id: string | null;
   task_progress: number | null;
   task_eta_min: number | null;
+  engine_rpm?: number | null;
 }
 
 export interface LiveWorkerState {
@@ -123,11 +124,13 @@ export function inferBucketAngle(intent: string): number {
 }
 
 /**
- * Engine speed, reconstructed. The simulator does not publish RPM, so the twin
- * derives it the same way its own vehicle model does — load and travel raise
- * it above an 800 rpm idle — purely so the dial moves in sympathy with the work.
+ * Engine speed. The simulator reports it since contract 1.4.0; for older
+ * sources that do not, the twin falls back to deriving it the way its own
+ * vehicle model does — load and travel raise it above an 800 rpm idle.
  */
 export function inferEngineRpm(msg: LiveMachineState): number {
+  // Contract 1.4.0: the simulator reports rpm now. Only guess for older sources.
+  if (typeof msg.engine_rpm === "number") return msg.engine_rpm;
   if (!msg.engine_on) return 0;
   const speedRatio = Math.min(Math.abs(msg.speed_mps) / 3, 1);
   const working = msg.intent !== "idle" && msg.status !== "idle" ? 1 : 0;

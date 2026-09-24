@@ -4,6 +4,7 @@ import { create } from "zustand";
 import {
   alerts as seedAlerts,
   inspectionSteps,
+  operator as seedOperator,
   machineNotifications as seedNotifications,
   PRIMARY_MACHINE_ID,
   taskItems as seedTasks,
@@ -13,11 +14,13 @@ import type {
   HealthStatus,
   MachineMode,
   MachineNotification,
+  Operator,
   SensorData,
   SimulationScenario,
   TaskItem,
 } from "@/lib/types";
 import { clamp } from "@/lib/utils";
+import { getFleetSource } from "@/lib/api";
 
 export const DEVICE_SIZES = {
   "1280x800": { w: 1280, h: 800, label: '1280 × 800 · 10.1" primary' },
@@ -85,6 +88,16 @@ interface MachineState {
   tasks: TaskItem[];
   notifications: MachineNotification[];
   voiceState: VoiceState;
+  /** The operator on the primary machine: live from the hub, else the local profile. */
+  operator: Operator;
+  /**
+   * Sensor fields the hub is currently supplying. `tick()` leaves exactly
+   * these alone, so an older source that omits a reading still has that one
+   * gauge animating rather than frozen.
+   */
+  liveKeys: Partial<Record<keyof SensorData, true>>;
+  /** HMI alert id -> hub alert id, so an acknowledgement reaches the whole site. */
+  liveAlertIds: Record<string, string>;
 
   tick: () => void;
   setScenario: (s: SimulationScenario) => void;
@@ -102,7 +115,19 @@ interface MachineState {
     coolantTemperature?: number;
     speedKmh?: number;
     engineHours?: number;
+    engineRpm?: number;
+    batteryPct?: number;
+    defLevelPct?: number;
+    oilPressurePsi?: number;
+    hydraulicPressurePsi?: number;
+    engineLoadPct?: number;
   }) => void;
+  /** Replace the alert list with the hub's, keyed so acknowledgements round-trip. */
+  applyLiveAlerts: (alerts: Alert[], idMap: Record<string, string>) => void;
+  applyLiveTasks: (tasks: TaskItem[]) => void;
+  applyLiveOperator: (operator: Operator) => void;
+  /** The hub's restraint state. Drives the same escalation clock the demo toggle does. */
+  applyLiveSeatbelt: (fastened: boolean) => void;
   setBackendConnected: (v: boolean) => void;
   /** Presenter/demo toggle — the equivalent of the director's "unbuckle" scenario for this device. */
   setSeatbeltFastened: (v: boolean) => void;
@@ -185,20 +210,27 @@ export const useMachineStore = create<MachineState>((set, get) => ({
   tasks: seedTasks,
   notifications: seedNotifications,
   voiceState: "idle",
+  operator: seedOperator,
+  liveKeys: {},
+  liveAlertIds: {},
 
   tick: () => {
-    const { sensors, scenario, mode, live, backendConnected, alerts, seatbeltFastened, seatbeltUnfastenedAt } = get();
+    const { sensors, scenario, mode, live, backendConnected, liveKeys, alerts, seatbeltFastened, seatbeltUnfastenedAt } = get();
 
     // Runs every tick regardless of the "live sensor drift" toggle — a
     // presenter turning that off to hold a reading steady should not also
     // silence a safety alert.
+    //
+    // While the hub is connected it raises the seatbelt alert itself — with the
+    // site protocol attached and the simulator's own escalation — so deriving
+    // a second one here would show the operator the same alarm twice.
     const now = Date.now();
     const previousSeatbeltAlert = alerts.find((a) => a.id === SEATBELT_ALERT_ID);
     const nextSeatbeltAlert = seatbeltAlert(seatbeltFastened, seatbeltUnfastenedAt, now, previousSeatbeltAlert);
     const seatbeltAlertChanged =
       Boolean(nextSeatbeltAlert) !== Boolean(previousSeatbeltAlert) ||
       (nextSeatbeltAlert && previousSeatbeltAlert && nextSeatbeltAlert.severity !== previousSeatbeltAlert.severity);
-    if (seatbeltAlertChanged) {
+    if (!backendConnected && seatbeltAlertChanged) {
       set({
         alerts: nextSeatbeltAlert
           ? [nextSeatbeltAlert, ...alerts.filter((a) => a.id !== SEATBELT_ALERT_ID)]
@@ -211,39 +243,48 @@ export const useMachineStore = create<MachineState>((set, get) => ({
     const loadFactor = mode === "heavy-load" ? 1.06 : mode === "idle" ? 0.9 : mode === "maintenance" ? 0.7 : 1;
     const burn = mode === "heavy-load" ? 0.09 : mode === "operating" ? 0.05 : mode === "idle" ? 0.015 : 0;
 
-    // While the hub is streaming, these fields are driven by
-    // `applyLiveTelemetry` instead — drifting them here as well would just
-    // make the readout fight the real value every other frame.
-    const liveDriven = backendConnected;
+    // Fields the hub is supplying are driven by `applyLiveTelemetry` instead —
+    // drifting them here as well would make the readout fight the real value.
+    const isLive = (k: keyof SensorData) => backendConnected && liveKeys[k] === true;
 
     set({
       sensors: {
         ...sensors,
-        engineTemperature: liveDriven
+        engineTemperature: isLive("engineTemperature")
           ? sensors.engineTemperature
           : clamp(drift(sensors.engineTemperature, (t.engineTemperature ?? 82) * loadFactor, 0.06, 0.6), 40, 125),
-        hydraulicTemperature: liveDriven
+        hydraulicTemperature: isLive("hydraulicTemperature")
           ? sensors.hydraulicTemperature
           : clamp(drift(sensors.hydraulicTemperature, (t.hydraulicTemperature ?? 78) * loadFactor, 0.06, 0.6), 30, 125),
-        coolantTemperature: liveDriven
+        coolantTemperature: isLive("coolantTemperature")
           ? sensors.coolantTemperature
           : clamp(drift(sensors.coolantTemperature, (t.coolantTemperature ?? 84) * loadFactor, 0.06, 0.5), 40, 125),
-        hydraulicPressure: clamp(drift(sensors.hydraulicPressure, (t.hydraulicPressure ?? 3200) * loadFactor, 0.08, 40), 0, 4200),
-        rpm: clamp(drift(sensors.rpm, modeRpm[mode], 0.15, 60), 0, 2400),
-        fuelLevel: liveDriven
+        hydraulicPressure: isLive("hydraulicPressure")
+          ? sensors.hydraulicPressure
+          : clamp(drift(sensors.hydraulicPressure, (t.hydraulicPressure ?? 3200) * loadFactor, 0.08, 40), 0, 4200),
+        rpm: isLive("rpm") ? sensors.rpm : clamp(drift(sensors.rpm, modeRpm[mode], 0.15, 60), 0, 2400),
+        fuelLevel: isLive("fuelLevel")
           ? sensors.fuelLevel
           : clamp(Number((sensors.fuelLevel - burn).toFixed(2)), 0, 100),
-        fuelLitres: liveDriven
+        fuelLitres: isLive("fuelLitres")
           ? sensors.fuelLitres
           : clamp(Number((sensors.fuelLitres - burn * 6.2).toFixed(1)), 0, 640),
-        battery: clamp(drift(sensors.battery, mode === "maintenance" ? 88 : 91, 0.05, 0.3), 0, 100),
-        defLevel: clamp(Number((sensors.defLevel - burn * 0.12).toFixed(2)), 0, 100),
-        oilPressure: clamp(drift(sensors.oilPressure, mode === "idle" ? 44 : 62, 0.1, 1.5), 0, 90),
-        engineLoad: clamp(drift(sensors.engineLoad, mode === "heavy-load" ? 88 : mode === "idle" ? 12 : 58, 0.12, 4), 0, 100),
-        machineSpeed: liveDriven
+        battery: isLive("battery")
+          ? sensors.battery
+          : clamp(drift(sensors.battery, mode === "maintenance" ? 88 : 91, 0.05, 0.3), 0, 100),
+        defLevel: isLive("defLevel")
+          ? sensors.defLevel
+          : clamp(Number((sensors.defLevel - burn * 0.12).toFixed(2)), 0, 100),
+        oilPressure: isLive("oilPressure")
+          ? sensors.oilPressure
+          : clamp(drift(sensors.oilPressure, mode === "idle" ? 44 : 62, 0.1, 1.5), 0, 90),
+        engineLoad: isLive("engineLoad")
+          ? sensors.engineLoad
+          : clamp(drift(sensors.engineLoad, mode === "heavy-load" ? 88 : mode === "idle" ? 12 : 58, 0.12, 4), 0, 100),
+        machineSpeed: isLive("machineSpeed")
           ? sensors.machineSpeed
           : clamp(drift(sensors.machineSpeed, mode === "operating" ? 4.2 : mode === "heavy-load" ? 2.6 : 0, 0.18, 0.4), 0, 12),
-        operatingHours: liveDriven
+        operatingHours: isLive("operatingHours")
           ? sensors.operatingHours
           : Number((sensors.operatingHours + (mode === "maintenance" ? 0 : 0.0006)).toFixed(4)),
       },
@@ -257,35 +298,56 @@ export const useMachineStore = create<MachineState>((set, get) => ({
   setLive: (live) => set({ live }),
 
   applyLiveTelemetry: (patch) =>
+    set((s) => {
+      const next: Partial<SensorData> = {};
+      if (patch.fuelPct !== undefined) {
+        next.fuelLevel = clamp(patch.fuelPct, 0, 100);
+        // Tank capacity is the same 640 L used to seed the mock model, so the
+        // litres readout stays proportional to the real percent.
+        next.fuelLitres = clamp(Number(((patch.fuelPct / 100) * 640).toFixed(1)), 0, 640);
+      }
+      if (patch.hydraulicTemperature !== undefined) {
+        next.hydraulicTemperature = clamp(patch.hydraulicTemperature, 0, 200);
+      }
+      if (patch.coolantTemperature !== undefined) {
+        next.coolantTemperature = clamp(patch.coolantTemperature, 0, 200);
+        // There is no separate engine-block sensor on the wire; coolant is the
+        // standard proxy for it.
+        next.engineTemperature = clamp(patch.coolantTemperature, 0, 200);
+      }
+      if (patch.speedKmh !== undefined) next.machineSpeed = Math.max(0, patch.speedKmh);
+      if (patch.engineHours !== undefined) next.operatingHours = patch.engineHours;
+      if (patch.engineRpm !== undefined) next.rpm = clamp(patch.engineRpm, 0, 2400);
+      if (patch.batteryPct !== undefined) next.battery = clamp(patch.batteryPct, 0, 100);
+      if (patch.defLevelPct !== undefined) next.defLevel = clamp(patch.defLevelPct, 0, 100);
+      if (patch.oilPressurePsi !== undefined) next.oilPressure = clamp(patch.oilPressurePsi, 0, 120);
+      if (patch.hydraulicPressurePsi !== undefined) {
+        next.hydraulicPressure = clamp(patch.hydraulicPressurePsi, 0, 5000);
+      }
+      if (patch.engineLoadPct !== undefined) next.engineLoad = clamp(patch.engineLoadPct, 0, 100);
+
+      const liveKeys = { ...s.liveKeys };
+      for (const k of Object.keys(next) as (keyof SensorData)[]) liveKeys[k] = true;
+      return { sensors: { ...s.sensors, ...next }, liveKeys };
+    }),
+
+  applyLiveAlerts: (alerts, liveAlertIds) => set({ alerts, liveAlertIds }),
+  applyLiveTasks: (tasks) => set({ tasks }),
+  applyLiveOperator: (operator) => set({ operator }),
+  applyLiveSeatbelt: (fastened) =>
     set((s) => ({
-      sensors: {
-        ...s.sensors,
-        ...(patch.fuelPct !== undefined
-          ? {
-              fuelLevel: clamp(patch.fuelPct, 0, 100),
-              // Tank capacity is the same 640 L used to seed the mock model,
-              // so the litres readout stays proportional to the real percent.
-              fuelLitres: clamp(Number(((patch.fuelPct / 100) * 640).toFixed(1)), 0, 640),
-            }
-          : null),
-        ...(patch.hydraulicTemperature !== undefined
-          ? { hydraulicTemperature: clamp(patch.hydraulicTemperature, 0, 200) }
-          : null),
-        ...(patch.coolantTemperature !== undefined
-          ? {
-              coolantTemperature: clamp(patch.coolantTemperature, 0, 200),
-              // The backend has no separate engine-block sensor; coolant temp
-              // is the closest real proxy, same trade-off the twin's liveFrame
-              // mapping makes for inferred fields. Purely cosmetic.
-              engineTemperature: clamp(patch.coolantTemperature, 0, 200),
-            }
-          : null),
-        ...(patch.speedKmh !== undefined ? { machineSpeed: Math.max(0, patch.speedKmh) } : null),
-        ...(patch.engineHours !== undefined ? { operatingHours: patch.engineHours } : null),
-      },
+      seatbeltFastened: fastened,
+      seatbeltUnfastenedAt: fastened ? null : (s.seatbeltUnfastenedAt ?? Date.now()),
     })),
 
-  setBackendConnected: (backendConnected) => set({ backendConnected }),
+  setBackendConnected: (backendConnected) =>
+    set((s) => ({
+      backendConnected,
+      // Offline: every gauge goes back to the local model. The last known alerts
+      // and tasks stay on screen under the OFFLINE badge rather than being
+      // swapped for demo data the operator might mistake for the real thing.
+      liveKeys: backendConnected ? s.liveKeys : {},
+    })),
 
   setSeatbeltFastened: (seatbeltFastened) =>
     set((s) => ({
@@ -308,8 +370,14 @@ export const useMachineStore = create<MachineState>((set, get) => ({
   setInspectionIndex: (inspectionIndex) => set({ inspectionIndex }),
   resetInspection: () => set({ inspectionResults: {}, inspectionIndex: 0 }),
 
-  acknowledgeAlert: (id) =>
-    set((s) => ({ alerts: s.alerts.map((a) => (a.id === id ? { ...a, acknowledged: true } : a)) })),
+  acknowledgeAlert: (id) => {
+    const { backendConnected, liveAlertIds } = get();
+    set((s) => ({ alerts: s.alerts.map((a) => (a.id === id ? { ...a, acknowledged: true } : a)) }));
+    // Live: acknowledge on the hub too, so it clears on /cab, /command and the
+    // twin as well — not just on this device.
+    const hubId = liveAlertIds[id];
+    if (backendConnected && hubId) getFleetSource().acknowledgeAlert(hubId);
+  },
 
   cycleTask: (id) =>
     set((s) => ({
