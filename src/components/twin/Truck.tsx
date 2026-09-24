@@ -32,6 +32,7 @@ import {
   profileGeometry,
   useMachineMotion,
 } from "./rig";
+import { InternalBox, InternalTube, useXray } from "./xray";
 
 const HITCH_Z = -0.9;
 const TYRE_R = 0.95;
@@ -61,6 +62,7 @@ export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
   const hoistBaseR = useRef<THREE.Group>(null);
   const hoistRodL = useRef<THREE.Group>(null);
   const hoistRodR = useRef<THREE.Group>(null);
+  const { handlers } = useXray(telemetry.machineId, root);
 
   const geo = useMemo(
     () => ({ side: profileGeometry(BODY_SIDE, 0.12, 0.02) }),
@@ -94,7 +96,11 @@ export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
         <group ref={tractor} position={[0, 0, HITCH_Z]}>
           {/* front axle tyres */}
           {[-1, 1].map((side) => (
-            <group key={side} position={[side * TRACK, TYRE_R, -3.05]}>
+            <group
+              key={side}
+              position={[side * TRACK, TYRE_R, -3.05]}
+              userData={{ part: "undercarriage" }}
+            >
               <Tyre
                 radius={TYRE_R}
                 width={TYRE_W}
@@ -108,36 +114,42 @@ export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
             <boxGeometry args={[1.1, 0.6, 3.9]} />
           </mesh>
           {/* engine bonnet and grille */}
-          <RoundedBox
-            args={[1.95, 1.25, 2.3]}
-            radius={0.14}
-            position={[0, 1.98, -3.45]}
-            material={MAT.paint}
-            castShadow
-            receiveShadow
-          />
-          <mesh position={[0, 1.92, -4.62]} material={MAT.grille}>
-            <boxGeometry args={[1.5, 0.95, 0.06]} />
-          </mesh>
-          {[-0.45, -0.15, 0.15, 0.45].map((y) => (
-            <mesh key={y} position={[0, 1.92 + y, -4.66]} material={MAT.steel}>
-              <boxGeometry args={[1.5, 0.05, 0.03]} />
+          <group userData={{ part: "engine" }}>
+            <RoundedBox
+              args={[1.95, 1.25, 2.3]}
+              radius={0.14}
+              position={[0, 1.98, -3.45]}
+              material={MAT.paint}
+              castShadow
+              receiveShadow
+            />
+            <mesh position={[0, 1.92, -4.62]} material={MAT.grille}>
+              <boxGeometry args={[1.5, 0.95, 0.06]} />
             </mesh>
-          ))}
-          <Decal
-            text="CAT"
-            logo
-            position={[0.99, 2.05, -3.5]}
-            rotation={[0, Math.PI / 2, 0]}
-            width={1.1}
-          />
-          <Decal
-            text="CAT"
-            logo
-            position={[-0.99, 2.05, -3.5]}
-            rotation={[0, -Math.PI / 2, 0]}
-            width={1.1}
-          />
+            {[-0.45, -0.15, 0.15, 0.45].map((y) => (
+              <mesh
+                key={y}
+                position={[0, 1.92 + y, -4.66]}
+                material={MAT.steel}
+              >
+                <boxGeometry args={[1.5, 0.05, 0.03]} />
+              </mesh>
+            ))}
+            <Decal
+              text="CAT"
+              logo
+              position={[0.99, 2.05, -3.5]}
+              rotation={[0, Math.PI / 2, 0]}
+              width={1.1}
+            />
+            <Decal
+              text="CAT"
+              logo
+              position={[-0.99, 2.05, -3.5]}
+              rotation={[0, -Math.PI / 2, 0]}
+              width={1.1}
+            />
+          </group>
           {/* front bumper with lights */}
           <mesh position={[0, 1.05, -4.78]} material={MAT.steelDark} castShadow>
             <boxGeometry args={[2.7, 0.35, 0.3]} />
@@ -156,75 +168,83 @@ export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
             />
           ))}
           {/* cab on its platform */}
-          <mesh position={[0, 2.0, -1.55]} material={MAT.paint} castShadow>
-            <boxGeometry args={[2.4, 0.2, 1.9]} />
-          </mesh>
-          <group position={[0, 2.95, -1.55]}>
-            <mesh material={MAT.glass}>
-              <boxGeometry args={[1.95, 1.6, 1.6]} />
+          <group userData={{ part: "cab" }}>
+            <mesh position={[0, 2.0, -1.55]} material={MAT.paint} castShadow>
+              <boxGeometry args={[2.4, 0.2, 1.9]} />
             </mesh>
-            {[
-              [-0.95, -0.78],
-              [0.95, -0.78],
-              [-0.95, 0.78],
-              [0.95, 0.78],
-            ].map(([x, z]) => (
-              <mesh
-                key={`${x}${z}`}
-                position={[x, 0, z]}
-                material={MAT.black}
+            <group position={[0, 2.95, -1.55]}>
+              <mesh material={MAT.glass}>
+                <boxGeometry args={[1.95, 1.6, 1.6]} />
+              </mesh>
+              {[
+                [-0.95, -0.78],
+                [0.95, -0.78],
+                [-0.95, 0.78],
+                [0.95, 0.78],
+              ].map(([x, z]) => (
+                <mesh
+                  key={`${x}${z}`}
+                  position={[x, 0, z]}
+                  material={MAT.black}
+                  castShadow
+                >
+                  <boxGeometry args={[0.07, 1.62, 0.07]} />
+                </mesh>
+              ))}
+              <RoundedBox
+                args={[2.1, 0.16, 1.8]}
+                radius={0.05}
+                position={[0, 0.86, 0]}
+                material={MAT.paint}
                 castShadow
-              >
-                <boxGeometry args={[0.07, 1.62, 0.07]} />
+              />
+              <mesh position={[0, -0.35, 0.2]} material={MAT.seat}>
+                <boxGeometry args={[0.5, 0.5, 0.5]} />
               </mesh>
-            ))}
-            <RoundedBox
-              args={[2.1, 0.16, 1.8]}
-              radius={0.05}
-              position={[0, 0.86, 0]}
-              material={MAT.paint}
-              castShadow
-            />
-            <mesh position={[0, -0.35, 0.2]} material={MAT.seat}>
-              <boxGeometry args={[0.5, 0.5, 0.5]} />
-            </mesh>
-            <mesh position={[0, 0.05, 0.15]} material={MAT.seat}>
-              <sphereGeometry args={[0.13, 10, 8]} />
-            </mesh>
-            <Beacon telemetry={telemetry} position={[0.6, 0.94, 0.5]} />
-            <Lamp position={[-0.6, 0.97, -0.8]} />
-            <Lamp position={[0.6, 0.97, -0.8]} />
-            {/* mirrors on arms */}
-            {[-1, 1].map((side) => (
-              <group key={side} position={[side * 1.3, 0.2, -0.8]}>
-                <mesh position={[-side * 0.18, 0, 0]} material={MAT.black}>
-                  <boxGeometry args={[0.4, 0.04, 0.04]} />
+              <mesh position={[0, 0.05, 0.15]} material={MAT.seat}>
+                <sphereGeometry args={[0.13, 10, 8]} />
+              </mesh>
+              <Beacon telemetry={telemetry} position={[0.6, 0.94, 0.5]} />
+              <Lamp position={[-0.6, 0.97, -0.8]} />
+              <Lamp position={[0.6, 0.97, -0.8]} />
+              {/* mirrors on arms */}
+              {[-1, 1].map((side) => (
+                <group key={side} position={[side * 1.3, 0.2, -0.8]}>
+                  <mesh position={[-side * 0.18, 0, 0]} material={MAT.black}>
+                    <boxGeometry args={[0.4, 0.04, 0.04]} />
+                  </mesh>
+                  <mesh material={MAT.black}>
+                    <boxGeometry args={[0.05, 0.42, 0.24]} />
+                  </mesh>
+                </group>
+              ))}
+            </group>
+            {/* access ladder */}
+            <group position={[-1.25, 1.2, -1.2]}>
+              {[-0.2, 0.2].map((z) => (
+                <mesh key={z} position={[0, 0, z]} material={MAT.black}>
+                  <boxGeometry args={[0.04, 1.6, 0.04]} />
                 </mesh>
-                <mesh material={MAT.black}>
-                  <boxGeometry args={[0.05, 0.42, 0.24]} />
+              ))}
+              {[-0.6, -0.2, 0.2, 0.6].map((y) => (
+                <mesh key={y} position={[0, y, 0]} material={MAT.steel}>
+                  <boxGeometry args={[0.05, 0.04, 0.44]} />
                 </mesh>
-              </group>
-            ))}
-          </group>
-          {/* access ladder */}
-          <group position={[-1.25, 1.2, -1.2]}>
-            {[-0.2, 0.2].map((z) => (
-              <mesh key={z} position={[0, 0, z]} material={MAT.black}>
-                <boxGeometry args={[0.04, 1.6, 0.04]} />
-              </mesh>
-            ))}
-            {[-0.6, -0.2, 0.2, 0.6].map((y) => (
-              <mesh key={y} position={[0, y, 0]} material={MAT.steel}>
-                <boxGeometry args={[0.05, 0.04, 0.44]} />
-              </mesh>
-            ))}
+              ))}
+            </group>
           </group>
           {/* exhaust */}
-          <mesh position={[0.95, 3.0, -2.5]} material={MAT.black} castShadow>
+          <mesh
+            position={[0.95, 3.0, -2.5]}
+            material={MAT.black}
+            castShadow
+            userData={{ part: "engine" }}
+          >
             <cylinderGeometry args={[0.08, 0.09, 1.2, 10]} />
           </mesh>
           {/* hitch */}
           <mesh
+            userData={{ part: "hitch" }}
             position={[0, 1.05, 0]}
             rotation={[0, 0, 0]}
             material={MAT.steelDark}
@@ -232,6 +252,23 @@ export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
           >
             <cylinderGeometry args={[0.38, 0.38, 0.9, 14]} />
           </mesh>
+
+          {/* X-ray internals: engine block, hoist pump, lines back to the hitch */}
+          <InternalBox
+            part="engine"
+            position={[0, 1.95, -3.4]}
+            size={[1.4, 0.95, 1.7]}
+          />
+          <InternalBox
+            part="hydraulic_pump"
+            position={[0.5, 1.3, -0.4]}
+            size={[0.4, 0.4, 0.5]}
+          />
+          <InternalTube
+            part="hydraulic_lines"
+            from={[0.5, 1.25, -0.6]}
+            to={[0.3, 1.1, 0]}
+          />
         </group>
 
         {/* ---------------- trailer unit ---------------- */}
@@ -239,7 +276,11 @@ export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
           {/* tandem bogies */}
           {[3.1, 4.9].map((z) =>
             [-1, 1].map((side) => (
-              <group key={`${z}${side}`} position={[side * TRACK, TYRE_R, z]}>
+              <group
+                key={`${z}${side}`}
+                position={[side * TRACK, TYRE_R, z]}
+                userData={{ part: "undercarriage" }}
+              >
                 <Tyre
                   radius={TYRE_R}
                   width={TYRE_W}
@@ -274,7 +315,11 @@ export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
           />
 
           {/* ---------------- dump body, hinged at the tail ---------------- */}
-          <group ref={body} position={[0, 1.55, 5.2]}>
+          <group
+            ref={body}
+            position={[0, 1.55, 5.2]}
+            userData={{ part: "dump_body" }}
+          >
             <mesh
               geometry={geo.side}
               position={[1.62, 0, 0]}
@@ -367,8 +412,26 @@ export function Truck({ telemetry }: { telemetry: MachineTelemetry }) {
             <Anchor anchorRef={hoistRodL} position={[-0.75, 0.15, -3.6]} />
             <Anchor anchorRef={hoistRodR} position={[0.75, 0.15, -3.6]} />
           </group>
-          <Ram from={hoistBaseL} to={hoistRodL} radius={0.12} />
-          <Ram from={hoistBaseR} to={hoistRodR} radius={0.12} />
+          <Ram
+            from={hoistBaseL}
+            to={hoistRodL}
+            radius={0.12}
+            part="hydraulic_lines"
+          />
+          <Ram
+            from={hoistBaseR}
+            to={hoistRodR}
+            radius={0.12}
+            part="hydraulic_lines"
+          />
+          {[-1, 1].map((side) => (
+            <InternalTube
+              key={side}
+              part="hydraulic_lines"
+              from={[0.2 * side, 1.1, 0.1]}
+              to={[0.75 * side, 1.25, 1.2]}
+            />
+          ))}
         </group>
       </group>
     </group>

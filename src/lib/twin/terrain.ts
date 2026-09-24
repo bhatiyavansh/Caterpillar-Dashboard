@@ -1,36 +1,40 @@
 /**
  * Procedural terrain.
  *
- * `terrainHeight` is the authoritative ground function: the render mesh is
- * displaced by it, the physics heightfield is sampled from it, and every
- * scene prop sits on it. Mesh and physics can never disagree because there is
- * only one definition — and `buildHeightGrid` makes sure they don't even
- * sample it separately: the mesh and the collider share one grid.
+ * `terrainHeight` is the authoritative ground function: the mesh is displaced by
+ * it, and the vehicle model samples it to derive pitch, roll and therefore the
+ * tip-over margin. Mesh and physics can never disagree because there is only one
+ * definition.
  *
- * `surfaceAt` classifies the same ground into running surfaces (haul road,
- * windrow gravel, loose spoil, wet clay…). The terrain colours and the physics
- * friction coefficients both come from it, so what looks slippery is.
+ * The landform is built the way a real site is: natural rolling ground in a
+ * valley, then the engineering cut into it — a benched pit, graded pads with
+ * batter slopes, a raised waste-dump tip head, trenches with their spoil,
+ * stockpiles at their angle of repose, and haul roads cut and filled to grade
+ * with safety windrows on their shoulders.
+ *
+ * The physics world samples the same function: `buildHeightGrid` turns it into
+ * the collider, so what a machine drives on is what is drawn. `surfaceAt`
+ * classifies the same ground into running surfaces (haul road, windrow gravel,
+ * loose spoil, wet clay…) for the tyre and track friction.
  */
 
 import {
-  BERMS,
   DUMP,
   MOUNDS,
   PADS,
-  PERIMETER,
   PIT,
-  PIT_BENCHES,
   POND,
   ROADS,
+  ROAD_SHOULDER,
   SHALLOW_FACE,
   SIDEHILL,
+  SITE_BOUNDS,
   SITE_SIZE,
   TRENCHES,
-  WINDROWS,
-  projectRoads,
-  segmentDistance,
-  smoothstep,
   headingVector,
+  projectRoads,
+  segmentProjection,
+  smoothstep,
 } from "./site";
 
 /* ------------------------------------------------------------------------ */
@@ -89,43 +93,145 @@ export function distanceOutsideSite(x: number, z: number): number {
 /** Undisturbed ground: broad rolling relief with a gentle fall to the south. */
 function naturalGround(x: number, z: number): number {
   return (
-    Math.sin(x * 0.0401 + 1.7) * Math.cos(z * 0.0333 - 0.6) * 1.15 +
-    Math.sin(x * 0.0172 + z * 0.0231 + 2.3) * 0.85 +
-    Math.cos(x * 0.0113 - z * 0.0151 - 1.1) * 0.6 +
-    Math.sin(x * 0.087 + z * 0.079) * 0.22
+    fbm(x * 0.0085 + 12, z * 0.0085 - 4, 4) * 5.5 +
+    fbm(x * 0.03, z * 0.03, 3) * 1.1 +
+    valueNoise(x * 0.17, z * 0.17) * 0.12 -
+    z * 0.012
   );
 }
+
+/** Valley walls: rise from the site edge into ridged hills; highest behind the pit. */
+function valleyWalls(x: number, z: number): number {
+  const d = distanceOutsideSite(x, z);
+  if (d <= 0) return 0;
+  const rise = smoothstep(0, 95, d);
+  // Taller range to the north, behind the pit.
+  const north = 0.55 + 0.9 * smoothstep(-110, -190, z);
+  const ridges = 1 - Math.abs(fbm(x * 0.011 + 40, z * 0.011 - 11, 4));
+  const bulk = fbm(x * 0.0055 - 3, z * 0.0055 + 8, 3) * 0.5 + 0.5;
+  return rise * north * (14 + bulk * 26 + ridges * ridges * 20);
+}
+
+/** Metres outside an axis-aligned rectangle (0 inside). */
+function outsideRect(x: number, z: number, x0: number, x1: number, z0: number, z1: number): number {
+  const dx = Math.max(x0 - x, 0, x - x1);
+  const dz = Math.max(z0 - z, 0, z - z1);
+  return Math.hypot(dx, dz);
+}
+
+/**
+ * Benched pit. Returns the cut below natural ground and how far into the pit
+ * the point is (0 at the crest, 1 on the floor).
+ */
+export function pitCut(x: number, z: number): { cut: number; into: number } {
+  const f = PIT.floor;
+  const d = outsideRect(x, z, f.x0, f.x1, f.z0, f.z1);
+  if (d >= PIT.wallWidth) return { cut: 0, into: 0 };
+  const into = 1 - d / PIT.wallWidth;
+  // Each bench: a level berm, then a steep face down to the next.
+  const s = into * PIT.benches;
+  const k = Math.floor(s);
+  const frac = s - k;
+  const stepped =
+    (Math.min(k + smoothstep(0.52, 0.98, frac), PIT.benches) / PIT.benches) * PIT.depth;
+  return { cut: stepped, into };
+}
+
+function padLevel(h: number, x: number, z: number): number {
+  for (const p of PADS) {
+    const feather = p.feather ?? 8;
+    let d: number;
+    if (p.shape === "rect") {
+      d = outsideRect(x, z, p.x - p.rx, p.x + p.rx, p.z - p.rz, p.z + p.rz);
+    } else {
+      d = (Math.hypot((x - p.x) / p.rx, (z - p.z) / p.rz) - 1) * Math.min(p.rx, p.rz);
+    }
+    if (d >= feather) continue;
+    const inside = 1 - smoothstep(0, feather, d);
+    h = h + ((p.y ?? 0) - h) * inside;
+  }
+  return h;
+}
+
+function mounds(x: number, z: number): number {
+  let add = 0;
+  for (const m of MOUNDS) {
+    const dist = Math.hypot(x - m.x, z - m.z);
+    if (m.cone) {
+      if (dist >= m.r) continue;
+      const d = dist / m.r;
+      // Straight flanks at the angle of repose, a rounded crest and toe, and a
+      // little lumpiness where loads were tipped.
+      const flank = 1 - d;
+      const crest = d < 0.15 ? 1 - ((0.15 - d) * (0.15 - d)) / 0.3 : 1;
+      const toe = smoothstep(1, 0.86, d);
+      const lumps = 1 + valueNoise(x * 0.45, z * 0.45) * 0.06;
+      add += m.h * flank * crest * toe * lumps;
+    } else {
+      const d = dist / m.r;
+      if (d < 1.8) add += m.h * Math.exp(-d * d * 1.4);
+    }
+  }
+  return add;
+}
+
+/** Trenches: vertical-sided cuts along the dug length, spoil windrowed alongside. */
+function trenches(x: number, z: number): number {
+  let add = 0;
+  for (const t of TRENCHES) {
+    const dugTo = t.x0 + (t.x1 - t.x0) * t.progress;
+    if (x < t.x0 - 3 || x > dugTo + 3) continue;
+    const along = smoothstep(t.x0 - 1.5, t.x0 + 0.5, x) * smoothstep(dugTo + 1.5, dugTo - 0.5, x);
+    const dz = z - t.z;
+    const half = t.width / 2;
+    const cut = t.depth * (1 - smoothstep(half - 0.35, half + 0.25, Math.abs(dz)));
+    // Spoil heaped on the north side, clear of the trench edge.
+    const s = (dz + half + 2.8) / 1.35;
+    const spoil = 1.25 * Math.exp(-s * s);
+    add += (spoil - cut) * along;
+  }
+  return add;
+}
+
+/** Safety windrows along bermed roads, opened wherever another road joins. */
+function windrows(x: number, z: number): number {
+  let best = 0;
+  for (let i = 0; i < ROADS.length; i++) {
+    const r = ROADS[i];
+    if (!r.berm) continue;
+    const { t, dist } = segmentProjection(r, x, z);
+    const centre = r.width / 2 + 3.4;
+    const across = (dist - centre) / 1.25;
+    if (Math.abs(across) > 3) continue;
+
+    // Other roads' running surfaces break the windrow (junctions, crossings).
+    let other = 0;
+    for (let j = 0; j < ROADS.length; j++) {
+      if (j === i) continue;
+      const o = ROADS[j];
+      const p = segmentProjection(o, x, z);
+      const half = o.width / 2;
+      if (p.dist < half + ROAD_SHOULDER + 4) {
+        other = Math.max(other, 1 - smoothstep(half + 1, half + ROAD_SHOULDER + 4, p.dist));
+      }
+    }
+    const len = Math.hypot(r.x2 - r.x1, r.z2 - r.z1);
+    const along = t * len;
+    const ends = smoothstep(6, 16, along) * smoothstep(6, 16, len - along);
+    const lumps = 0.82 + valueNoise(x * 0.4, z * 0.4) * 0.18;
+    const h = 0.95 * Math.exp(-across * across) * (1 - other) * ends * lumps;
+    if (h > best) best = h;
+  }
+  return best;
+}
+
+/* ------------------------------------------------------------------------ */
+/*  Face C and the sidehill bench                                           */
+/* ------------------------------------------------------------------------ */
 
 function lerpN(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
-
-/** Normalised distance from the pit centre: 1 at the rim ellipse. */
-function pitDistance(x: number, z: number): number {
-  return Math.hypot((x - PIT.x) / PIT.rx, (z - PIT.z) / PIT.rz);
-}
-
-/**
- * Terraced pit profile. Between terraces the level eases across a face with
- * smoothstep, so faces are steep but the collider has no vertical cliffs.
- * Returns the level and how strongly it overrides natural ground (0..1).
- */
-function pitProfile(d: number): { y: number; w: number } {
-  const b = PIT_BENCHES;
-  if (d >= b[b.length - 1].to) return { y: 0, w: 1 - smoothstep(b[b.length - 1].to, 1.34, d) };
-  for (let i = 0; i < b.length; i++) {
-    const lv = b[i];
-    if (d <= lv.to) {
-      if (d >= lv.from || i === 0) return { y: lv.y, w: 1 };
-      // On the face between the previous terrace and this one.
-      const prev = b[i - 1];
-      return { y: lerpN(prev.y, lv.y, smoothstep(prev.to, lv.from, d)), w: 1 };
-    }
-  }
-  return { y: 0, w: 0 };
-}
-
-/* ------------------------------------------------------------ face C */
 
 /** Height of bench face C *before* it fails (the rock blocks' top surface). */
 export function faceIntactHeight(z: number): number {
@@ -144,190 +250,84 @@ export function faceFailedHeight(z: number): number {
   return Math.min(Math.max(slump, f.floorY), Math.max(faceIntactHeight(z), floor));
 }
 
-/** 0..1 across the face's length, feathered over 3 m at each end. */
-function faceSpan(x: number): number {
+/** Grades the face C working area level, then cuts the failed face profile. */
+function faceC(h: number, x: number, z: number): number {
   const f = SHALLOW_FACE;
-  return smoothstep(f.x1 - 3, f.x1, x) * (1 - smoothstep(f.x2, f.x2 + 3, x));
+  if (z >= f.crestZ + 16 || z <= f.exitZ - 6 || x <= f.x1 - 8 || x >= f.x2 + 8) return h;
+  // The cut, including its approach, is graded flat before carving.
+  const grade =
+    smoothstep(f.x1 - 8, f.x1 - 3, x) *
+    (1 - smoothstep(f.x2 + 3, f.x2 + 8, x)) *
+    smoothstep(f.exitZ - 6, f.exitZ, z) *
+    (1 - smoothstep(f.crestZ + 10, f.crestZ + 16, z));
+  h = lerpN(h, 0, grade);
+  // 0..1 across the face's length, feathered over 3 m at each end.
+  const along = smoothstep(f.x1 - 3, f.x1, x) * (1 - smoothstep(f.x2, f.x2 + 3, x));
+  return lerpN(h, faceFailedHeight(z), along);
 }
 
-/* ----------------------------------------------------- line features */
+/** The sidehill's east edge sits on the natural ground there; the west edge is `high` above it. */
+const SIDEHILL_BASE = naturalGround(SIDEHILL.x2, (SIDEHILL.z1 + SIDEHILL.z2) / 2);
 
-interface Line {
-  x1: number;
-  z1: number;
-  x2: number;
-  z2: number;
-  width: number;
-  h: number;
-  minX: number;
-  maxX: number;
-  minZ: number;
-  maxZ: number;
-}
-
-/** Line features with their bounding boxes, so most samples skip them outright. */
-function boxed(f: { x1: number; z1: number; x2: number; z2: number; width: number; h: number }, reach = f.width): Line {
-  return {
-    ...f,
-    minX: Math.min(f.x1, f.x2) - reach,
-    maxX: Math.max(f.x1, f.x2) + reach,
-    minZ: Math.min(f.z1, f.z2) - reach,
-    maxZ: Math.max(f.z1, f.z2) + reach,
-  };
-}
-
-function inBox(l: Line, x: number, z: number): boolean {
-  return x >= l.minX && x <= l.maxX && z >= l.minZ && z <= l.maxZ;
-}
-
-function spoilLine(t: (typeof TRENCHES)[number]) {
-  const dx = t.x2 - t.x1;
-  const dz = t.z2 - t.z1;
-  const len = Math.hypot(dx, dz) || 1;
-  // Perpendicular to the trench, on the side `spoilOffset` points to.
-  const nx = (-dz / len) * t.spoilOffset;
-  const nz = (dx / len) * t.spoilOffset;
-  return { x1: t.x1 + nx, z1: t.z1 + nz, x2: t.x2 + nx, z2: t.z2 + nz, width: 3.2, h: 1.1 };
-}
-
-const RIDGES: Line[] = [...WINDROWS, ...BERMS].map((f) => boxed(f));
-const TRENCH_LINES: Line[] = TRENCHES.map((t) => boxed(t, t.width));
-const SPOIL_LINES: Line[] = TRENCHES.map((t) => boxed(spoilLine(t)));
-const RAMP_DUMP = boxed({ ...(ROADS.find((r) => r.id === "ramp-dump") ?? ROADS[0]), h: 0 }, 13);
-
-/** Rounded ridge profile across a line feature: 1 on the crest, 0 at the edge. */
-function ridge(d: number, width: number): number {
-  const half = width / 2;
-  if (d >= half) return 0;
-  const u = d / half;
-  return Math.cos(u * Math.PI * 0.5) ** 2;
-}
-
-/**
- * Ground height at a world position.
- *
- * Layered: rolling base noise and the perimeter valley walls; the benched pit
- * and face C are cut; mounds and the waste dump are raised; pads and the pond
- * are graded; the road network is blended in so running surfaces are always
- * drivable; and finally the linear features — windrows, ramp berms, trenches
- * and their spoil — are laid on top.
- */
-export function terrainHeight(x: number, z: number): number {
-  let h = noise(x, z);
-
-  // Valley walls beyond the fence line.
-  const edge = Math.max(Math.abs(x), Math.abs(z));
-  if (edge > PERIMETER.wallStart) {
-    h += smoothstep(PERIMETER.wallStart, SITE_SIZE / 2, edge) * PERIMETER.wallHeight;
-  }
-
-  // Benched excavation pit.
-  const pd = pitDistance(x, z);
-  if (pd < 1.34) {
-    const p = pitProfile(pd);
-    h = lerpN(h, p.y + (pd < 0.62 ? noise(x * 3, z * 3) * 0.08 : 0), p.w);
-  }
-
-  // Face C: grade the working area level, then cut the failed face profile.
-  const f = SHALLOW_FACE;
-  if (z < f.crestZ + 16 && z > f.exitZ - 6 && x > f.x1 - 8 && x < f.x2 + 8) {
-    const along = faceSpan(x);
-    // The cut, including its approach, is graded flat before carving.
-    const grade =
-      smoothstep(f.x1 - 8, f.x1 - 3, x) *
-      (1 - smoothstep(f.x2 + 3, f.x2 + 8, x)) *
-      smoothstep(f.exitZ - 6, f.exitZ, z) *
-      (1 - smoothstep(f.crestZ + 10, f.crestZ + 16, z));
-    h = lerpN(h, 0, grade);
-    h = lerpN(h, faceFailedHeight(z), along);
-  }
-
-  // Sidehill bench: a planar cross-slope falling east, feathered at the edges.
+/** Sidehill bench: a planar cross-slope falling east, feathered at the edges. */
+function sidehill(h: number, x: number, z: number): number {
   const sh = SIDEHILL;
-  if (x > sh.x1 - 6 && x < sh.x2 + 6 && z > sh.z1 - 6 && z < sh.z2 + 6) {
-    const w =
-      smoothstep(sh.x1 - 6, sh.x1, x) *
-      (1 - smoothstep(sh.x2, sh.x2 + 6, x)) *
-      smoothstep(sh.z1 - 6, sh.z1, z) *
-      (1 - smoothstep(sh.z2, sh.z2 + 6, z));
-    const plane = sh.high * (1 - (Math.min(Math.max(x, sh.x1), sh.x2) - sh.x1) / (sh.x2 - sh.x1));
-    h = lerpN(h, plane, w);
+  if (x <= sh.x1 - 6 || x >= sh.x2 + 6 || z <= sh.z1 - 6 || z >= sh.z2 + 6) return h;
+  const w =
+    smoothstep(sh.x1 - 6, sh.x1, x) *
+    (1 - smoothstep(sh.x2, sh.x2 + 6, x)) *
+    smoothstep(sh.z1 - 6, sh.z1, z) *
+    (1 - smoothstep(sh.z2, sh.z2 + 6, z));
+  const across = (Math.min(Math.max(x, sh.x1), sh.x2) - sh.x1) / (sh.x2 - sh.x1);
+  return lerpN(h, SIDEHILL_BASE + sh.high * (1 - across), w);
+}
+
+/* ------------------------------------------------------------------------ */
+/*  Ground height                                                           */
+/* ------------------------------------------------------------------------ */
+
+export function terrainHeight(x: number, z: number): number {
+  let h = naturalGround(x, z) + valleyWalls(x, z);
+
+  // The pit: benches stepping down to a level floor.
+  const pit = pitCut(x, z);
+  if (pit.into > 0) {
+    h = h * (1 - pit.into) - pit.cut + valueNoise(x * 0.3, z * 0.3) * 0.05;
   }
 
-  // Stockpile mounds and spoil heaps.
-  for (const m of MOUNDS) {
-    const d = Math.hypot(x - m.x, z - m.z) / m.r;
-    if (d < 1.7) h += m.h * Math.exp(-d * d * 1.5);
-  }
+  // Sediment pond.
+  const pondDist = Math.hypot((x - POND.x) / POND.rx, (z - POND.z) / POND.rz);
+  if (pondDist < 1.35) h -= POND.depth * (1 - smoothstep(0.3, 1.25, pondDist));
 
-  // Waste dump: a flat tip head on 38-degree tipped sides.
-  const dd = Math.hypot((x - DUMP.x) / DUMP.rx, (z - DUMP.z) / DUMP.rz);
-  if (dd < 1.4) {
-    const top = DUMP.h + noise(x * 2.5, z * 2.5) * 0.05;
-    h = lerpN(h, top, 1 - smoothstep(1.0, 1.35, dd));
-  }
+  // Graded pads and the raised tip head, each with its batter slope.
+  h = padLevel(h, x, z);
 
-  // Graded working pads.
-  for (const p of PADS) {
-    const d = Math.hypot((x - p.x) / p.rx, (z - p.z) / p.rz);
-    if (d < 1.35) h = lerpN(h, 0, 1 - smoothstep(0.7, 1.32, d));
-  }
+  // Face C and the sidehill bench: the physics scenarios' ground.
+  h = faceC(h, x, z);
+  h = sidehill(h, x, z);
 
-  // Settling pond basin.
-  const dp = Math.hypot(x - POND.x, z - POND.z);
-  if (dp < POND.r * 1.6) {
-    h = lerpN(h, -0.2, 1 - smoothstep(POND.r, POND.r * 1.6, dp));
-    h -= POND.depth * (1 - smoothstep(POND.r * 0.35, POND.r, dp));
-  }
+  // Material on top of the graded ground.
+  h += mounds(x, z);
+  h += trenches(x, z);
 
-  // Roads win over everything so ramps and haul routes stay smooth.
+  // Roads win so every running surface is at grade; the shoulder becomes the
+  // cut or fill batter where the road passes through relief.
   const road = projectRoads(x, z);
-  if (road.influence > 0) h = lerpN(h, road.y, road.influence);
+  if (road.influence > 0) h = h + (road.y - h) * road.influence;
 
-  // Dump crest berm, open where the ramp arrives.
-  if (dd > 0.82 && dd < 1.02) {
-    const ramp = rampDumpInfluence(x, z);
-    h += 1.2 * ridge(Math.abs(dd - 0.92) * DUMP.rz, 2.4) * (1 - ramp);
-  }
-
-  // Windrows and ramp berms sit on the finished surface.
-  for (const w of RIDGES) {
-    if (!inBox(w, x, z)) continue;
-    const { d } = segmentDistance(x, z, w);
-    if (d < w.width) h += w.h * ridge(d, w.width);
-  }
-
-  // Trenches, with the spoil thrown up on one side.
-  for (let i = 0; i < TRENCH_LINES.length; i++) {
-    const t = TRENCH_LINES[i];
-    if (inBox(t, x, z)) {
-      const { d, t: along } = segmentDistance(x, z, t);
-      if (d < t.width / 2 + 0.6 && along > 0 && along < 1) {
-        h -= t.h * (1 - smoothstep(t.width / 2 - 0.4, t.width / 2 + 0.6, d));
-      }
-    }
-    const sp = SPOIL_LINES[i];
-    if (inBox(sp, x, z)) {
-      const s = segmentDistance(x, z, sp);
-      if (s.d < sp.width) h += sp.h * ridge(s.d, sp.width);
-    }
-  }
+  // Windrows sit on the shoulders, outside the running surface.
+  h += windrows(x, z);
 
   return h;
 }
 
-/** Influence of the dump ramp at (x, z), 0..1 — same falloff as projectRoads. */
-function rampDumpInfluence(x: number, z: number): number {
-  if (!inBox(RAMP_DUMP, x, z)) return 0;
-  const { d } = segmentDistance(x, z, RAMP_DUMP);
-  return 1 - smoothstep(RAMP_DUMP.width / 2, RAMP_DUMP.width / 2 + 7, d);
-}
-
-/* ------------------------------------------------------------- surfaces */
+/* ------------------------------------------------------------------------ */
+/*  Running surfaces                                                        */
+/* ------------------------------------------------------------------------ */
 
 /**
  * Running-surface classes. Each has a friction coefficient per weather in
- * `surface.ts`; the terrain colours use the same classes.
+ * `surface.ts`.
  */
 export type SurfaceClass =
   | "road"
@@ -338,38 +338,42 @@ export type SurfaceClass =
   | "wet_clay"
   | "rock_face";
 
+/** Metres from the nearest point of a pad (0 inside it). */
+function padDistance(p: (typeof PADS)[number], x: number, z: number): number {
+  if (p.shape === "rect") return outsideRect(x, z, p.x - p.rx, p.x + p.rx, p.z - p.rz, p.z + p.rz);
+  return Math.max(0, (Math.hypot((x - p.x) / p.rx, (z - p.z) / p.rz) - 1) * Math.min(p.rx, p.rz));
+}
+
 /**
  * What the ground at (x, z) is made of.
  *
- * `slope` (radians) may be passed when the caller already has it — the mesh
- * builder derives it from the shared grid — otherwise it is sampled.
+ * `slope` (radians) may be passed when the caller already has it; otherwise
+ * it is sampled.
  */
 export function surfaceAt(x: number, z: number, slope?: number): SurfaceClass {
+  if (windrows(x, z) > 0.35) return "gravel_windrow";
+
   const road = projectRoads(x, z);
+  if (road.influence > 0.55) {
+    // The tip ramp is tipped spoil, not a maintained road.
+    return ROADS[road.index]?.id === "dump-ramp" ? "loose_spoil" : "road";
+  }
 
-  for (const w of RIDGES) if (inBox(w, x, z) && segmentDistance(x, z, w).d < w.width / 2) return "gravel_windrow";
+  if (Math.hypot((x - POND.x) / POND.rx, (z - POND.z) / POND.rz) < 1.8) return "wet_clay";
 
-  // The dump ramp is a tipped-spoil ramp, not a maintained road.
-  if (rampDumpInfluence(x, z) > 0.5) return "loose_spoil";
-  if (road.influence > 0.55) return "road";
+  // The tip head and its tipped faces.
+  if (Math.hypot(x - DUMP.x, z - DUMP.z) < DUMP.r + 6) return "loose_spoil";
 
-  const dp = Math.hypot(x - POND.x, z - POND.z);
-  if (dp < POND.clayR) return "wet_clay";
-
-  const dd = Math.hypot((x - DUMP.x) / DUMP.rx, (z - DUMP.z) / DUMP.rz);
-  if (dd < 1.35) return "loose_spoil";
-
-  for (let i = 0; i < TRENCH_LINES.length; i++) {
-    const sp = SPOIL_LINES[i];
-    if (inBox(sp, x, z) && segmentDistance(x, z, sp).d < 1.6) return "loose_spoil";
-    const t = TRENCH_LINES[i];
-    if (inBox(t, x, z)) {
-      const tr = segmentDistance(x, z, t);
-      if (tr.d < t.width / 2 + 0.3 && tr.t > 0 && tr.t < 1) return "loose_spoil";
+  // Trenches, and the spoil windrowed on their north side.
+  for (const t of TRENCHES) {
+    const dugTo = t.x0 + (t.x1 - t.x0) * t.progress;
+    if (x > t.x0 - 1 && x < dugTo + 1 && z > t.z - t.width / 2 - 4.5 && z < t.z + t.width / 2 + 0.3) {
+      return "loose_spoil";
     }
   }
 
-  for (const m of MOUNDS) if (Math.hypot(x - m.x, z - m.z) < m.r * 0.9) return "loose_spoil";
+  // Stockpiles and tipped heaps (natural knolls are not cones).
+  for (const m of MOUNDS) if (m.cone && Math.hypot(x - m.x, z - m.z) < m.r * 0.9) return "loose_spoil";
 
   const f = SHALLOW_FACE;
   if (x > f.x1 && x < f.x2) {
@@ -382,14 +386,14 @@ export function surfaceAt(x: number, z: number, slope?: number): SurfaceClass {
   if ((slope ?? slopeAngle(x, z)) > 0.42) return "rock_face";
 
   if (x > SIDEHILL.x1 && x < SIDEHILL.x2 && z > SIDEHILL.z1 && z < SIDEHILL.z2) return "packed";
-  if (pitDistance(x, z) < 1.04) return "packed";
-  for (const p of PADS) {
-    if (Math.hypot((x - p.x) / p.rx, (z - p.z) / p.rz) < 0.9) return "packed";
-  }
+  if (pitCut(x, z).into > 0) return "packed";
+  for (const p of PADS) if (padDistance(p, x, z) < 1) return "packed";
   return "natural";
 }
 
-/* ---------------------------------------------------------- shared grid */
+/* ------------------------------------------------------------------------ */
+/*  Shared height grid (the physics collider)                               */
+/* ------------------------------------------------------------------------ */
 
 export interface HeightGrid {
   /** Vertices per side minus one. */
@@ -400,21 +404,21 @@ export interface HeightGrid {
   cell: number;
   /**
    * Row-major heights: index `iz * (segments + 1) + ix`, world
-   * x = ix * cell - size/2, z = iz * cell - size/2. This is exactly the
-   * vertex order of a `PlaneGeometry` rotated flat.
+   * x = ix * cell - size/2, z = iz * cell - size/2 — the vertex order of a
+   * `PlaneGeometry` rotated flat.
    */
   heights: Float32Array;
 }
 
 /**
- * One metre between samples: fine enough for a 0.9 m windrow and a 1.5 m
- * bench face, and the same grid feeds the mesh and the collider.
+ * One metre between samples over the drivable site: fine enough for a 0.9 m
+ * windrow and the 1.5 m face C toe.
  */
 export const GRID_SEGMENTS = SITE_SIZE;
 
 const gridCache = new Map<number, HeightGrid>();
 
-/** Samples `terrainHeight` on a square grid once, and shares it. */
+/** Samples `terrainHeight` on a square grid over the site once, and shares it. */
 export function buildHeightGrid(segments = GRID_SEGMENTS): HeightGrid {
   const hit = gridCache.get(segments);
   if (hit) return hit;
@@ -436,8 +440,8 @@ export function buildHeightGrid(segments = GRID_SEGMENTS): HeightGrid {
 
 /**
  * Ground height from the shared grid, interpolated over the same triangle
- * split the render mesh uses. This is what the collider and the mesh actually
- * are, as opposed to the continuous function they were sampled from.
+ * split the collider uses: what the machines actually drive on, as opposed to
+ * the continuous function it was sampled from.
  */
 export function gridHeight(grid: HeightGrid, x: number, z: number): number {
   const n = grid.segments + 1;
@@ -451,12 +455,14 @@ export function gridHeight(grid: HeightGrid, x: number, z: number): number {
   const h10 = grid.heights[iz * n + ix + 1];
   const h01 = grid.heights[(iz + 1) * n + ix];
   const h11 = grid.heights[(iz + 1) * n + ix + 1];
-  // PlaneGeometry splits each quad along the (ix, iz+1)-(ix+1, iz) diagonal.
+  // Each quad splits along the (ix, iz+1)-(ix+1, iz) diagonal.
   if (u + v <= 1) return h00 + (h10 - h00) * u + (h01 - h00) * v;
   return h11 + (h01 - h11) * (1 - u) + (h10 - h11) * (1 - v);
 }
 
-/* --------------------------------------------------------------- attitude */
+/* ------------------------------------------------------------------------ */
+/*  Attitude                                                                */
+/* ------------------------------------------------------------------------ */
 
 export interface Attitude {
   /** Radians. Positive = nose up. */
@@ -503,7 +509,7 @@ export function sampleAttitude(
 
 /** Steepness in radians, regardless of direction. Used for risk scoring. */
 export function slopeAngle(x: number, z: number): number {
-  const e = 1;
+  const e = 2;
   const dx = terrainHeight(x + e, z) - terrainHeight(x - e, z);
   const dz = terrainHeight(x, z + e) - terrainHeight(x, z - e);
   return Math.atan(Math.hypot(dx, dz) / (2 * e));

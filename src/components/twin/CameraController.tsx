@@ -21,6 +21,7 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { MACHINES } from "@/lib/twin/simulation";
+import { componentSpec } from "@/lib/twin/components";
 import type { MachineKind } from "@/types/twin";
 
 /** Operator eye point per machine type, in machine space (forward is -Z). */

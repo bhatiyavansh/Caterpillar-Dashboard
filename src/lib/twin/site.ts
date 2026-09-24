@@ -363,6 +363,9 @@ function road(
 const L = LOADED_ROUTE;
 const E = EMPTY_ROUTE;
 
+/** Where the tip ramp leaves the haul road: 18 m below its top at z = 138. */
+export const DUMP_RAMP_FOOT_Z = 120;
+
 /** Top of the pit ramp, and its foot on the pit floor. */
 export const RAMP_TOP = { x: -30, z: 30 };
 export const RAMP_FOOT = { x: -132, z: 10 };
@@ -374,8 +377,9 @@ export const ROADS: RoadSegment[] = [
   // Laden lane (north) and empty lane (south) the trucks actually drive.
   road("loaded-exit", L[0], L[1], { width: 12 }),
   road("loaded-lane", L[1], L[3], { width: 12, markings: true, berm: true }),
-  road("dump-approach", L[3], { x: L[3].x, z: 110 }, { width: 12 }),
-  road("dump-ramp", { x: L[3].x, z: 110 }, { x: L[4].x, z: 138 }, { width: 12, y2: DUMP.height, berm: true }),
+  road("dump-approach", L[3], { x: L[3].x, z: DUMP_RAMP_FOOT_Z }, { width: 12 }),
+  // A 20% ramp of tipped spoil, not a maintained road: see `surfaceAt`.
+  road("dump-ramp", { x: L[3].x, z: DUMP_RAMP_FOOT_Z }, { x: L[4].x, z: 138 }, { width: 12, y2: DUMP.height, berm: true }),
   road("dump-access", { x: L[4].x, z: 138 }, L[5], { width: 12, y1: DUMP.height }),
   road("dump-exit", L[5], E[1], { width: 12, y1: DUMP.height, y2: 0 }),
   road("empty-diagonal", E[1], E[2], { width: 12, berm: true }),
@@ -603,3 +607,144 @@ export const STATIC_PROPS = {
     { x: 24, z: 150 },
   ],
 };
+
+/* ------------------------------------------------------------------------ */
+/*  Physics landforms and structures                                        */
+/*                                                                          */
+/*  Geometry the terrain function carves (face C, the sidehill bench) and   */
+/*  every structure the rigid-body world treats as solid. The landforms sit */
+/*  in open ground north of zones B and C, clear of the fleet's routes.     */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * Bench face C: a shallow cut north of zone B, left over-steep on purpose.
+ *
+ * The ground function describes the face *after* it has failed: the crest
+ * has slumped back to `crestZ` along a 21 degree plane that meets the floor.
+ * The intact face — near vertical, crest at `intactCrestZ` — is made of loose
+ * rock blocks the physics world stacks on that plane. Until a heavy machine
+ * works too close to the edge, the blocks are locked in place; then they
+ * break free and slide. One ground function either way. The wedge between
+ * the two profiles is roughly 30 x 6.7 x 1.2 m: about 600 t of rock.
+ *
+ * Heights are absolute: the crest is at 0, level with the zone B pad south
+ * of it, and the floor 5.5 m down.
+ */
+export const SHALLOW_FACE = {
+  x1: 22,
+  x2: 52,
+  /** Crest of the intact face. */
+  intactCrestZ: -106,
+  /** Toe of the intact face: 5.5 m of fall in 1.5 m, about 75 degrees. */
+  intactToeZ: -107.5,
+  /** Where the crest ends up after the failure: 6 m of retreat. */
+  crestZ: -100,
+  /** Where the slump plane meets the floor. */
+  slumpToeZ: -114,
+  floorY: -5.5,
+  /** Floor runs north to here, then climbs back to the datum. */
+  floorEndZ: -126,
+  exitZ: -139,
+};
+
+/**
+ * Sidehill bench in the north-east corner: a planar 13-degree cross-slope
+ * falling to the east, `high` metres above the ground at its east edge.
+ * Real benches like this are where excavators are told to keep loads close
+ * in and the house uphill — the load-shift scenario shows why.
+ */
+export const SIDEHILL = { x1: 150, x2: 174, z1: -135, z2: -113, high: 5.6 };
+
+/**
+ * Level natural ground between zone C and the sidehill (about 4 m above the
+ * pads, within a metre either way), clear of roads, props and crew. The
+ * traffic scenarios run along the east-west line through it.
+ */
+export const OPEN_GROUND = { x: 116, z: -120 };
+
+/** Oriented box resting on the ground: a structure the physics world treats as solid. */
+export interface StaticCollider {
+  id: string;
+  x: number;
+  z: number;
+  /** Rotation about Y, radians (three.js convention, as the meshes use). */
+  rot: number;
+  /** Half extents. */
+  hx: number;
+  hy: number;
+  hz: number;
+  /** Lift of the box centre above ground at (x, z). Defaults to hy. */
+  lift?: number;
+  /**
+   * Long runs (fences) follow the ground: the physics world splits them into
+   * short pieces, each seated on the terrain, rather than laying one level
+   * box across a grade.
+   */
+  follow?: boolean;
+}
+
+/** A box in a rotated group's frame (three.js Y rotation), placed in the world. */
+function inFrame(
+  id: string,
+  origin: { x: number; z: number; rot: number },
+  local: { x: number; z: number; hx: number; hy: number; hz: number; lift?: number },
+): StaticCollider {
+  const c = Math.cos(origin.rot);
+  const s = Math.sin(origin.rot);
+  return {
+    id,
+    x: origin.x + local.x * c + local.z * s,
+    z: origin.z - local.x * s + local.z * c,
+    rot: origin.rot,
+    hx: local.hx,
+    hy: local.hy,
+    hz: local.hz,
+    lift: local.lift,
+  };
+}
+
+function fenceRun(id: string, ax: number, az: number, bx: number, bz: number): StaticCollider {
+  const alongX = Math.abs(bx - ax) >= Math.abs(bz - az);
+  return {
+    id,
+    x: (ax + bx) / 2,
+    z: (az + bz) / 2,
+    rot: 0,
+    hx: alongX ? Math.abs(bx - ax) / 2 : 0.08,
+    hy: 1.1,
+    hz: alongX ? 0.08 : Math.abs(bz - az) / 2,
+    follow: true,
+  };
+}
+
+/**
+ * Every solid structure on site, from the same numbers the meshes are drawn
+ * from (SiteProps, SiteDetails), so there is nothing a machine can see and
+ * still drive through. Cones, marker posts, scrub and the stores yard are
+ * deliberately absent: a 20-tonne machine does not stop for them.
+ */
+export const SITE_COLLIDERS: StaticCollider[] = [
+  ...STATIC_PROPS.containers.map((c, i) => ({ id: `container-${i}`, x: c.x, z: c.z, rot: c.rot, hx: 3.05, hy: 1.3, hz: 1.22 })),
+  { id: "office", x: STATIC_PROPS.office.x, z: STATIC_PROPS.office.z, rot: STATIC_PROPS.office.rot, hx: 4.5, hy: 1.5, hz: 2.1 },
+  ...STATIC_PROPS.fuelTanks.map((t, i) => ({ id: `fuel-tank-${i}`, x: t.x, z: t.z, rot: 0, hx: 2.6, hy: 1.1, hz: 1.1, lift: 1.5 })),
+  ...STATIC_PROPS.lightMasts.map((m, i) => ({ id: `light-mast-${i}`, x: m.x, z: m.z, rot: 0, hx: 0.6, hy: 2.5, hz: 0.6 })),
+  // Barrier runs either side of the pit ramp mouth (SiteProps HaulRoadBarriers).
+  ...[0, 1, 2, 3].flatMap((i) => [
+    { id: `barrier-w${i}`, x: RAMP_TOP.x - 10 - i * 3.4, z: RAMP_TOP.z - 4, rot: 0, hx: 1.6, hy: 0.5, hz: 0.07 },
+    { id: `barrier-e${i}`, x: RAMP_TOP.x + 10 + i * 3.4, z: RAMP_TOP.z - 4, rot: 0, hx: 1.6, hy: 0.5, hz: 0.07 },
+  ]),
+  // Crusher plant (SiteDetails Crusher): jaw crusher, control cabin, and the
+  // trestles under the feed hopper and the screen.
+  inFrame("crusher-jaw", CRUSHER, { x: 0, z: 0, hx: 2.1, hy: 2.2, hz: 1.7 }),
+  inFrame("crusher-cabin", CRUSHER, { x: -1, z: -4.4, hx: 1.3, hy: 1.3, hz: 1 }),
+  inFrame("crusher-hopper", CRUSHER, { x: -5, z: 0, hx: 2.15, hy: 1.4, hz: 2.15 }),
+  inFrame("crusher-screen", CRUSHER, { x: 5.5, z: 0, hx: 2.5, hy: 2.4, hz: 1.5 }),
+  // Gatehouse (SiteDetails SiteGate).
+  { id: "gatehouse", x: FENCE.x0 + 10, z: FENCE.gateZ - 12, rot: 0, hx: 2, hy: 1.4, hz: 1.6 },
+  // Perimeter fence, open on the west side where the access road comes in.
+  fenceRun("fence-n", FENCE.x0, FENCE.z0, FENCE.x1, FENCE.z0),
+  fenceRun("fence-e", FENCE.x1, FENCE.z0, FENCE.x1, FENCE.z1),
+  fenceRun("fence-s", FENCE.x0, FENCE.z1, FENCE.x1, FENCE.z1),
+  fenceRun("fence-w1", FENCE.x0, FENCE.z1, FENCE.x0, FENCE.gateZ + FENCE.gateWidth / 2),
+  fenceRun("fence-w2", FENCE.x0, FENCE.gateZ - FENCE.gateWidth / 2, FENCE.x0, FENCE.z0),
+];

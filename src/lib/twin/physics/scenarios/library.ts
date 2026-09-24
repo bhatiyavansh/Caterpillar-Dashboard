@@ -10,14 +10,15 @@
  * director panel pick it up from `PHYSICS_SCENARIOS`.
  */
 
-import { SHALLOW_FACE, SIDEHILL } from "../../site";
+import { DUMP_RAMP_FOOT_Z, LOADED_ROUTE, OPEN_GROUND, SHALLOW_FACE, SIDEHILL } from "../../site";
 import type { PhysicsScenario } from "./types";
 
 const FACE_X = (SHALLOW_FACE.x1 + SHALLOW_FACE.x2) / 2;
 const SIDEHILL_X = (SIDEHILL.x1 + SIDEHILL.x2) / 2;
 const SIDEHILL_Z = (SIDEHILL.z1 + SIDEHILL.z2) / 2;
-/** Open ground east of the sidehill, clear of roads, props and crew. */
-const OPEN = { x: 124, z: -112 };
+const OPEN = OPEN_GROUND;
+/** The tip ramp climbs south (+Z) from the haul road onto the dump. */
+const RAMP_X = LOADED_ROUTE[3].x;
 
 export const PHYSICS_SCENARIOS: PhysicsScenario[] = [
   {
@@ -106,21 +107,22 @@ export const PHYSICS_SCENARIOS: PhysicsScenario[] = [
     id: "wet-ramp-slip",
     title: "Loaded truck on a wet tip ramp",
     summary:
-      "After rain, TRK001 takes 30 t up the 20% dump ramp. Loose spoil soaked through grips at μ ≈ 0.16 — less than the grade needs. The wheels spin and, braked, the truck still slides back.",
+      "After rain, TRK001 takes 30 t up the 20% tip ramp. Loose spoil soaked through grips at μ ≈ 0.16 — less than the grade needs. The wheels spin and, braked, the truck still slides back.",
     category: "traction",
     cast: ["TRK001"],
     focus: "TRK001",
     setup: [
       { kind: "weather", mode: "rain" },
       { kind: "soak", level: 1 },
-      { kind: "place", machine: "TRK001", x: -96, z: 6, heading: 0, payload: 30_000 },
+      // At the foot of the ramp, no run-up: the grade has to be climbed on grip alone.
+      { kind: "place", machine: "TRK001", x: RAMP_X, z: DUMP_RAMP_FOOT_Z - 4, heading: 180, payload: 30_000 },
     ],
     steps: [
       {
         label: "Climbing the wet ramp",
         when: { kind: "elapsed", s: 1 },
         do: [
-          { kind: "driveTo", machine: "TRK001", x: -96, z: -36, cruise: 0.9 },
+          { kind: "driveTo", machine: "TRK001", x: RAMP_X, z: DUMP_RAMP_FOOT_Z + 22, cruise: 0.9 },
         ],
       },
       {
@@ -154,8 +156,8 @@ export const PHYSICS_SCENARIOS: PhysicsScenario[] = [
     cast: ["DOZ001", "EXC001"],
     focus: "DOZ001",
     setup: [
-      { kind: "place", machine: "EXC001", x: OPEN.x, z: OPEN.z, heading: 90 },
-      { kind: "place", machine: "DOZ001", x: OPEN.x, z: OPEN.z + 20, heading: 180 },
+      { kind: "place", machine: "EXC001", x: OPEN.x, z: OPEN.z, heading: 0 },
+      { kind: "place", machine: "DOZ001", x: OPEN.x - 20, z: OPEN.z, heading: 270 },
       { kind: "avoidance", machine: "DOZ001", on: true },
     ],
     steps: [
@@ -187,8 +189,8 @@ export const PHYSICS_SCENARIOS: PhysicsScenario[] = [
     cast: ["DOZ001", "EXC001"],
     focus: "EXC001",
     setup: [
-      { kind: "place", machine: "EXC001", x: OPEN.x, z: OPEN.z, heading: 90 },
-      { kind: "place", machine: "DOZ001", x: OPEN.x, z: OPEN.z + 32, heading: 0 },
+      { kind: "place", machine: "EXC001", x: OPEN.x, z: OPEN.z, heading: 0 },
+      { kind: "place", machine: "DOZ001", x: OPEN.x - 32, z: OPEN.z, heading: 90 },
       { kind: "avoidance", machine: "DOZ001", on: false },
       { kind: "event", text: "DOZ001 on intercept course with EXC001 — proximity sensor fault", severity: "warning" },
     ],
@@ -196,7 +198,7 @@ export const PHYSICS_SCENARIOS: PhysicsScenario[] = [
       {
         label: "Closing",
         when: { kind: "elapsed", s: 0.5 },
-        do: [{ kind: "driveTo", machine: "DOZ001", x: OPEN.x, z: OPEN.z - 4, cruise: 1 }],
+        do: [{ kind: "driveTo", machine: "DOZ001", x: OPEN.x + 4, z: OPEN.z, cruise: 1 }],
       },
       {
         label: "Impact",

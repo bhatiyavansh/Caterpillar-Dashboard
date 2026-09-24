@@ -29,6 +29,7 @@ const HEALTH: Record<Machine["status"], HealthStatus> = {
   warning: "warning",
   critical: "critical",
   maintenance: "offline",
+  offline: "offline",
 };
 
 /**

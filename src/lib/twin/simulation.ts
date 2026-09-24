@@ -49,7 +49,7 @@ import {
   normalizeHeading,
   zoneAt,
 } from "./site";
-import { type Agent, type FleetRole, initialPlacement, stepAgent } from "./fleet";
+import { type Agent, type FleetRole, type FleetWorld, initialPlacement, stepAgent } from "./fleet";
 import { sampleAttitude, terrainHeight } from "./terrain";
 import {
   DEG,
@@ -63,7 +63,6 @@ import {
   TUNING,
   VehicleModel,
   damp,
-  steerReverse,
   steerToward,
   type StepContext,
 } from "./vehicle";
@@ -300,6 +299,12 @@ export class SimulationEngine {
   private physicsLoading: Promise<PhysicsWorld | null> | null = null;
   /** Whether the world was stepped on the last frame. */
   private physicsActive = false;
+  /**
+   * Set by a view that wants the kinematic model only (the guided lesson).
+   * The world stays loaded; bodies go kinematic and resume where telemetry
+   * left them once the flag clears.
+   */
+  private physicsSuspended = false;
   /** Alerts raised by physical events, and the elapsed time they expire at. */
   private timedAlerts = new Map<string, number>();
   /** Per-machine AI state for physical traffic: seconds boxed in. */
@@ -310,8 +315,6 @@ export class SimulationEngine {
   private recovering = new Map<string, { left: number; steer: number }>();
   /** Machines giving way to another: seconds of the manoeuvre left. */
   private yielding = new Map<string, { left: number }>();
-  /** Wheeled machines part-way through a three-point turn. */
-  private turning = new Map<string, { dir: 1 | -1; legTime: number; stalled: number; x: number; z: number }>();
   /**
    * Per-machine scripted input from the scenario runner. While set, it
    * replaces the machine's route AI (or the keyboard, for the primary).
@@ -350,6 +353,11 @@ export class SimulationEngine {
         });
     }
     return this.physicsLoading;
+  }
+
+  /** Pauses (or resumes) the rigid-body world without unloading it. */
+  setPhysicsSuspended(on: boolean): void {
+    this.physicsSuspended = on;
   }
 
   /** Gives every simulated machine a rigid body and lays out the site's loose spoil. */
@@ -402,11 +410,18 @@ export class SimulationEngine {
         stickAngle: m.kind === "excavator" ? -10 * DEG : 0,
         bucketAngle: 0,
       });
-      this.register(t, TUNING[kind]);
-      // `register` settles the machine and empties it; the truck starts parked
-      // at the loading zone with a load on.
-      if (id === "TRK001") t.payload = 24000;
-      this.routes.set(id, { index: 1, dwellLeft: 0 });
+      const model = this.register(t, TUNING[m.kind]);
+      this.agents.push({
+        id: m.id,
+        role: m.role,
+        t,
+        model,
+        phase: place.phase,
+        timer: 0,
+        index: place.index,
+        lane: 0,
+        target: null,
+      });
     }
 
     // Site crew.
@@ -547,7 +562,7 @@ export class SimulationEngine {
     // Physics runs for the locally simulated fleet only. Live telemetry and
     // recorded replays are the authority on pose; the world isn't touched.
     const local = !this.replay && this.source !== "websocket";
-    this.syncPhysicsModes(local);
+    this.syncPhysicsModes(local && !this.physicsSuspended);
     if (this.scenarios.running) {
       if (this.physicsActive) this.scenarios.tick(step, this);
       else this.scenarios.stop(this);
@@ -782,108 +797,37 @@ export class SimulationEngine {
   }
 
   private stepFleet(dt: number): void {
-    for (const descriptor of MACHINES) {
-      if (descriptor.controllable) continue;
-      const id = descriptor.id;
-      const t = this.telemetryOf(id);
-      const model = this.modelOf(id);
-      const route = MACHINE_ROUTES[id];
-      const state = this.routes.get(id);
-      if (!route || !state) continue;
-      const ctx = { ...this.stepContext(), emergencyStopped: false };
+    const ctx = this.stepContext();
+    const free = { ...ctx, emergencyStopped: false };
+    // V2V braking through the physics world applies to every autonomous
+    // move; without physics `withAvoidance` passes input straight through.
+    const world: FleetWorld = {
+      agents: this.agents,
+      ctx,
+      filter: (agent, input, step) => this.withAvoidance(agent.id, input, step),
+    };
 
+    for (const agent of this.agents) {
       // A scenario is driving this machine.
-      const scripted = this.overrides.get(id);
+      const scripted = this.overrides.get(agent.id);
       if (scripted) {
-        model.step(this.withAvoidance(id, scripted, dt), dt, ctx);
+        agent.model.step(this.withAvoidance(agent.id, scripted, dt), dt, free);
         continue;
       }
 
       // Director override: aim the dozer straight at the excavator. With
       // physics on, this ends in real contact — V2V braking is off for it.
-      if (this.forcedCollisionLeft > 0 && id === "DOZ001") {
+      if (this.forcedCollisionLeft > 0 && agent.id === "DOZ001") {
         const p = this.primary;
-        model.step(steerToward(t, p.x, p.z, { cruise: 1, arriveRadius: 0.5 }), dt, ctx);
+        const arrive = this.physicsActive ? 0.5 : 3;
+        agent.model.step(steerToward(agent.t, p.x, p.z, { cruise: 1, arriveRadius: arrive }), dt, free);
         continue;
       }
 
-      if (state.dwellLeft > 0) {
-        state.dwellLeft -= dt;
-        model.step(emptyInput(), dt, ctx);
-        continue;
-      }
-
-      const target = route[state.index % route.length];
-      const dist = Math.hypot(target.x - t.x, target.z - t.z);
-      if (dist < 4.5) {
-        state.dwellLeft = target.dwell ?? 0;
-        state.index = (state.index + 1) % route.length;
-        this.onWaypointReached(id, t, target);
-      }
-
-      // Keep right on the haul roads so oncoming traffic passes, not meets.
-      let tx = target.x;
-      let tz = target.z;
-      const onRoad = zoneAt(t.x, t.z) === null && !target.reverse;
-      if (this.physics && onRoad && dist > 10) {
-        const ux = (target.x - t.x) / dist;
-        const uz = (target.z - t.z) / dist;
-        tx += -uz * 2.8;
-        tz += ux * 2.8;
-      }
-
-      const cruise = id === "TRK001" ? 0.85 : id === "WHL001" ? 0.78 : 0.62;
-      let input: VehicleInput;
-      if (target.reverse) {
-        input = steerReverse(t, tx, tz, cruise * 0.55, descriptor.kind === "bulldozer" || descriptor.kind === "excavator");
-      } else {
-        input = steerToward(t, tx, tz, { cruise });
-        if (model.physical && (descriptor.kind === "truck" || descriptor.kind === "loader")) {
-          input = this.threePointTurn(id, t, tx, tz, input);
-        }
-      }
-      model.step(this.withAvoidance(id, input, dt), dt, ctx);
+      const before = agent.t.payload;
+      stepAgent(agent, world, dt);
+      if (agent.role === "haul") this.onTipped(agent, before);
     }
-  }
-
-  /**
-   * Wheeled machines cannot spin on the spot. When the next waypoint is well
-   * behind, they turn round the way a haul truck does at a dump: reverse on
-   * opposite lock, then forward on full lock, alternating whenever a leg runs
-   * out of room (stalls against a windrow or heap) or has gone far enough,
-   * until the waypoint is roughly ahead.
-   */
-  private threePointTurn(
-    id: string,
-    t: MachineTelemetry,
-    tx: number,
-    tz: number,
-    input: VehicleInput,
-  ): VehicleInput {
-    const turn = angleDelta(t.heading, headingTo(t.x, t.z, tx, tz));
-    let k = this.turning.get(id);
-    if (!k && Math.abs(turn) > 1.75) {
-      k = { dir: -1, legTime: 0, stalled: 0, x: t.x, z: t.z };
-      this.turning.set(id, k);
-    }
-    if (!k) return input;
-    if (Math.abs(turn) < 0.7) {
-      this.turning.delete(id);
-      return input;
-    }
-    const dt = 1 / 60;
-    k.legTime += dt;
-    k.stalled = Math.abs(t.speed) < 0.15 && k.legTime > 1 ? k.stalled + dt : 0;
-    const travelled = Math.hypot(t.x - k.x, t.z - k.z);
-    if (k.stalled > 1.2 || travelled > 9 || k.legTime > 12) {
-      k.dir = k.dir === 1 ? -1 : 1;
-      k.legTime = 0;
-      k.stalled = 0;
-      k.x = t.x;
-      k.z = t.z;
-    }
-    const lock = Math.sign(turn) || 1;
-    return { ...input, throttle: 0.45 * k.dir, steer: k.dir === 1 ? lock : -lock };
   }
 
   /**
@@ -943,32 +887,21 @@ export class SimulationEngine {
   }
 
   /**
-   * Haul trucks fill and tip; loaders pick up and drop. With physics on, what
-   * is dropped lands as real material behind the bed or in front of the bucket.
+   * A haul truck that has just tipped. With physics on, the load lands as
+   * real material behind the body rather than vanishing.
    */
-  private onWaypointReached(id: string, t: MachineTelemetry, wp: Waypoint): void {
-    const body = this.physics?.machine(id);
-    // The waypoint says what the stop is for; the machine may pull up just
-    // short of the zone boundary.
-    const zone = zoneAt(wp.x, wp.z);
-    if (id === "TRK001") {
-      if (zone?.kind === "stockpile") {
-        if (body && t.payload > 0) {
-          const back = body.toWorld({ x: 0, y: 0, z: 1 });
-          const origin = body.toWorld({ x: 0, y: 0, z: 0 });
-          this.physics?.material.pour(body.toWorld({ x: 0, y: 2.6, z: 5.3 }), t.payload, {
-            x: (back.x - origin.x) * 1.5,
-            y: -0.5,
-            z: (back.z - origin.z) * 1.5,
-          });
-        }
-        t.payload = 0;
-      } else if (zone?.kind === "loading") t.payload = 24000;
-    }
-    if (id === "WHL001") {
-      // The loader's bucket goes into the truck at the loading zone.
-      t.payload = zone?.kind === "stockpile" ? 3800 : 0;
-    }
+  private onTipped(agent: Agent, before: number): void {
+    const dropped = before - agent.t.payload;
+    if (dropped < 1000 || !this.physicsActive) return;
+    const body = this.physics?.machine(agent.id);
+    if (!body) return;
+    const back = body.toWorld({ x: 0, y: 0, z: 1 });
+    const origin = body.toWorld({ x: 0, y: 0, z: 0 });
+    this.physics?.material.pour(body.toWorld({ x: 0, y: 2.6, z: 5.3 }), dropped, {
+      x: (back.x - origin.x) * 1.5,
+      y: -0.5,
+      z: (back.z - origin.z) * 1.5,
+    });
   }
 
   private stepWorkers(dt: number): void {
@@ -1692,7 +1625,7 @@ export class SimulationEngine {
   runScenario(id: string): boolean {
     const def = getPhysicsScenario(id);
     if (!def) return false;
-    if (!this.physics || this.replay || this.source === "websocket") {
+    if (!this.physics || this.physicsSuspended || this.replay || this.source === "websocket") {
       this.pushEvent(`${def.title}: needs the local physics simulation`, "warning");
       return false;
     }
@@ -1705,7 +1638,6 @@ export class SimulationEngine {
 
   /** Forgets route-AI manoeuvre state, so a machine handed back resumes cleanly. */
   clearAi(id: string): void {
-    this.turning.delete(id);
     this.yielding.delete(id);
     this.recovering.delete(id);
     this.stalledFor.delete(id);
@@ -1964,7 +1896,7 @@ export class SimulationEngine {
    * kinematic intercept runs instead.
    */
   forceCollisionRisk(): void {
-    if (this.physics && this.runScenario("dozer-intercept")) return;
+    if (this.physics && !this.physicsSuspended && this.runScenario("dozer-intercept")) return;
     this.forcedCollisionLeft = 14;
     const dozer = this.telemetryOf("DOZ001");
     const p = this.primary;
@@ -2037,7 +1969,6 @@ export class SimulationEngine {
     this.paths.clear();
     this.timedAlerts.clear();
     this.blockedFor.clear();
-    this.turning.clear();
     this.yielding.clear();
     this.stalledFor.clear();
     this.recovering.clear();
@@ -2064,6 +1995,42 @@ export class SimulationEngine {
 function rightOfWay(id: string): number {
   if (id === PRIMARY_MACHINE) return 9;
   return id.startsWith("TRK") ? 3 : id.startsWith("WHL") ? 2 : 1;
+}
+
+/** Implement pose for a non-excavator from its activity and load. */
+function poseImplements(kind: MachineDescriptor["kind"], t: MachineTelemetry, dt: number): void {
+  const working = t.activity === "digging";
+  const dumping = t.activity === "loading";
+  let boom = t.boomAngle;
+  let bucket = t.bucketAngle;
+  let swing = t.swingAngle;
+
+  if (kind === "loader") {
+    if (working) [boom, bucket] = [0, 0.6];
+    else if (dumping) [boom, bucket] = [0.92, -0.75];
+    else [boom, bucket] = t.payload > 500 ? [0.3, 0.7] : [0.08, 0];
+  } else if (kind === "truck") {
+    const onDump = Math.hypot(t.x - DUMP_POINT.x, t.z - DUMP_POINT.z) < 26;
+    boom = 0;
+    bucket = onDump && Math.abs(t.speed) < 0.3 && t.payload < 2000 ? -1 : 0;
+  } else if (kind === "bulldozer") {
+    boom = working ? -0.06 : 0.3;
+    bucket = 0;
+  } else if (kind === "grader") {
+    boom = working ? -0.04 : 0.25;
+    swing = working ? 0.5 : 0.2;
+  }
+
+  t.boomAngle = damp(t.boomAngle, boom, 2.5, dt);
+  t.bucketAngle = damp(t.bucketAngle, bucket, 2, dt);
+  t.swingAngle = damp(t.swingAngle, swing, 1.5, dt);
+}
+
+const SERVICE_POINTS = [LOADER_POINT, DUMP_POINT, STOCKPILE_POINT, EMPTY_ROUTE[4]];
+const SERVICE_RADIUS_M = 30;
+
+function atServicePoint(x: number, z: number): boolean {
+  return SERVICE_POINTS.some((p) => Math.hypot(x - p.x, z - p.z) < SERVICE_RADIUS_M);
 }
 
 function severityRank(s: AlertSeverity): number {

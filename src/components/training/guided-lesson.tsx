@@ -449,7 +449,7 @@ export function GuidedLesson({ onExit }: { onExit?: () => void }) {
     <div className="flex h-full min-h-0 flex-col bg-ink-950 lg:flex-row">
       {/* Simulator */}
       <div className="relative min-h-[360px] flex-1">
-        <TwinStage liveLink={false} hud={false} />
+        <TwinStage liveLink={false} hud={false} physics={false} />
         {running ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex justify-center">
             <div className="rounded-xl border border-white/10 bg-ink-950/90 px-5 py-4 shadow-2xl">

@@ -28,6 +28,7 @@ import {
   useMachineMotion,
   useShoeMaterial,
 } from "./rig";
+import { InternalBox, InternalTube, useXray } from "./xray";
 
 const GAUGE = 0.98;
 const SHOE = 0.56;
@@ -52,6 +53,7 @@ const BLADE_PROFILE: [number, number][] = [
 export function Bulldozer({ telemetry }: { telemetry: MachineTelemetry }) {
   const { root, tilt } = useMachineMotion(telemetry, 3.2);
   const engine = useTwinStore((s) => s.engine);
+  const { handlers } = useXray(telemetry.machineId, root);
   const blade = useRef<THREE.Group>(null);
   const ripper = useRef<THREE.Group>(null);
   const wheels = useRef<THREE.Object3D[]>([]);
@@ -92,7 +94,11 @@ export function Bulldozer({ telemetry }: { telemetry: MachineTelemetry }) {
       <group ref={tilt}>
         {/* ---------------- high-drive tracks ---------------- */}
         {[-1, 1].map((side) => (
-          <group key={side} position={[side * GAUGE, 0, 0]}>
+          <group
+            key={side}
+            position={[side * GAUGE, 0, 0]}
+            userData={{ part: "undercarriage" }}
+          >
             <TrackRun
               from={[IDLER.z, 0.05]}
               to={[REAR.z, 0.05]}
@@ -208,6 +214,7 @@ export function Bulldozer({ telemetry }: { telemetry: MachineTelemetry }) {
 
         {/* ---------------- main frame and hood ---------------- */}
         <mesh
+          userData={{ part: "undercarriage" }}
           position={[0, 0.9, 0.1]}
           material={MAT.steelDark}
           castShadow
@@ -215,96 +222,100 @@ export function Bulldozer({ telemetry }: { telemetry: MachineTelemetry }) {
         >
           <boxGeometry args={[1.5, 0.6, 3.2]} />
         </mesh>
-        <RoundedBox
-          args={[1.45, 1.05, 2.1]}
-          radius={0.12}
-          position={[0, 1.55, -0.85]}
-          material={MAT.paint}
-          castShadow
-          receiveShadow
-        />
-        {/* radiator guard and grille */}
-        <mesh position={[0, 1.5, -1.92]} material={MAT.grille}>
-          <boxGeometry args={[1.2, 0.85, 0.05]} />
-        </mesh>
-        {[-0.3, -0.1, 0.1, 0.3].map((y) => (
-          <mesh key={y} position={[0, 1.5 + y, -1.96]} material={MAT.steel}>
-            <boxGeometry args={[1.2, 0.05, 0.03]} />
+        <group userData={{ part: "engine" }}>
+          <RoundedBox
+            args={[1.45, 1.05, 2.1]}
+            radius={0.12}
+            position={[0, 1.55, -0.85]}
+            material={MAT.paint}
+            castShadow
+            receiveShadow
+          />
+          {/* radiator guard and grille */}
+          <mesh position={[0, 1.5, -1.92]} material={MAT.grille}>
+            <boxGeometry args={[1.2, 0.85, 0.05]} />
           </mesh>
-        ))}
-        <Decal
-          text="CAT"
-          logo
-          position={[0.74, 1.62, -0.85]}
-          rotation={[0, Math.PI / 2, 0]}
-          width={1.0}
-        />
-        <Decal
-          text="CAT"
-          logo
-          position={[-0.74, 1.62, -0.85]}
-          rotation={[0, -Math.PI / 2, 0]}
-          width={1.0}
-        />
-        <Decal
-          text="D6"
-          position={[0.74, 1.25, -0.2]}
-          rotation={[0, Math.PI / 2, 0]}
-          width={0.6}
-        />
-        {/* exhaust and precleaner */}
-        <mesh position={[0.35, 2.35, -1.05]} material={MAT.black} castShadow>
-          <cylinderGeometry args={[0.07, 0.08, 0.6, 10]} />
-        </mesh>
-        <mesh position={[-0.35, 2.25, -1.1]} material={MAT.black}>
-          <cylinderGeometry args={[0.11, 0.11, 0.35, 12]} />
-        </mesh>
+          {[-0.3, -0.1, 0.1, 0.3].map((y) => (
+            <mesh key={y} position={[0, 1.5 + y, -1.96]} material={MAT.steel}>
+              <boxGeometry args={[1.2, 0.05, 0.03]} />
+            </mesh>
+          ))}
+          <Decal
+            text="CAT"
+            logo
+            position={[0.74, 1.62, -0.85]}
+            rotation={[0, Math.PI / 2, 0]}
+            width={1.0}
+          />
+          <Decal
+            text="CAT"
+            logo
+            position={[-0.74, 1.62, -0.85]}
+            rotation={[0, -Math.PI / 2, 0]}
+            width={1.0}
+          />
+          <Decal
+            text="D6"
+            position={[0.74, 1.25, -0.2]}
+            rotation={[0, Math.PI / 2, 0]}
+            width={0.6}
+          />
+          {/* exhaust and precleaner */}
+          <mesh position={[0.35, 2.35, -1.05]} material={MAT.black} castShadow>
+            <cylinderGeometry args={[0.07, 0.08, 0.6, 10]} />
+          </mesh>
+          <mesh position={[-0.35, 2.25, -1.1]} material={MAT.black}>
+            <cylinderGeometry args={[0.11, 0.11, 0.35, 12]} />
+          </mesh>
+        </group>
         <Anchor anchorRef={liftBaseL} position={[-0.62, 2.0, -1.55]} />
         <Anchor anchorRef={liftBaseR} position={[0.62, 2.0, -1.55]} />
 
         {/* ---------------- ROPS cab ---------------- */}
-        <RoundedBox
-          args={[1.8, 0.3, 1.7]}
-          radius={0.05}
-          position={[0, 1.3, 0.75]}
-          material={MAT.paint}
-          castShadow
-        />
-        <group position={[0, 2.25, 0.75]}>
-          <mesh material={MAT.glass}>
-            <boxGeometry args={[1.5, 1.55, 1.45]} />
-          </mesh>
-          {[
-            [-0.74, -0.7],
-            [0.74, -0.7],
-            [-0.74, 0.7],
-            [0.74, 0.7],
-          ].map(([x, z]) => (
-            <mesh
-              key={`${x}${z}`}
-              position={[x, 0, z]}
-              material={MAT.black}
-              castShadow
-            >
-              <boxGeometry args={[0.08, 1.58, 0.08]} />
-            </mesh>
-          ))}
+        <group userData={{ part: "cab" }}>
           <RoundedBox
-            args={[1.7, 0.14, 1.65]}
+            args={[1.8, 0.3, 1.7]}
             radius={0.05}
-            position={[0, 0.84, 0]}
+            position={[0, 1.3, 0.75]}
             material={MAT.paint}
             castShadow
           />
-          <mesh position={[0, -0.35, 0.15]} material={MAT.seat}>
-            <boxGeometry args={[0.5, 0.5, 0.5]} />
-          </mesh>
-          <mesh position={[0, 0.05, 0.1]} material={MAT.seat}>
-            <sphereGeometry args={[0.13, 10, 8]} />
-          </mesh>
-          <Beacon telemetry={telemetry} position={[0.5, 0.91, 0.5]} />
-          <Lamp position={[-0.5, 0.94, -0.75]} />
-          <Lamp position={[0.5, 0.94, -0.75]} />
+          <group position={[0, 2.25, 0.75]}>
+            <mesh material={MAT.glass}>
+              <boxGeometry args={[1.5, 1.55, 1.45]} />
+            </mesh>
+            {[
+              [-0.74, -0.7],
+              [0.74, -0.7],
+              [-0.74, 0.7],
+              [0.74, 0.7],
+            ].map(([x, z]) => (
+              <mesh
+                key={`${x}${z}`}
+                position={[x, 0, z]}
+                material={MAT.black}
+                castShadow
+              >
+                <boxGeometry args={[0.08, 1.58, 0.08]} />
+              </mesh>
+            ))}
+            <RoundedBox
+              args={[1.7, 0.14, 1.65]}
+              radius={0.05}
+              position={[0, 0.84, 0]}
+              material={MAT.paint}
+              castShadow
+            />
+            <mesh position={[0, -0.35, 0.15]} material={MAT.seat}>
+              <boxGeometry args={[0.5, 0.5, 0.5]} />
+            </mesh>
+            <mesh position={[0, 0.05, 0.1]} material={MAT.seat}>
+              <sphereGeometry args={[0.13, 10, 8]} />
+            </mesh>
+            <Beacon telemetry={telemetry} position={[0.5, 0.91, 0.5]} />
+            <Lamp position={[-0.5, 0.94, -0.75]} />
+            <Lamp position={[0.5, 0.94, -0.75]} />
+          </group>
         </group>
         {/* rear fuel tank */}
         <RoundedBox
@@ -323,7 +334,11 @@ export function Bulldozer({ telemetry }: { telemetry: MachineTelemetry }) {
         />
 
         {/* ---------------- ripper ---------------- */}
-        <group ref={ripper} position={[0, 0.95, 2.15]}>
+        <group
+          ref={ripper}
+          position={[0, 0.95, 2.15]}
+          userData={{ part: "ripper" }}
+        >
           <mesh position={[0, 0, 0.5]} material={MAT.paint} castShadow>
             <boxGeometry args={[1.5, 0.22, 1.0]} />
           </mesh>
@@ -345,7 +360,11 @@ export function Bulldozer({ telemetry }: { telemetry: MachineTelemetry }) {
         </group>
 
         {/* ---------------- blade ---------------- */}
-        <group ref={blade} position={[0, 0.05, -2.6]}>
+        <group
+          ref={blade}
+          position={[0, 0.05, -2.6]}
+          userData={{ part: "moldboard" }}
+        >
           <mesh
             geometry={bladeGeo}
             material={MAT.paint}
@@ -371,10 +390,22 @@ export function Bulldozer({ telemetry }: { telemetry: MachineTelemetry }) {
           <Anchor anchorRef={armEndL} position={[-1.28, 0.35, 0.2]} />
           <Anchor anchorRef={armEndR} position={[1.28, 0.35, 0.2]} />
         </group>
-        <Strut from={armBaseL} to={armEndL} size={[0.2, 0.26]} />
-        <Strut from={armBaseR} to={armEndR} size={[0.2, 0.26]} />
-        <Ram from={liftBaseL} to={liftRodL} radius={0.09} />
-        <Ram from={liftBaseR} to={liftRodR} radius={0.09} />
+        <group userData={{ part: "push_arms" }}>
+          <Strut from={armBaseL} to={armEndL} size={[0.2, 0.26]} />
+          <Strut from={armBaseR} to={armEndR} size={[0.2, 0.26]} />
+        </group>
+        <Ram
+          from={liftBaseL}
+          to={liftRodL}
+          radius={0.09}
+          part="hydraulic_lines"
+        />
+        <Ram
+          from={liftBaseR}
+          to={liftRodR}
+          radius={0.09}
+          part="hydraulic_lines"
+        />
       </group>
     </group>
   );

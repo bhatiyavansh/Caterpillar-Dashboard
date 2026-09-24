@@ -217,10 +217,13 @@ export function Ram({
   from,
   to,
   radius = 0.1,
+  part,
 }: {
   from: React.RefObject<THREE.Object3D | null>;
   to: React.RefObject<THREE.Object3D | null>;
   radius?: number;
+  /** X-ray component id (see `lib/twin/components.ts`). */
+  part?: string;
 }) {
   const group = useRef<THREE.Group>(null);
   const barrel = useRef<THREE.Mesh>(null);
@@ -253,7 +256,7 @@ export function Ram({
   });
 
   return (
-    <group ref={group}>
+    <group ref={group} userData={part ? { part } : undefined}>
       <mesh ref={barrel} rotation={[Math.PI / 2, 0, 0]} material={MAT.paintDark} castShadow>
         <cylinderGeometry args={[radius, radius, 1, 12]} />
       </mesh>

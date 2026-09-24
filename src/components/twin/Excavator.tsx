@@ -35,6 +35,7 @@ import {
   profileGeometry,
   shoeTexture,
 } from "./rig";
+import { InternalBox, InternalTube, useXray } from "./xray";
 
 interface ExcavatorProps {
   telemetry: MachineTelemetry;
@@ -135,6 +136,7 @@ export function Excavator({
   const bucketRod = useRef<THREE.Group>(null);
 
   const engine = useTwinStore((s) => s.engine);
+  const { handlers } = useXray(telemetry.machineId, root);
 
   const geo = useMemo(
     () => ({
@@ -211,29 +213,31 @@ export function Excavator({
     <group ref={root} {...handlers}>
       <group ref={tilt}>
         {/* ---------------- undercarriage ---------------- */}
-        {[-1, 1].map((side) => (
-          <TrackLoop
-            key={side}
-            side={side as -1 | 1}
-            shoes={shoes}
-            register={register}
-          />
-        ))}
-        {/* car body tying the frames together */}
-        <mesh
-          position={[0, 0.72, 0]}
-          material={MAT.steelDark}
-          castShadow
-          receiveShadow
-        >
-          <boxGeometry args={[2.0, 0.44, 1.7]} />
-        </mesh>
-        <mesh position={[0, 0.98, 0]} material={MAT.black} castShadow>
-          <cylinderGeometry args={[0.95, 1.0, 0.16, 28]} />
-        </mesh>
+        <group userData={{ part: "undercarriage" }}>
+          {[-1, 1].map((side) => (
+            <TrackLoop
+              key={side}
+              side={side as -1 | 1}
+              shoes={shoes}
+              register={register}
+            />
+          ))}
+          {/* car body tying the frames together */}
+          <mesh
+            position={[0, 0.72, 0]}
+            material={MAT.steelDark}
+            castShadow
+            receiveShadow
+          >
+            <boxGeometry args={[2.0, 0.44, 1.7]} />
+          </mesh>
+          <mesh position={[0, 0.98, 0]} material={MAT.black} castShadow>
+            <cylinderGeometry args={[0.95, 1.0, 0.16, 28]} />
+          </mesh>
+        </group>
 
         {/* ---------------- upper structure ---------------- */}
-        <group ref={house} position={[0, 1.06, 0]}>
+        <group ref={house} position={[0, 1.06, 0]} userData={{ part: "house" }}>
           {/* deck frame */}
           <mesh
             position={[0, 0.12, 0.3]}
@@ -254,61 +258,91 @@ export function Excavator({
             receiveShadow
           />
           {/* engine hood, sloping to the rear */}
-          <RoundedBox
-            args={[2.46, 0.95, 1.55]}
-            radius={0.12}
-            position={[0, 0.72, 1.12]}
-            material={MAT.paint}
-            castShadow
-            receiveShadow
-          />
-          <RoundedBox
-            args={[2.3, 0.18, 1.35]}
-            radius={0.06}
-            position={[0, 1.26, 1.12]}
-            material={MAT.paintDark}
-            castShadow
-          />
-          {/* engine grille slats on the hood side */}
-          {[0.82, 1.02, 1.22, 1.42].map((z) => (
-            <mesh key={z} position={[1.24, 0.78, z]} material={MAT.grille}>
-              <boxGeometry args={[0.02, 0.5, 0.1]} />
-            </mesh>
-          ))}
+          <group userData={{ part: "engine" }}>
+            <RoundedBox
+              args={[2.46, 0.95, 1.55]}
+              radius={0.12}
+              position={[0, 0.72, 1.12]}
+              material={MAT.paint}
+              castShadow
+              receiveShadow
+            />
+            <RoundedBox
+              args={[2.3, 0.18, 1.35]}
+              radius={0.06}
+              position={[0, 1.26, 1.12]}
+              material={MAT.paintDark}
+              castShadow
+            />
+            {/* engine grille slats on the hood side */}
+            {[0.82, 1.02, 1.22, 1.42].map((z) => (
+              <mesh key={z} position={[1.24, 0.78, z]} material={MAT.grille}>
+                <boxGeometry args={[0.02, 0.5, 0.1]} />
+              </mesh>
+            ))}
+          </group>
           {/* counterweight: heavy rounded casting across the tail */}
-          <RoundedBox
-            args={[2.54, 1.02, 0.78]}
-            radius={0.3}
-            smoothness={5}
-            position={[0, 0.64, 2.2]}
-            material={MAT.paint}
-            castShadow
-            receiveShadow
-          />
-          <Decal
-            text="CAT"
-            logo
-            position={[0, 0.72, 2.6]}
-            rotation={[0, 0, 0]}
-            width={0.95}
-          />
-          <TailLights />
+          <group userData={{ part: "counterweight" }}>
+            <RoundedBox
+              args={[2.54, 1.02, 0.78]}
+              radius={0.3}
+              smoothness={5}
+              position={[0, 0.64, 2.2]}
+              material={MAT.paint}
+              castShadow
+              receiveShadow
+            />
+            <Decal
+              text="CAT"
+              logo
+              position={[0, 0.72, 2.6]}
+              rotation={[0, 0, 0]}
+              width={0.95}
+            />
+            <TailLights />
+          </group>
 
           {/* exhaust stack with rain cap */}
-          <mesh position={[0.72, 1.62, 1.05]} material={MAT.black} castShadow>
-            <cylinderGeometry args={[0.07, 0.08, 0.55, 10]} />
-          </mesh>
-          <mesh
-            position={[0.72, 1.9, 1.02]}
-            rotation={[0.5, 0, 0]}
-            material={MAT.black}
-          >
-            <cylinderGeometry args={[0.1, 0.1, 0.02, 10]} />
-          </mesh>
-          {/* air cleaner */}
-          <mesh position={[0.25, 1.47, 0.72]} material={MAT.black} castShadow>
-            <cylinderGeometry args={[0.13, 0.13, 0.3, 12]} />
-          </mesh>
+          <group userData={{ part: "engine" }}>
+            <mesh position={[0.72, 1.62, 1.05]} material={MAT.black} castShadow>
+              <cylinderGeometry args={[0.07, 0.08, 0.55, 10]} />
+            </mesh>
+            <mesh
+              position={[0.72, 1.9, 1.02]}
+              rotation={[0.5, 0, 0]}
+              material={MAT.black}
+            >
+              <cylinderGeometry args={[0.1, 0.1, 0.02, 10]} />
+            </mesh>
+            {/* air cleaner */}
+            <mesh position={[0.25, 1.47, 0.72]} material={MAT.black} castShadow>
+              <cylinderGeometry args={[0.13, 0.13, 0.3, 12]} />
+            </mesh>
+          </group>
+
+          {/* X-ray internals: pump, engine block, pump-to-valve lines */}
+          <InternalBox
+            part="hydraulic_pump"
+            position={[0.7, 0.75, 0.55]}
+            size={[0.45, 0.45, 0.6]}
+          />
+          <InternalBox
+            part="engine"
+            position={[-0.2, 0.75, 1.25]}
+            size={[1.3, 0.8, 1.1]}
+          />
+          <InternalTube
+            part="hydraulic_lines"
+            from={[0.7, 0.7, 0.25]}
+            to={[0.5, 0.6, -1.6]}
+            radius={0.06}
+          />
+          <InternalTube
+            part="hydraulic_lines"
+            from={[0.55, 0.7, 0.25]}
+            to={[0.35, 0.6, -1.6]}
+            radius={0.06}
+          />
 
           {/* handrails along the right deck and over the hood */}
           <Handrail
@@ -332,15 +366,17 @@ export function Excavator({
           </mesh>
 
           {/* cab riser */}
-          <RoundedBox
-            args={[1.1, 0.5, 1.7]}
-            radius={0.05}
-            position={[-0.7, 0.47, -0.74]}
-            material={MAT.paint}
-            castShadow
-            receiveShadow
-          />
-          <Cab />
+          <group userData={{ part: "cab" }}>
+            <RoundedBox
+              args={[1.1, 0.5, 1.7]}
+              radius={0.05}
+              position={[-0.7, 0.47, -0.74]}
+              material={MAT.paint}
+              castShadow
+              receiveShadow
+            />
+            <Cab />
+          </group>
           <Lamp position={[0.65, 1.28, -1.33]} size={[0.24, 0.16, 0.08]} />
 
           {primary ? (
@@ -357,7 +393,11 @@ export function Excavator({
           <Anchor anchorRef={boomBaseR} position={[0.81, 0.32, -1.95]} />
 
           {/* ---------------- boom ---------------- */}
-          <group ref={boom} position={[0.45, 1.05, -1.55]}>
+          <group
+            ref={boom}
+            position={[0.45, 1.05, -1.55]}
+            userData={{ part: "boom" }}
+          >
             <mesh
               geometry={geo.boom}
               material={MAT.paint}
@@ -391,6 +431,7 @@ export function Excavator({
             </mesh>
             {/* hydraulic lines along the boom top */}
             <mesh
+              userData={{ part: "hydraulic_lines" }}
               position={[0.12, 1.72, -2.9]}
               rotation={[Math.PI / 2, 0, 0]}
               material={MAT.black}
@@ -400,9 +441,23 @@ export function Excavator({
             <Anchor anchorRef={boomRodL} position={[-0.36, 0.72, -2.4]} />
             <Anchor anchorRef={boomRodR} position={[0.36, 0.72, -2.4]} />
             <Anchor anchorRef={stickBase} position={[0, 1.78, -2.85]} />
+            <InternalTube
+              part="hydraulic_lines"
+              from={[0.2, 0.5, -0.3]}
+              to={[0.2, 1.2, -3.0]}
+            />
+            <InternalTube
+              part="hydraulic_lines"
+              from={[0.2, 1.2, -3.0]}
+              to={[0.2, 0.5, -5.4]}
+            />
 
             {/* ---------------- stick ---------------- */}
-            <group ref={stick} position={[0, 0.257, -5.65]}>
+            <group
+              ref={stick}
+              position={[0, 0.257, -5.65]}
+              userData={{ part: "stick" }}
+            >
               <mesh
                 geometry={geo.stick}
                 material={MAT.paint}
@@ -411,6 +466,11 @@ export function Excavator({
               />
               <Anchor anchorRef={stickRod} position={[0, 0.6, 0.66]} />
               <Anchor anchorRef={bucketBase} position={[0, 0.5, -0.35]} />
+              <InternalTube
+                part="hydraulic_lines"
+                from={[0.2, 0.35, 0]}
+                to={[0.2, 0.3, -1.8]}
+              />
               <mesh
                 position={[0, 0, -2.9]}
                 rotation={[0, 0, Math.PI / 2]}
@@ -420,7 +480,11 @@ export function Excavator({
               </mesh>
 
               {/* ---------------- bucket ---------------- */}
-              <group ref={bucket} position={[0, 0, -2.9]}>
+              <group
+                ref={bucket}
+                position={[0, 0, -2.9]}
+                userData={{ part: "bucket" }}
+              >
                 <mesh
                   geometry={geo.shell}
                   material={MAT.paintWorn}
@@ -477,10 +541,15 @@ export function Excavator({
           </group>
 
           {/* rams: twin boom rams, stick ram, bucket ram */}
-          <Ram from={boomBaseL} to={boomRodL} radius={0.11} />
-          <Ram from={boomBaseR} to={boomRodR} radius={0.11} />
-          <Ram from={stickBase} to={stickRod} radius={0.1} />
-          <Ram from={bucketBase} to={bucketRod} radius={0.085} />
+          <Ram from={boomBaseL} to={boomRodL} radius={0.11} part="boom_ram" />
+          <Ram from={boomBaseR} to={boomRodR} radius={0.11} part="boom_ram" />
+          <Ram from={stickBase} to={stickRod} radius={0.1} part="stick_ram" />
+          <Ram
+            from={bucketBase}
+            to={bucketRod}
+            radius={0.085}
+            part="bucket_ram"
+          />
         </group>
       </group>
     </group>

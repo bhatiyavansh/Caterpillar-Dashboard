@@ -117,6 +117,14 @@ export const COMPONENTS: Record<MachineKind, ComponentSpec[]> = {
     { id: "hitch", label: "Articulation hitch", alertKinds: ["tip_over"], anomalyPatterns: ["harsh_operation"], focus: { x: 0, y: 1.05, z: -0.1 } },
     { id: "dump_body", label: "Dump body", alertKinds: ["tip_over"], anomalyPatterns: ["overload"], reading: payload(41000), focus: { x: 0, y: 2.4, z: 2 } },
   ],
+  grader: [
+    { id: "hydraulic_pump", label: "Hydraulic pump", maintenance: "hydraulic_pump", alertKinds: HYD_ALERTS, anomalyPatterns: HYD_PATTERNS, reading: hydraulic, focus: { x: 0.4, y: 1.4, z: 1.6 }, internal: true },
+    { id: "hydraulic_lines", label: "Blade lift hydraulics", maintenance: "hydraulic_pump", alertKinds: ["hydraulic"], anomalyPatterns: HYD_PATTERNS, reading: hydraulic, focus: { x: 0.6, y: 1.2, z: -1.4 }, internal: true },
+    { id: "engine", label: "Engine", maintenance: "engine", alertKinds: ["engine", "fuel", "anomaly"], anomalyPatterns: ["excessive_idling", "low_productivity"], reading: engine, focus: { x: 0, y: 1.85, z: 2.75 }, internal: true },
+    { id: "undercarriage", label: "Tandem drives & tyres", maintenance: "undercarriage", alertKinds: ["tip_over", "collision", "weather"], anomalyPatterns: ["overload", "unusual_pattern"], reading: stability, focus: { x: 1.08, y: 0.7, z: 2.3 } },
+    { id: "cab", label: "Cab", alertKinds: ["proximity", "seatbelt", "fatigue"], anomalyPatterns: ["seatbelt_violation"], focus: { x: 0, y: 2.7, z: 0.9 } },
+    { id: "moldboard", label: "Moldboard & circle", alertKinds: ["collision"], anomalyPatterns: ["overload"], focus: { x: 0, y: 0.5, z: -1.4 } },
+  ],
 };
 
 export function componentsFor(kind: MachineKind): ComponentSpec[] {
@@ -130,7 +138,7 @@ export function componentSpec(kind: MachineKind, id: string | null | undefined):
 /**
  * Machine id -> kind. Fleet ids carry the kind in their prefix (EXC, DOZ,
  * WHL, TRK); the older records pages use model-number ids (CAT-D6-011), so
- * those are recognised by model too. Graders have no twin model: null.
+ * those are recognised by model too (CAT-140-xxx for graders).
  */
 export function kindOf(machineId: string): MachineKind | null {
   const id = machineId.toUpperCase();
@@ -139,6 +147,7 @@ export function kindOf(machineId: string): MachineKind | null {
   if (p === "DOZ" || /(^|-)D[5-9](-|$)/.test(id)) return "bulldozer";
   if (p === "WHL" || /(^|-)9[5-8]\d(-|$)/.test(id)) return "loader";
   if (p === "TRK" || /(^|-)7[34]\d(-|$)/.test(id)) return "truck";
+  if (p === "GRD" || /(^|-)1[2-6]0(-|$)/.test(id)) return "grader";
   return null;
 }
 

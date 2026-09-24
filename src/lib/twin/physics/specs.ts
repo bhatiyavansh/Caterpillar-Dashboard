@@ -9,9 +9,11 @@
  *   D6 dozer         23 000 kg
  *   950 wheel loader 19 000 kg
  *   745 haul truck   30 000 kg empty, 41 000 kg rated payload
+ *   140 motor grader 16 000 kg
  *
  * Geometry is taken from the rig components (Excavator.tsx, Bulldozer.tsx,
- * Loader.tsx, Truck.tsx) so every collider sits under the part it stands for.
+ * Loader.tsx, Truck.tsx, Grader.tsx) so every collider sits under the part it
+ * stands for, and every support under a wheel the rig draws.
  * Body frame: origin on the ground under the machine centre, -Z forward,
  * +X right, +Y up — the same frame the meshes are modelled in.
  */
@@ -134,10 +136,10 @@ export const BUILDS: Record<MachineKind, MachineBuild> = {
       { part: "bucket", hx: 1.45, hy: 0.55, hz: 0.65, x: 0, y: 0.6, z: -4.05, mass: 1_500, cutsGround: true },
     ],
     supports: [
-      { x: -1.25, z: -1.7, radius: 0.82, steer: 1, driven: true },
-      { x: 1.25, z: -1.7, radius: 0.82, steer: 1, driven: true },
-      { x: -1.25, z: 1.75, radius: 0.82, steer: -1, driven: true },
-      { x: 1.25, z: 1.75, radius: 0.82, steer: -1, driven: true },
+      { x: -1.12, z: -1.68, radius: 0.84, steer: 1, driven: true },
+      { x: 1.12, z: -1.68, radius: 0.84, steer: 1, driven: true },
+      { x: -1.12, z: 1.68, radius: 0.84, steer: -1, driven: true },
+      { x: 1.12, z: 1.68, radius: 0.84, steer: -1, driven: true },
     ],
     hardPointY: 1.25,
     suspensionRest: 0.45,
@@ -161,12 +163,12 @@ export const BUILDS: Record<MachineKind, MachineBuild> = {
       { part: "dump_body", hx: 1.45, hy: 0.75, hz: 2.3, x: 0, y: 2.4, z: 2.0, mass: 10_000 },
     ],
     supports: [
-      { x: -1.45, z: -2.6, radius: 0.95, steer: 1, driven: false },
-      { x: 1.45, z: -2.6, radius: 0.95, steer: 1, driven: false },
-      { x: -1.45, z: 1.5, radius: 0.95, driven: true },
-      { x: 1.45, z: 1.5, radius: 0.95, driven: true },
-      { x: -1.45, z: 3.1, radius: 0.95, driven: true },
-      { x: 1.45, z: 3.1, radius: 0.95, driven: true },
+      { x: -1.36, z: -3.95, radius: 0.95, steer: 1, driven: false },
+      { x: 1.36, z: -3.95, radius: 0.95, steer: 1, driven: false },
+      { x: -1.36, z: 2.2, radius: 0.95, driven: true },
+      { x: 1.36, z: 2.2, radius: 0.95, driven: true },
+      { x: -1.36, z: 4.0, radius: 0.95, driven: true },
+      { x: 1.36, z: 4.0, radius: 0.95, driven: true },
     ],
     hardPointY: 1.4,
     suspensionRest: 0.45,
@@ -177,6 +179,35 @@ export const BUILDS: Record<MachineKind, MachineBuild> = {
     steer: 0.4,
     sideGrip: 1,
     payloadAt: { x: 0, y: 2.3, z: 2.0 },
+  },
+  grader: {
+    mass: 16_000,
+    tracked: false,
+    parts: [
+      { part: "engine", hx: 0.88, hy: 0.58, hz: 1.2, x: 0, y: 1.85, z: 2.75, mass: 5_000 },
+      { part: "rear_frame", hx: 0.5, hy: 0.25, hz: 1.6, x: 0, y: 1.0, z: 2.4, mass: 4_000 },
+      { part: "cab", hx: 0.88, hy: 0.9, hz: 0.83, x: 0, y: 2.7, z: 0.9, mass: 1_200 },
+      { part: "front_frame", hx: 0.25, hy: 0.25, hz: 2.5, x: 0, y: 1.6, z: -1.8, mass: 3_300 },
+      { part: "moldboard", hx: 1.85, hy: 0.35, hz: 0.15, x: 0, y: 0.45, z: -1.4, mass: 2_500, cutsGround: true },
+    ],
+    supports: [
+      { x: -1.08, z: -4.3, radius: 0.66, steer: 1, driven: false },
+      { x: 1.08, z: -4.3, radius: 0.66, steer: 1, driven: false },
+      { x: -1.08, z: 1.55, radius: 0.66, driven: true },
+      { x: 1.08, z: 1.55, radius: 0.66, driven: true },
+      { x: -1.08, z: 3.05, radius: 0.66, driven: true },
+      { x: 1.08, z: 3.05, radius: 0.66, driven: true },
+    ],
+    hardPointY: 1.1,
+    suspensionRest: 0.4,
+    stiffness: 24,
+    // A 140 has roughly 110 kN of drawbar pull.
+    tractiveForce: 110_000,
+    brake: 45_000,
+    maxSpeed: 3.2,
+    steer: 0.5,
+    sideGrip: 1,
+    payloadAt: { x: 0, y: 0.5, z: -1.4 },
   },
 };
 

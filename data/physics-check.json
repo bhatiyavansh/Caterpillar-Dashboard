@@ -1,27 +1,27 @@
 {
-  "generatedAt": "2026-09-24T05:24:10.862Z",
+  "generatedAt": "2026-09-24T07:32:23.209Z",
   "terrain": {
     "samples": 5000,
     "misses": 0,
-    "colliderVsRenderMeshMaxM": 0.000022,
-    "colliderVsContinuousFnMaxM": 1.632,
-    "colliderVsContinuousFnMeanM": 0.0062
+    "colliderVsRenderMeshMaxM": 0.000023,
+    "colliderVsContinuousFnMaxM": 4.896,
+    "colliderVsContinuousFnMeanM": 0.0077
   },
   "fleet": {
     "simulatedSeconds": 180,
-    "machines": 4,
-    "materialParcels": 42,
-    "deepestHullPenetrationM": 0.0049,
-    "deepestPair": "WHL001/TRK001",
+    "machines": 9,
+    "materialParcels": 18,
+    "deepestHullPenetrationM": 0,
+    "deepestPair": null,
     "physicsStepMs": {
-      "p50": 0.675,
-      "p95": 1.129,
-      "max": 7.629
+      "p50": 2.887,
+      "p95": 3.639,
+      "max": 10.032
     },
     "engineStepMs": {
-      "p50": 1.137,
-      "p95": 1.801,
-      "max": 8.794
+      "p50": 7.212,
+      "p95": 9.417,
+      "max": 65.63
     }
   },
   "scenarios": [
@@ -35,15 +35,15 @@
         },
         {
           "label": "Excavator pitched past 10°",
-          "observedAtS": 12.8
+          "observedAtS": 11.8
         }
       ],
       "physicsStepMs": {
-        "p50": 1.317,
-        "p95": 2.982,
-        "max": 4.992
+        "p50": 1.46,
+        "p95": 5.835,
+        "max": 8.56
       },
-      "peakAwakeBodies": 64
+      "peakAwakeBodies": 69
     },
     {
       "id": "load-shift-tipover",
@@ -63,15 +63,15 @@
         }
       ],
       "physicsStepMs": {
-        "p50": 0.633,
-        "p95": 0.712,
-        "max": 1.779
+        "p50": 2.928,
+        "p95": 3.653,
+        "max": 7.074
       },
-      "peakAwakeBodies": 4
+      "peakAwakeBodies": 9
     },
     {
       "id": "wet-ramp-slip",
-      "ranSeconds": 15.5,
+      "ranSeconds": 15.4,
       "outcomes": [
         {
           "label": "Traction lost on the grade",
@@ -79,15 +79,15 @@
         },
         {
           "label": "Truck slides back 2 m",
-          "observedAtS": 11.3
+          "observedAtS": 12
         }
       ],
       "physicsStepMs": {
-        "p50": 0.605,
-        "p95": 1.026,
-        "max": 2.115
+        "p50": 3,
+        "p95": 3.743,
+        "max": 8.049
       },
-      "peakAwakeBodies": 4
+      "peakAwakeBodies": 9
     },
     {
       "id": "near-miss-v2v",
@@ -103,11 +103,11 @@
         }
       ],
       "physicsStepMs": {
-        "p50": 0.626,
-        "p95": 0.919,
-        "max": 6.683
+        "p50": 2.972,
+        "p95": 3.503,
+        "max": 12.632
       },
-      "peakAwakeBodies": 4
+      "peakAwakeBodies": 9
     },
     {
       "id": "dozer-intercept",
@@ -119,11 +119,11 @@
         }
       ],
       "physicsStepMs": {
-        "p50": 0.625,
-        "p95": 1.059,
-        "max": 2.892
+        "p50": 0.989,
+        "p95": 3.166,
+        "max": 4.382
       },
-      "peakAwakeBodies": 4
+      "peakAwakeBodies": 9
     }
   ],
   "control": {
@@ -140,11 +140,11 @@
       }
     ],
     "physicsStepMs": {
-      "p50": 0.567,
-      "p95": 0.976,
-      "max": 8.742
+      "p50": 3.102,
+      "p95": 5.284,
+      "max": 29.706
     },
-    "peakAwakeBodies": 4
+    "peakAwakeBodies": 9
   },
   "failures": []
 }
